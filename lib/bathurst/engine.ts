@@ -393,6 +393,7 @@ export function createBathurstEngine() {
     stick.classList.toggle('nodes', nodeIdx>=0);
     if(nodeIdx<0){ selected=null; markChip('all'); if(view.type==='place') view={type:'list'}; setCollapsed(true); render(); refresh(); resetView(); return; }
     openPlace(NODES[nodeIdx].id);   // focus the marker and open its sidebar
+    if(W<760) setSheet('peek');   // phones: while scrolling the projects the sheet stays closed (handle + title); drag it up to open
   }
   function setIndustry(i){
     indIdx=Math.max(0, Math.min(INDS.length-1, i)); const k=INDS[indIdx][0];
@@ -569,12 +570,24 @@ export function createBathurstEngine() {
   // phone bottom sheet: peek / half / full, drag or tap the handle
   const ORDER=['peek','half','full'];
   function setSheet(st){ sheet.dataset.state=st; }
-  { const grab=$('grab'); let y0=null, moved=false;
-    grab.addEventListener('pointerdown', e=>{ y0=e.clientY; moved=false; grab.setPointerCapture(e.pointerId); });
+  // the handle drags the sheet live (it follows the finger), then settles on the nearest state; a quick flick
+  // goes one state further in its direction, and a tap steps to the next state
+  { const grab=$('grab'); let d=null;
+    const offsetOf = () => new DOMMatrix(getComputedStyle(sheet).transform).m42;   // current translateY in px
+    const stateY = () => { const was=sheet.style.transform; sheet.style.transform=''; const cur=sheet.dataset.state, y={};
+      for(const st of ORDER){ sheet.dataset.state=st; y[st]=offsetOf(); } sheet.dataset.state=cur; sheet.style.transform=was; return y; };
+    grab.addEventListener('pointerdown', e=>{ const y=offsetOf(); sheet.classList.add('dragging'); sheet.style.transform=`translateY(${y}px)`;   // freeze where it is (mid-transition too)
+      d={y0:e.clientY, start:y, y, t:performance.now(), v:0, moved:false, pos:stateY()}; grab.setPointerCapture(e.pointerId); });
     grab.addEventListener('touchmove', e=>{ if(e.cancelable) e.preventDefault(); }, {passive:false});   // the handle moves the panel, never scrolls the page
-    grab.addEventListener('pointermove', e=>{ if(y0!==null && Math.abs(e.clientY-y0)>6) moved=true; });
-    grab.addEventListener('pointerup', e=>{ if(y0===null) return; const dy=e.clientY-y0, i=ORDER.indexOf(sheet.dataset.state); y0=null;
-      if(!moved) setSheet(ORDER[(i+1)%3]); else setSheet(ORDER[Math.max(0,Math.min(2, i + (dy<0?1:-1)))]); });
+    grab.addEventListener('pointermove', e=>{ if(!d) return; const dy=e.clientY-d.y0; if(Math.abs(dy)>6) d.moved=true; if(!d.moved) return;
+      const lo=d.pos.full, hi=d.pos.peek, y=Math.min(hi+24, Math.max(lo-24, d.start+dy)), now=performance.now();
+      d.v = (y-d.y)/Math.max(1, now-d.t); d.y=y; d.t=now; sheet.style.transform=`translateY(${y}px)`; });
+    const end = () => { if(!d) return; const {moved, y, v, pos}=d; d=null; sheet.classList.remove('dragging'); sheet.style.transform='';
+      if(!moved){ const i=ORDER.indexOf(sheet.dataset.state); setSheet(ORDER[(i+1)%3]); return; }
+      let best=ORDER.reduce((a,st)=>Math.abs(pos[st]-y)<Math.abs(pos[a]-y)?st:a, 'half');
+      if(Math.abs(v)>.5){ const i=ORDER.indexOf(best), j=Math.max(0, Math.min(2, i + (v<0?1:-1))); if((v<0 && pos[ORDER[j]]<y) || (v>0 && pos[ORDER[j]]>y)) best=ORDER[j]; }   // flick
+      setSheet(best); };
+    grab.addEventListener('pointerup', end); grab.addEventListener('pointercancel', end);
   }
   const mapUI=$('mapui');
   function setCollapsed(c){ mapUI.classList.toggle('pc', c); const et=$('edgetab'); et.setAttribute('aria-label', c?'Expand side panel':'Collapse side panel'); et.setAttribute('aria-expanded', String(!c));  }
@@ -743,7 +756,12 @@ export function createBathurstEngine() {
         <label class="sprout field-box dir-box"><input class="input" name="from" required placeholder="Your business name" aria-label="Your business name" autocomplete="organization"></label>
         <label class="sprout field-box dir-box"><select class="input" name="goal" required aria-label="Your destination"><option value="" disabled selected>Choose your destination</option>${GOALS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>
           <span class="caret"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></label></div>
-      <button type="submit" class="sprout btn orange dc-go" data-no-tumble aria-label="Get directions"><svg class="glyph" viewBox="0 0 24 24"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z"/><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2"/></svg>Get directions</button>`;
+      <button type="submit" class="sprout btn orange dc-go dc-start" data-no-tumble aria-label="Start" hidden><svg class="glyph" viewBox="0 0 24 24"><path d="M12 3l7 18-7-4-7 4z"/></svg>Start</button>`;
+    // Start slides in once a destination is chosen; with no name yet, the name field pulses and Start jumps to it
+    { const go=el.querySelector('.dc-go'), name=el.querySelector('input[name=from]'), box=name.closest('.dir-box'), sel=el.querySelector('select');
+      const sync=()=>{ const has=!!sel.value, need=has && !name.value.trim(); go.hidden=!has; box.classList.toggle('need', need); };
+      el.addEventListener('input', sync); el.addEventListener('change', sync); sync();
+      go.addEventListener('click', e=>{ if(!name.value.trim()){ e.preventDefault(); name.focus(); } }); }
     // Get directions opens the booking page with the route filled in
     // the button only appears once both the business name and a destination are filled in
     el.onsubmit=e=>{ e.preventDefault(); const f=new FormData(el); location.href='/book?'+new URLSearchParams({from:String(f.get('from')||''), goal:String(f.get('goal')||'')}); };
@@ -796,7 +814,7 @@ export function createBathurstEngine() {
   // dev-only: jump the camera to a progress value without waiting for the eased scroll (stripped in production)
   if(process.env.NODE_ENV !== 'production') window.__tcgJump = v => { target=prog=Math.min(1,Math.max(0,v)); };
   function goStreet(p){ INTRO.el = (p && INTRO.stopT[p.id]!==undefined) ? INTRO.stopT[p.id] : 0; streetAnchor = (p && p.pos) ? {x:xAt(p.pos.z+420), z:p.pos.z+420} : {x:X0,z:900}; buildCurves(); if(!mapDirty) resetView(); scrollToProg(0); }
-  $('pegman').onclick=()=>goStreet(selected ? ALL.find(p=>p.id===selected) : null);
+  if($('pegman')) $('pegman').onclick=()=>goStreet(selected ? ALL.find(p=>p.id===selected) : null);
 
   // ---------- map gestures (embedded-maps conventions) ----------
   const ray=new THREE.Raycaster(), plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), hit=new THREE.Vector3(), ndc=new THREE.Vector2();

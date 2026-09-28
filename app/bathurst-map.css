@@ -1089,12 +1089,29 @@
 }
 /* Find Your Way Forward: no service chips (the card is the only thing to act on) */
 #stick.finale .chipbar { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s; }
-/* Find Your Way Forward (every size): no search bar and no wordmark, only the TCG mark stays */
+/* Find Your Way Forward (every size): no search bar; the TCG mark and wordmark sit in the navbar (see #stick.dirs below) */
 #stick.finale .search { clip-path: inset(-4px 100% -4px -4px); transform: translateX(-24px); opacity: 0; pointer-events: none; transition-delay: 0s; }
-#stick.finale .wordclip { opacity: 0 !important; transition: opacity .15s ease; }
 /* Route Preview (every size): no chips, no search; the TCG wordmark slides back out beside the mark
-   (Find Your Way Forward keeps the mark alone, see #stick.finale above) */
+ */
 #stick.dirs .chipbar { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s; }
 #stick.dirs .search { clip-path: inset(-4px 100% -4px -4px); transform: translateX(-24px); opacity: 0; pointer-events: none; transition-delay: 0s; }
-#stick.dirs:not(.finale) .wordclip { opacity: 1; transition: opacity .15s ease; }
+#stick.dirs .wordclip { opacity: 1; transition: opacity .15s ease; }
 #stick.dirs .wordclip .word { transform: none; transition-delay: .15s; }
+/* Get directions forms: Start slides in once a destination is picked; an empty name field pulses until it is filled */
+.dc-start { animation: dc-start-in .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes dc-start-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+.dir-box.need { --ink: var(--orange); animation: need-pulse 1.4s ease-in-out infinite; border-radius: var(--btn-radius); }
+.dir-box.need .input::placeholder { color: var(--orange); }
+@keyframes need-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(179 83 14 / .45); } 50% { box-shadow: 0 0 0 6px rgb(179 83 14 / 0); } }
+@media (prefers-reduced-motion: reduce) { .dc-start, .dir-box.need { animation: none; } .dir-box.need { box-shadow: 0 0 0 2px var(--orange); } }
+/* phones: a project sheet opens compact, title first, so more of the map is left for the thumb to swipe on */
+@media (max-width: 759px) {
+  .sheet[data-state="half"] { transform: translateY(58%); }
+  .place { gap: var(--s2); }
+  .place .hd { order: -1; }
+  .place h2 { font-size: 26px; }
+  .place .gallery { height: 96px; gap: 6px; }
+  .place .gallery > div { font-size: 9px; letter-spacing: .1em; }
+  .place .ptabs { margin-top: -4px; }
+}
+@media (max-width: 759px) { .sheet[data-state="peek"] { transform: translateY(calc(100% - 118px)); } }   /* closed: the handle, the name and its industry */

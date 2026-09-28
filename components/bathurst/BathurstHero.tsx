@@ -170,7 +170,6 @@ export default function BathurstHero() {
 
           <div className="ctrls">
             <button type="button" id="compass" aria-label="Compass: drag to rotate the map, press to face north" data-tip="Drag to rotate · click for north"><span id="needle" className="rose" dangerouslySetInnerHTML={{ __html: COMPASS_ROSE }} /></button>
-            <CtaButton variant="icon" id="pegman" label="Street View" data-tip="Street View"><Glyph g="peg" /></CtaButton>
             <CtaButton variant="icon" id="recenter" label="Recenter on Bathurst" data-tip="Recenter the map"><Glyph g="recenter" /></CtaButton>
             <div className="zoomgrp frame" role="group" aria-label="Zoom">
               <button type="button" id="zin" aria-label="Zoom in" data-tip="Zoom in"><Glyph g="plus" /></button>
