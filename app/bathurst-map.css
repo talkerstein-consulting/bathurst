@@ -1032,7 +1032,7 @@
 /* phones: the reviews/services sheet is large and moves with the scroll; drop the costly effects inside it
    (grunge SVG filter re-rasterised on every line, poster zoom) so it scrolls smoothly */
 @media (max-width: 759px) {
-  .cover .lines g, .cover .stroke g { filter: none; }
+  .cover .stroke g, .cover .single > .lines g { filter: none; }   /* big frames keep the grunge; buttons and hairline tiles draw clean */
   .rv-thumb { transition: none; }
   .rv-card:hover .rv-thumb { transform: none; }
 }
@@ -1063,3 +1063,22 @@
 .rv-phone .rv-who small { font-size: 12px; white-space: normal; }
 .rv-phone .rv-media.single > .rv-quote { font-size: 13px; }
 .rv.rv-phone { min-height: 0; grid-template-rows: none; align-content: start; }   /* no full-screen stretch: the section ends under the card row */
+/* phones: a swipe on the chip row is always sideways (never handed to the page's vertical scroll) */
+@media (max-width: 759px) { .chips { touch-action: pan-x; } }
+/* testimonial modal: centred (the CSS reset drops the dialog's margin:auto); one close button, top-right, always in reach */
+.rv-modal { margin: auto; inset: 0; max-height: calc(100svh - 32px); }
+.rv-modal-in { position: relative; }
+.rv-modal-in > .rv-x { position: absolute; top: var(--s2); right: var(--s2); z-index: 3; background: var(--sea); }
+.rv-modal-text .rv-id { padding-right: 56px; }   /* clear of the close button */
+@media (max-width: 759px) {
+  .rv-modal { width: calc(100vw - 24px); max-width: none; }
+  .rv-modal-in { max-height: calc(100svh - 24px); overflow: auto; padding: var(--s2); gap: var(--s2); }
+  .rv-modal-video { aspect-ratio: 3 / 4; max-height: 52svh; margin-inline: auto; width: 100%; }
+  .rv-modal-in > .rv-x { top: calc(var(--s2) + 8px); right: calc(var(--s2) + 8px); width: 40px; height: 40px; }
+  .rv-modal-text .rv-id { padding-right: 0; }
+  .rv-full { font-size: 15px; line-height: 1.55; }
+}
+@media (min-width: 760px) {
+  .rv-modal-in { grid-template-columns: auto minmax(0, 1fr); }
+  .rv-modal-video { height: min(640px, calc(100svh - 32px - 2 * var(--s4) - 8px)); width: auto; aspect-ratio: 9 / 16; }   /* the whole video always fits on screen */
+}

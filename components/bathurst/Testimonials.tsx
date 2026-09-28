@@ -81,6 +81,7 @@ export default function Testimonials() {
         onClose={() => setOpen(null)} onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}>
         {open && (
           <div className="rv-modal-in frame">
+            <button type="button" className="sprout btn icon rv-x" aria-label="Close" onClick={() => setOpen(null)}><Close /></button>
             <div className="rv-modal-video single hair">
               <video ref={video} key={open.id} src={open.video} poster={open.poster} controls playsInline autoPlay onEnded={() => {}} />
             </div>
@@ -88,7 +89,6 @@ export default function Testimonials() {
               <div className="rv-id">
                 <span className="rv-logo single hair"><img src={open.logo} alt="" /></span>
                 <span className="rv-who"><b>{open.who}</b><small>{open.role}</small></span>
-                <button type="button" className="sprout btn icon" aria-label="Close" onClick={() => setOpen(null)}><Close /></button>
               </div>
               <blockquote className="rv-full">“{open.quote}”</blockquote>
             </div>

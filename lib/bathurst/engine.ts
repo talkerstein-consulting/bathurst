@@ -381,8 +381,12 @@ export function createBathurstEngine() {
   let nodeIdx=-1;
   // the chip row is the category indicator: it lights the current node's industry
   // centre a chip by scrolling only the chip row (scrollIntoView would also slide the whole map container sideways)
-  function centreChip(c){ if(c) chips.scrollTo({left: c.offsetLeft - (chips.clientWidth - c.offsetWidth)/2, behavior: reduce?'auto':'smooth'}); }
-  function markChip(k){ const i=Math.max(0, INDS.findIndex(x=>x[0]===k)); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all') chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
+  // a finger on the chip row owns it: no programmatic re-centring until a moment after it lifts
+  let chipTouchUntil=0;
+  chips.addEventListener('touchstart', ()=>{ chipTouchUntil=Infinity; }, {passive:true, signal});
+  for(const ev of ['touchend','touchcancel']) chips.addEventListener(ev, ()=>{ chipTouchUntil=performance.now()+1200; }, {passive:true, signal});
+  function centreChip(c){ if(performance.now()<chipTouchUntil) return; if(c) chips.scrollTo({left: c.offsetLeft - (chips.clientWidth - c.offsetWidth)/2, behavior: reduce?'auto':'smooth'}); }
+  function markChip(k){ const i=Math.max(0, INDS.findIndex(x=>x[0]===k)); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all' && performance.now()>=chipTouchUntil) chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
   function setNode(i){
     nodeIdx=Math.max(-1, Math.min(NODES.length-1, i));
     filter='all';   // scrolling to the next stop clears a chip filter
