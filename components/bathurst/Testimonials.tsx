@@ -30,7 +30,7 @@ export default function Testimonials() {
   const video = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const m = matchMedia("(max-width: 759px)"), set = () => setCols(m.matches ? 2 : 3);
+    const m = matchMedia("(max-width: 759px)"), set = () => setCols(m.matches ? 1 : 3);   // 1 = the phone layout
     set(); m.addEventListener("change", set); return () => m.removeEventListener("change", set);
   }, []);
   useEffect(() => {
@@ -74,25 +74,8 @@ export default function Testimonials() {
   const google = rating("google", GOOGLE.url, GOOGLE.rating ? GOOGLE.rating.toFixed(1) : "–", GOOGLE.count ? `${GOOGLE.count} ratings on Google` : "Rating on Google",
     GOOGLE.rating ? `${GOOGLE.rating} out of 5` : undefined, !GOOGLE.rating);
 
-  // deal the cards into columns, then give the ratings to the shortest columns (Clutch on top, Google mid-way)
-  const columns: Tile[][] = Array.from({ length: cols }, () => []);
-  cards.forEach((c, i) => columns[i % cols].push(c));
-  const short = columns.map((c, i) => [c.length, i]).sort((a, b) => a[0] - b[0] || b[1] - a[1]).map(([, i]) => i);
-  columns[short[0]].unshift(clutch);
-  columns[short[1]].splice(1, 0, google);
-
-  return (
-    <div className="rv">
-      <div className="rv-wall" style={{ "--cols": cols } as CSSProperties} aria-label="Video testimonials">
-        {columns.map((col, c) => (
-          <div className="rv-col" key={c}>
-            {col.map((t) => (
-              <div key={t.key} className={`rv-cell${t.rating ? " rating" : ""}`} style={t.rating ? undefined : { flexGrow: t.weight }}>{t.node}</div>
-            ))}
-          </div>
-        ))}
-      </div>
-
+  const modal = (
+    <>
       {/* the video with the rest of the testimonial; a native modal dialog (top layer, so the sheet's transform never clips it) */}
       <dialog ref={dialog} className="rv-modal" aria-label={open ? `Video testimonial from ${open.who}` : "Video testimonial"}
         onClose={() => setOpen(null)} onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}>
@@ -112,6 +95,40 @@ export default function Testimonials() {
           </div>
         )}
       </dialog>
+    </>
+  );
+
+  // phones: the ratings side by side, then one swipeable row of full-size video cards
+  if (cols === 1) return (
+    <div className="rv rv-phone">
+      <div className="rv-rates">{clutch.node}{google.node}</div>
+      <div className="rv-swipe" aria-label="Video testimonials">
+        {cards.map((t) => <div key={t.key} className="rv-slot">{t.node}</div>)}
+      </div>
+      {modal}
+    </div>
+  );
+
+  // deal the cards into columns, then give the ratings to the shortest columns (Clutch on top, Google mid-way)
+  const columns: Tile[][] = Array.from({ length: cols }, () => []);
+  cards.forEach((c, i) => columns[i % cols].push(c));
+  const short = columns.map((c, i) => [c.length, i]).sort((a, b) => a[0] - b[0] || b[1] - a[1]).map(([, i]) => i);
+  columns[short[0]].unshift(clutch);
+  columns[short[1]].splice(1, 0, google);
+
+  return (
+    <div className="rv">
+      <div className="rv-wall" style={{ "--cols": cols } as CSSProperties} aria-label="Video testimonials">
+        {columns.map((col, c) => (
+          <div className="rv-col" key={c}>
+            {col.map((t) => (
+              <div key={t.key} className={`rv-cell${t.rating ? " rating" : ""}`} style={t.rating ? undefined : { flexGrow: t.weight }}>{t.node}</div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {modal}
     </div>
   );
 }

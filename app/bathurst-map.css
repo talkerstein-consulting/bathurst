@@ -1043,3 +1043,23 @@
   .sheet .grab { height: 44px; }                 /* ≥44px touch target across the full width */
   .sheet .grab i { width: 56px; height: 5px; border-radius: 3px; opacity: .4; }
 }
+/* the project sidebar / sheet always sits above the map controls */
+#mapui .panel { z-index: 5; }
+#mapui .ctrls { z-index: 2; }
+/* Find Your Way Forward: the card sits in the middle of the screen */
+.dircard.cta { top: 50%; translate: 0 -50%; }
+/* phones: ratings side by side, then a swipeable row of full-size video cards (snap, bleeding to the screen edges) */
+.rv-phone .rv-rates { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.rv-phone .rv-rates .rv-score { padding: var(--s2); }
+.rv-phone .rv-rates .rv-score b { font-size: 44px; }
+.rv-phone .rv-swipe { display: flex; gap: var(--s2); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin-inline: calc(-1 * var(--s3)); padding: 4px var(--s3); scroll-padding-inline: var(--s3); }
+.rv-phone .rv-swipe::-webkit-scrollbar { display: none; }
+.rv-phone .rv-slot { flex: 0 0 78vw; max-width: 320px; scroll-snap-align: start; display: grid; }
+.rv-phone .rv-card { padding: 10px; gap: 10px; }
+.rv-phone .rv-media { flex: none; aspect-ratio: 4 / 5; min-height: 0; }
+.rv-phone .rv-logo { display: grid; width: 40px; height: 40px; }
+.rv-phone .rv-who b { font-size: 15px; white-space: normal; }
+.rv-phone .rv-who small { font-size: 12px; white-space: normal; }
+.rv-phone .rv-media.single > .rv-quote { font-size: 13px; }
+.rv.rv-phone { min-height: 0; grid-template-rows: none; align-content: start; }   /* no full-screen stretch: the section ends under the card row */

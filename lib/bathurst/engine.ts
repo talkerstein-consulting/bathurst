@@ -703,7 +703,7 @@ export function createBathurstEngine() {
   const nav = runner.clone(true); nav.userData.halo = nav.children[0]; nav.visible=false; scene.add(nav);
   let dirProg=0;   // 0..1 along the whole route, straight from the scroll (no stops until the end)
   function fitFinale(){ const fit=()=>{ if(dirIdx!==DIRECTIONS.length+1 || fPlace) return; const st=stick.getBoundingClientRect(), b=dirCard.getBoundingClientRect().bottom-st.top;
-      setGoal(viewOf([OFFICE_P, ...LOCAL.map(p=>p.pos)], mapView.view==='2d' ? 0 : .3, Math.max(84, b+24))); };
+      setGoal(viewOf([OFFICE_P, ...LOCAL.map(p=>p.pos)], mapView.view==='2d' ? 0 : .3)); };
     fit(); setTimeout(fit, 520); }
   // Find Your Way Forward: a clicked pin swaps the card for that project's sidebar; collapsing the sidebar brings the card back
   let fPlace=false;
@@ -1029,7 +1029,7 @@ export function createBathurstEngine() {
       .sort((a,b)=> (selected===b.p.id) - (selected===a.p.id) || b.sp.y - a.sp.y);
     order.forEach(({p, sp, dist})=>{
       // walking the clients: only the one in focus is on screen; on the route, none (the dot is the focus)
-      const overviewAll = dirIdx===DIRECTIONS.length+1;
+      const overviewAll = false;   // Find Your Way Forward shows no pins: the card is the only thing to act on
       // the project in focus gets the full callout; every other pin is a small service icon (none while driving the directions)
       const full = (dirIdx<0 || fPlace) && selected===p.id;
       if(p._full!==full){ p.el.classList.toggle('mini', !full); p._full=full; }
