@@ -692,6 +692,7 @@ export function createBathurstEngine() {
     }
     // after the last direction step, the reviews (and services) sheet slides in
     const k1=Math.min(1, Math.max(0, (s-dirEnd)/PH_C)); covered = k1>=1;
+    if(stage._cov!==covered){ stage._cov=covered; stage.style.visibility = labels.style.visibility = covered ? 'hidden' : ''; }   // sheet fully up: drop the map canvas and labels from compositing
     if(k1>0 && fPlace) leaveFPlace(false);   // the reviews sheet takes over: close the project opened on Find Your Way Forward
     const up=Math.min(Math.max(0, coverH-H+16), Math.max(0, (s-dirEnd-PH_C)*H));   // once it is up, it keeps rising with the scroll
     coverEl.style.transform=`translate3d(0,${((1-k1)*H - up).toFixed(1)}px,0)`; coverEl.style.visibility = k1>0 ? 'visible' : 'hidden';
@@ -738,7 +739,7 @@ export function createBathurstEngine() {
         <label class="sprout field-box dir-box"><input class="input" name="from" required placeholder="Your business name" aria-label="Your business name" autocomplete="organization"></label>
         <label class="sprout field-box dir-box"><select class="input" name="goal" required aria-label="Your destination"><option value="" disabled selected>Choose your destination</option>${GOALS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>
           <span class="caret"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></label></div>
-      <button type="submit" class="sprout btn orange dc-go" data-no-tumble aria-label="Find Your Way Forward"><svg class="glyph" viewBox="0 0 24 24"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z"/><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2"/></svg>Find Your Way Forward</button>`;
+      <button type="submit" class="sprout btn orange dc-go" data-no-tumble aria-label="Get directions"><svg class="glyph" viewBox="0 0 24 24"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z"/><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2"/></svg>Get directions</button>`;
     // Get directions opens the booking page with the route filled in
     // the button only appears once both the business name and a destination are filled in
     el.onsubmit=e=>{ e.preventDefault(); const f=new FormData(el); location.href='/book?'+new URLSearchParams({from:String(f.get('from')||''), goal:String(f.get('goal')||'')}); };

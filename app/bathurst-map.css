@@ -953,7 +953,7 @@
 /* a card: the poster (hairline frame) takes the height left over; one row under it for who + play */
 .rv-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s2); color: var(--steel); outline: none; }
 .rv-media { flex: 1 1 0; min-height: 120px; border-radius: var(--btn-radius); overflow: hidden; }
-.rv-media.single > .rv-thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform .6s cubic-bezier(.22,1,.36,1); }
+.rv-media.single .rv-thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform .6s cubic-bezier(.22,1,.36,1); }
 .rv-card:hover .rv-thumb { transform: scale(1.03); }
 /* hover / focus: the quote, truncated, on a Sea Breeze band over the poster's foot */
 .rv-media.single > .rv-quote { position: absolute; left: 8px; right: 8px; bottom: 8px; top: auto; z-index: 2; margin: 0; padding: 10px 12px; border-radius: 8px;
@@ -1027,3 +1027,19 @@
 /* the coupon row starts on the margin but scrolls out to the screen edges (full-bleed track, margin-aligned snap) */
 .cover-body #services .svc-row { margin-inline: calc(-1 * var(--s5)); padding-inline: var(--s5); scroll-padding-inline: var(--s5); }
 @media (max-width: 759px) { .cover-body #services .svc-row { margin-inline: calc(-1 * var(--s3)); padding-inline: var(--s3); scroll-padding-inline: var(--s3); } }
+/* the <picture> wrapper stays out of layout: the img inside fills the frame as before */
+.rv-media.single > .rv-pic { display: contents; }
+/* phones: the reviews/services sheet is large and moves with the scroll; drop the costly effects inside it
+   (grunge SVG filter re-rasterised on every line, poster zoom) so it scrolls smoothly */
+@media (max-width: 759px) {
+  .cover .lines g, .cover .stroke g { filter: none; }
+  .rv-thumb { transition: none; }
+  .rv-card:hover .rv-thumb { transform: none; }
+}
+/* phones: map controls on the left edge (sliding in from the left), and a bigger grab area on the project sheet handle */
+@media (max-width: 759px) {
+  .ctrls { right: auto; left: var(--inset); }
+  #stick:not(.mapped) .ctrls { translate: calc(-100% - var(--inset) - 16px) 0; }
+  .sheet .grab { height: 44px; }                 /* ≥44px touch target across the full width */
+  .sheet .grab i { width: 56px; height: 5px; border-radius: 3px; opacity: .4; }
+}

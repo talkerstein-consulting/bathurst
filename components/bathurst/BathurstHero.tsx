@@ -87,7 +87,7 @@ export default function BathurstHero() {
             <div className="sv-hero" id="svhero">
               <h1 className="h1">Find your way to the right customers.</h1>
               <p>We build bespoke systems that use AI, automation, and technology to create a clearer path between your business and the right customers.</p>
-              <CtaButton label="Book a free call" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:offer"))} />   {/* opens the offer modal (CornerOffer) */}
+              <CtaButton label="Get directions" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:directions"))} />   {/* opens the Find Your Way Forward sheet (DirectionsPanel) */}
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               <div className="hero-proofrow">
                 <div className="hero-ratings">
