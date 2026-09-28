@@ -10,18 +10,18 @@ const jost = Jost({
   weight: ["400", "500", "600", "700"],
 });
 
-// Brand faces (client-supplied files in app/fonts)
+// Brand faces: WOFF2 subsets (Latin + typographic punctuation) of the client files kept at the project root
 const cheltenham = localFont({
-  src: "./fonts/CheltenhamStdBoldCond.otf",
+  src: "./fonts/CheltenhamStdBoldCond.woff2",
   variable: "--font-chelt",
   weight: "700",
   display: "swap",
 });
 const slowly = localFont({
-  src: "./fonts/SlowlySignature.ttf",
+  src: "./fonts/SlowlySignature.woff2",
   variable: "--font-slowly",
   display: "swap",
-  preload: false,   // 141 KB; only the closing signature line uses it, far down the page, so it loads on demand
+  preload: false,   // only the accent script and the closing signature line use it, so it loads on demand
 });
 
 export const metadata: Metadata = {
@@ -33,11 +33,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jost.variable} ${cheltenham.variable} ${slowly.variable} antialiased`}>
-      <head>
-        {/* the map's data starts downloading with the page (the engine fetches the same URLs) */}
-        <link rel="preload" href="/map/bathurst-osm.tcgm.gz" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/map/bathurst-topo.tcgt.gz" as="fetch" crossOrigin="anonymous" />
-      </head>
       <body>
         <LineSystem />
         {children}

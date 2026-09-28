@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GOOGLE, REVIEW, onBathurst } from "@/lib/bathurst/data";
+import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
 
 const ROTATE_MS = 7000;
 const SLIDE_MS = 420;
 
-type Slide = { id: string; person: string; company: string; heading: string; body: string; thumb?: string; photo?: string };
+type Slide = (typeof TESTIMONIALS)[number];
 
 /**
  * Reviews on the cover sheet (replaces the old "Word on the Street" spotlight, same carousel mechanics):
@@ -15,14 +15,9 @@ type Slide = { id: string; person: string; company: string; heading: string; bod
  * one show their published work until their words are supplied (never written on their behalf).
  */
 export default function Testimonials() {
-  const slides: Slide[] = [
-    { id: "clutch", person: REVIEW.who, company: REVIEW.org, heading: "Came for marketing. Left with a system.", body: `“${REVIEW.quote}”` },
-    ...onBathurst.map((c) => ({
-      id: c.id, person: c.testimonial?.who ?? "Owner", company: c.name, thumb: c.thumb,
-      heading: c.result ?? c.services.slice(0, 2).join(" and "),
-      body: c.testimonial ? `“${c.testimonial.quote}”` : `${c.services.join(", ")} for ${c.name} on ${c.addr}. Their review is on the way.`,
-    })),
-  ];
+  const slides: Slide[] = TESTIMONIALS;
+  const videos = useRef<(HTMLVideoElement | null)[]>([]);
+  const [playing, setPlaying] = useState(false);
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
@@ -40,17 +35,18 @@ export default function Testimonials() {
     return () => clearTimeout(t);
   }, [leaving, index]);
   useEffect(() => {
-    if (reduced) return;
+    if (reduced || playing) return;
     const t = setTimeout(() => go((index + 1) % slides.length), ROTATE_MS);
     return () => clearTimeout(t);
   });
   const go = (next: number) => {
     if (next === index) return;
     panelRef.current?.style.setProperty("--slide", `${panelRef.current.offsetWidth}px`);
+    videos.current[index]?.pause();
+    setPlaying(false);
     setLeaving(index);
     setIndex(next);
   };
-  const initials = (s: string) => s.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="rv">
@@ -79,7 +75,7 @@ export default function Testimonials() {
         {slides.map((s, i) => (
           <button key={s.id} role="tab" id={`rv-tab-${i}`} aria-controls={`rv-panel-${i}`} aria-selected={i === index} type="button" onClick={() => go(i)}
             className={`sp-tab ${i === index ? "on" : ""}`}>
-            <span className="font-heading text-lg leading-tight">{s.company}</span>
+            <img className={`rv-tab-logo${s.tall ? " tall" : ""}`} src={s.logo} alt={s.role} />
           </button>
         ))}
       </div>
@@ -94,24 +90,14 @@ export default function Testimonials() {
             className={`rv-slide ${i === index ? "sp-in" : i === leaving ? "sp-out" : "invisible"}`}>
             <div className="rv-left">
               <div className="rv-person">
-                {/* TODO(content): owner portrait */}
-                <span className="rv-avatar single hair">{s.photo ? <img src={s.photo} alt="" /> : initials(s.person === "Owner" ? s.company : s.person)}</span>
-                <span><b>{s.person}</b><small>{s.company}</small></span>
+                <span><b>{s.who}</b><small>{s.role}</small></span>
               </div>
-              <h2 className="h2">{s.heading}</h2>
-              <p className="rv-body">{s.body}</p>
+              <p className="rv-body">“{s.quote}”</p>
             </div>
-            <div className="rv-media">
-              <div className="rv-video single hair" role="img" aria-label={`Video testimonial from ${s.company}, coming soon`}>
-                {/* TODO(content): client video testimonial */}
-                <span className="rv-play" aria-hidden="true"><svg className="glyph" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" /></svg></span>
-                <small>Video testimonial</small>
-              </div>
-              {[0, 1].map((k) => (
-                <div key={k} className="rv-photo single hair">
-                  {s.thumb && k === 0 ? <img src={s.thumb} alt="" /> : <small>Project photo</small>}
-                </div>
-              ))}
+            <div className="rv-video single hair">
+              <video ref={(el) => { videos.current[i] = el; }} src={s.video} poster={s.poster} controls playsInline preload="none"
+                onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+                aria-label={`Video testimonial from ${s.who}, ${s.role}`} />
             </div>
           </article>
         ))}

@@ -5,9 +5,9 @@
 // React renders the markup (components/bathurst/BathurstHero.tsx); this module wires behaviour onto it.
 // TODO(typing): the port is intentionally untyped for the rough build; type it once the behaviour is final.
 import * as THREE from "three";
-import { CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS } from "./data";
+import { CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS, ROUTE_START, OFFICE } from "./data";
 import { BATHURST_LINE } from "./bathurst-line";
-import { loadMapData, buildBuildings, buildFlatLayers, loadTopo } from "./osm-layer";
+import { loadCity, buildBuildings, buildFlatLayers } from "./osm-layer";
 
 export function createBathurstEngine() {
   const ac = new AbortController(); const signal = ac.signal;
@@ -28,11 +28,15 @@ export function createBathurstEngine() {
     services:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 16L18 4M16 16L6 4"/>',
     finance:'<path d="M4 20h16M6 17V10M10 17V10M14 17V10M18 17V10M3 9l9-5 9 5z"/>',
     industrial:'<path d="M3 20V10l5 3V10l5 3V6h6v14z"/>',
+    beauty:'<path d="M12 3c-3 4-5 6.5-5 9.5a5 5 0 0010 0C17 9.5 15 7 12 3z"/>',
+    community:'<path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6"/>',
+    professional:'<path d="M4 8h16v11H4zM9 8V5h6v3"/>',
   };
   const svg = (k,cls='') => `<svg class="${cls}" viewBox="0 0 24 24">${ICON[k]}</svg>`;
   const IND = {
-    food:{name:"Food & restaurant"}, health:{name:"Health"}, retail:{name:"Retail & beauty"},
-    services:{name:"Personal services"}, finance:{name:"Insurance"}, industrial:{name:"Industrial"},
+    food:{name:"Food & restaurant"}, health:{name:"Health"}, retail:{name:"Retail"}, beauty:{name:"Beauty"},
+    services:{name:"Personal services"}, finance:{name:"Finance"}, industrial:{name:"Industrial"},
+    community:{name:"Nonprofit"}, professional:{name:"Professional services"},
   };
 
   // ---------- data ----------
@@ -56,9 +60,12 @@ export function createBathurstEngine() {
   // ---------- three ----------
   const stage = document.getElementById('stage');
   const mobile = W < 760;
-  const renderer = new THREE.WebGLRenderer({antialias:true});
-  // render resolution: at most 1.5x (retina at 2x costs ~1.8x the GPU for little visible gain); drops further if frames run slow
-  let dprCap = Math.min(devicePixelRatio, 1.5);
+  // lite: phones and low-power devices get flat buildings, no antialiasing, a lower resolution and a slower idle frame rate
+  const weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const lite = mobile || weak;
+  const renderer = new THREE.WebGLRenderer({antialias:!lite, powerPreference:'high-performance'});
+  // render resolution: at most 1.5x (1.25x in lite; on dense phone screens edges stay clean without MSAA); drops further if frames run slow
+  let dprCap = Math.min(devicePixelRatio, lite ? 1.25 : 1.5);
   renderer.setPixelRatio(dprCap);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setClearColor(0xF3F7F3, 1);   // outside the front-page window: paper   // with colour management off, hex values reach the screen unchanged (#B3530E is #B3530E)
@@ -127,7 +134,6 @@ export function createBathurstEngine() {
       roof: new THREE.Color(C.sea), wallLit: mix(C.sea, C.steel, .10), wallShade: mix(C.sea, C.steel, .34), ink: new THREE.Color(C.steel),
       roads: [mix(C.steel,C.sea,.20), mix(C.steel,C.sea,.30), mix(C.steel,C.sea,.36), mix(C.steel,C.sea,.44), mix(C.steel,C.sea,.58), mix(C.steel,C.sea,.30)],
       park: mix(C.steel, C.sea, .09), water: mix(C.steel, C.sea, .42), footprint: mix(C.steel, C.sea, .30),
-      topo: {color:new THREE.Color(C.sea), minor:.10, major:.22},
     },
     // Paper: Sea Breeze land with Steel Blue ink, like a printed street atlas
     paper: {
@@ -135,25 +141,28 @@ export function createBathurstEngine() {
       roof: new THREE.Color(C.sea), wallLit: mix(C.sea, C.steel, .16), wallShade: mix(C.sea, C.steel, .36), ink: new THREE.Color(C.steel),
       roads: [new THREE.Color(C.sea), new THREE.Color(C.sea), new THREE.Color(C.sea), new THREE.Color(C.sea), mix(C.sea, C.steel, .30), new THREE.Color(C.sea)],
       park: mix(C.sea, C.steel, .18), water: mix(C.sea, C.steel, .34), footprint: mix(C.sea, C.steel, .24),
-      topo: {color:new THREE.Color(C.steel), minor:.16, major:.34},
     },
   };
   const PALETTE = PALETTES.paper;
   const city = {meshes:[], ready:false};
-  loadMapData('/map/bathurst-osm.tcgm.gz', signal).then(data=>{
+  // the city's data waits until the page itself has loaded (text, fonts, images first), then is
+  // decoded + triangulated in a worker (osm-layer.ts), so the page keeps scrolling while the city builds
+  const afterPageLoad = () => new Promise(res=>{
+    const idle = () => (window.requestIdleCallback || (f=>setTimeout(f, 200)))(res, {timeout:1500});
+    if(document.readyState==='complete') idle(); else addEventListener('load', idle, {once:true, signal});
+  });
+  afterPageLoad().then(()=>dead ? Promise.reject(new DOMException('gone','AbortError')) : loadCity('/map/bathurst-osm.tcgm.gz', {lite, signal})).then(baked=>{
     if(dead) return;
-    let o=2; const flats=buildFlatLayers(data, PALETTE, flatMat, ()=>Math.min(39, o++));
-    const {mesh, lines, recolor} = buildBuildings(data, PALETTE);
-    for(const m of [...flats, mesh, lines]){ scene.add(m); city.meshes.push(m); }
-    city.recolor=recolor; city.ink=lines; city.ready=true; city.data=data;
+    const data = {roads: baked.roads};
+    let o=2; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(39, o++));
+    for(const m of flats){ scene.add(m); city.meshes.push(m); }
+    if(baked.buildings){ const {mesh, lines, recolor} = buildBuildings(baked.buildings, PALETTE);
+      for(const m of [mesh, lines]){ scene.add(m); city.meshes.push(m); }
+      city.recolor=recolor; city.ink=lines; }
+    city.ready=true; city.data=data; stage.classList.add('city'); poke();   // the canvas fades in once the city is there
     paintBathurst(data);
     applyStyle(); applyShow();
   }).catch(err=>{ if(err?.name!=='AbortError') console.warn('Bathurst map data failed to load', err); });
-  loadTopo('/map/bathurst-topo.tcgt.gz', signal).then(({minor, major})=>{
-    if(dead) return;
-    for(const l of [minor, major]){ l.renderOrder = 1.5; scene.add(l); city.meshes.push(l); }
-    applyStyle(); applyShow();
-  }).catch(err=>{ if(err?.name!=='AbortError') console.warn('Bathurst contours failed to load', err); });
   flatOrder = 40;
 
   // Bathurst: the route (orange, draws in as the camera cranes up)
@@ -177,11 +186,16 @@ export function createBathurstEngine() {
   // Directions (after the last client): the last client's pin becomes "You are here" and drives on real streets
   // (the OSM road graph), one leg per step, never back north toward the pins already visited. Its trail extends
   // the orange highlight, which on the map ends at that pin.
-  let DIR=null, trail=null, ghost=null; const trailD={value:0}; let jTarget=0;   // jTarget: how far the journey fill should reach (client walk)   // trail is drawn up to exactly this distance
-  const lastPin = () => NODES[NODES.length-1].pos;   // NODES run north → south: the last stop is the southernmost
+  let ghostRun=-1; let DIR=null, trail=null, ghost=null; const trailD={value:0}, ghostD={value:0}, routeW={value:10};   // ghostD: how far the faint route has flowed out; routeW: half-width in metres, kept a steady on-screen thickness
+  let jTarget=0;   // jTarget: how far the journey fill should reach (client walk)   // trail is drawn up to exactly this distance
+  const lastPin = () => NODES[NODES.length-1].pos;   // NODES run in scroll order: the last project before the directions
+  // the mapped OSM area (scripts/build-map-data.py): outside it there are no streets to route on
+  const DATA_S = -(43.700-O.lat)*111000, DATA_N = -(43.812-O.lat)*111000;
+  const START = (()=>{ const {x,z}=toXZ(ROUTE_START.lat, ROUTE_START.lon); return new THREE.Vector3(x,0,z); })();
+  const OFFICE_P = (()=>{ const {x,z}=toXZ(OFFICE.lat, OFFICE.lon); return new THREE.Vector3(x,0,z); })();
   function buildDir(){
     const data=city.data; if(!data) return null;
-    const S=lastPin(), minZ=S.z-5;   // z grows southward: nothing north of the last pin
+    const S=lastPin(), minZ=-1e18;
     // road graph: shared vertices (snapped to 3 m) are the intersections; motorways excluded
     const nodes=new Map(), key=(x,z)=>`${Math.round(x/3)},${Math.round(z/3)}`;
     const node=(x,z)=>{ const k=key(x,z); let n=nodes.get(k); if(!n){ n={k,x,z,adj:[]}; nodes.set(k,n); } return n; };
@@ -200,36 +214,39 @@ export function createBathurstEngine() {
       if(!prev.has(b.k) && a!==b) return [a,b];   // not connected: a straight hop rather than nothing
       const out=[]; for(let n=b; n; n=prev.get(n.k)) { out.push(n); if(n===a) break; } return out.reverse();
     };
-    // targets: straight down Bathurst for two steps, one turn east onto the avenue, then arrive along it (few turns: calm)
-    const tn=(()=>{ const dx=xAt(S.z-60)-xAt(S.z+60), L=Math.hypot(dx,120); return {x:dx/L, z:-120/L}; })(), ea={x:-tn.z, z:tn.x};
-    const off=(p,v,m)=>({x:p.x+v.x*m, z:p.z+v.z*m});
-    const S0={x:xAt(S.z), z:S.z}, T1=off(S0,tn,-450), T2=off(T1,tn,-450), T3=off(T2,ea,600), T4=off(T3,ea,500);
-    // steps 1-2: dead straight down Bathurst's own centreline (where the orange ends), no side streets
     const pts=[], at=[0];
     const len=()=>{ let L=0; for(let i=1;i<pts.length;i++) L+=pts[i].distanceTo(pts[i-1]); return L; };
-    // the client walk: straight down Bathurst from the first (northernmost) pin to the last
-    // the client walk: pin to pin along the shortest roads (Dijkstra on the real street graph), in map order
-    const pinD=[0];
-    { let prev=near(NODES[0].pos.x, NODES[0].pos.z, (()=>{ const z0=NODES[0].pos.z, c=every.filter(n=>n.z>=z0-8 && Math.abs(n.x-roadX(n.z))<15); return c.length ? c : every; })());   /* start at the first pin, on its street, never above it */ pts.push(new THREE.Vector3(prev.x,0,prev.z));
-      for(let k=1;k<NODES.length;k++){ const to=near(NODES[k].pos.x, NODES[k].pos.z, every);
-        for(const n of route(prev,to,-1e18).slice(1)) pts.push(new THREE.Vector3(n.x,0,n.z)); pinD.push(len()); prev=to; } }
+    // one leg between two ground points: real streets inside the mapped area, a straight line outside it
+    const inData = q => q.z<=DATA_S && q.z>=DATA_N;
+    const hop = (a,b) => { const n=Math.max(1, Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/40)); for(let k=1;k<=n;k++) pts.push(new THREE.Vector3(a.x+(b.x-a.x)*k/n,0,a.z+(b.z-a.z)*k/n)); };
+    const leg = (a,b) => { if(!inData(a) || !inData(b)){ hop(a,b); return; }
+      const na=near(a.x,a.z,every), nb=near(b.x,b.z,every); hop(a,na); for(const n of route(na,nb,-1e18).slice(1)) pts.push(new THREE.Vector3(n.x,0,n.z)); hop(nb,b); };
+    // the project walk: the start point, then pin to pin in scroll order
+    const pinD=[];
+    pts.push(new THREE.Vector3(START.x,0,START.z));
+    { let prev=START; for(const n of NODES){ leg(prev, n.pos); pinD.push(len()); prev=n.pos; } }
     const walkLen=len(), walk=pts.length;
-    for(let z=S.z; z<=T1.z; z+=8) pts.push(new THREE.Vector3(roadX(z),0,z)); at.push(len());
-    for(let z=T1.z+8; z<=T2.z; z+=8) pts.push(new THREE.Vector3(roadX(z),0,z));
-    let from=near(roadX(T2.z), T2.z); pts.push(new THREE.Vector3(from.x,0,from.z)); at.push(len());
-    // steps 3-4: the turn and the arrival follow the real streets
-    for(const T of [T3,T4]){ const to=near(T.x,T.z); for(const n of route(from,to).slice(1)) pts.push(new THREE.Vector3(n.x,0,n.z)); at.push(len()); from=to; }
-    for(let k=0;k<at.length;k++) at[k]-=walkLen;   // legs are measured from the last pin
-    at[0]=0;
+    // directions: the last project → the TCG office on real streets, cut into one equal leg per step
+    leg(S, OFFICE_P);
+    const dirLen=len()-walkLen; for(let k=1;k<=DIRECTIONS.length;k++) at.push(dirLen*k/DIRECTIONS.length);
     const cum=[0]; for(let i=1;i<pts.length;i++) cum.push(cum[i-1]+pts[i].distanceTo(pts[i-1]));
     // the whole journey, faint; the solid trail fills it as you scroll (the page's progress indicator)
-    ghost = ribbon(pts, 10, C.orange, 0.28, {opacity:0});
-    trail = ribbon(pts, 10, C.orange, 0.3);
-    { const d=[0]; for(let i=1;i<pts.length;i++) d.push(d[i-1]+pts[i].distanceTo(pts[i-1]));
-      const ad=new Float32Array(pts.length*2); d.forEach((v,i)=>{ ad[i*2]=v; ad[i*2+1]=v; }); trail.geometry.setAttribute('aD', new THREE.BufferAttribute(ad,1));
-      trail.material.onBeforeCompile = sh => { sh.uniforms.uD = trailD;
-        sh.vertexShader = 'attribute float aD; varying float vD;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vD = aD;');
-        sh.fragmentShader = 'uniform float uD; varying float vD;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if(vD > uD) discard;'); }; }
+    // the route: a centreline ribbon widened in the shader (so it keeps its thickness at any zoom) and cut at a distance
+    const routeRibbon = (uD, y, opacity) => {
+      const pos=[], nrm=[], ad=[], idx=[]; let d=0;
+      pts.forEach((p,i)=>{ if(i) d+=p.distanceTo(pts[i-1]);
+        const a=pts[Math.max(0,i-1)], b=pts[Math.min(pts.length-1,i+1)], v=new THREE.Vector3().subVectors(b,a).normalize();
+        pos.push(p.x,y,p.z, p.x,y,p.z); nrm.push(-v.z,v.x, v.z,-v.x); ad.push(d,d);
+        if(i<pts.length-1){ const k=i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); } });
+      const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('aN',new THREE.Float32BufferAttribute(nrm,2)); g.setAttribute('aD',new THREE.Float32BufferAttribute(ad,1)); g.setIndex(idx);
+      const m=new THREE.Mesh(g, flatMat(C.orange, opacity)); m.material.depthTest=false; m.renderOrder=900+flatOrder++; m.frustumCulled=false; scene.add(m);   // drawn over the buildings
+      m.material.onBeforeCompile = sh => { sh.uniforms.uD=uD; sh.uniforms.uW=routeW;
+        sh.vertexShader = 'attribute vec2 aN; attribute float aD; uniform float uW; varying float vD;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed.xz += aN*uW; vD = aD;');
+        sh.fragmentShader = 'uniform float uD; varying float vD;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if(vD > uD) discard;'); };
+      return m;
+    };
+    ghost = routeRibbon(ghostD, 0.28, 0);
+    trail = routeRibbon(trailD, 0.3, 1);
     return {pts, cum, at, off:walkLen, walk, pinD, total:cum[cum.length-1]};
   }
   const dirPos=new THREE.Vector3(); let dirIdx=-1, dirD=0, dirLook=0;   // dirLook: metres the camera looks past the dot so it clears the card   // current step (-1 off, 0 = parked on the last pin, 1..4 = legs) and the dot's distance along the route
@@ -277,14 +294,14 @@ export function createBathurstEngine() {
   const labels = document.getElementById('labels');
   // the journey's destination: a map pin at the end of the route
   const destEl=document.createElement('div'); destEl.className='dest-pin'; destEl.setAttribute('aria-hidden','true');
-  destEl.innerHTML=`<svg viewBox="0 0 24 32"><path d="M12 31s-10-10.2-10-18A10 10 0 0112 3a10 10 0 0110 10c0 7.8-10 18-10 18z"/><circle cx="12" cy="13" r="3.6"/></svg><span>Your destination</span>`;
+  destEl.innerHTML=`<svg viewBox="0 0 24 32"><path d="M12 31s-10-10.2-10-18A10 10 0 0112 3a10 10 0 0110 10c0 7.8-10 18-10 18z"/><circle cx="12" cy="13" r="3.6"/></svg><span>Talkerstein Consulting Group</span>`;
   labels.appendChild(destEl);
   [...LOCAL].sort((a,b)=>b.pos.z-a.pos.z).forEach((p,i)=>{ p.side = i%2 ? 'l' : 'r'; });
   const thumbHTML = p => p.thumb ? `<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.ind,'glyph');
   LOCAL.forEach(p=>{
     const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':''); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
-    el.innerHTML=`<svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small></span></div>`;
-    el.onclick=()=>openPlace(p.id); el.onkeydown=e=>{if(e.key==='Enter')openPlace(p.id);};
+    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small></span></div>`;
+    el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
     labels.appendChild(el); p.el=el; p.sub=el.querySelector('small'); p.co=el.querySelector('.co');
   });
   roadLabels.forEach(r=>{ const el=document.createElement('div'); el.className='road '+r.cls; el.textContent = r.name; labels.appendChild(el); r.el=el; });
@@ -320,13 +337,26 @@ export function createBathurstEngine() {
   let filter='all', layer='industry', query='';
   const chips=$('chips');
   // chips run in the order the industries first appear while scrolling the map (north first), then All clients
-  const CHIP = {food:'Restaurants', retail:'Retail & beauty', health:'Health', services:'Personal services'};
-  const INDS=[...new Set([...LOCAL].filter(p=>p.pos).sort((a,b)=>a.pos.z-b.pos.z).map(p=>p.ind))].map(k=>[k,CHIP[k],k]).concat([['all','All clients',null]]);
+  const CHIP = {food:'Restaurants', retail:'Retail', beauty:'Beauty', health:'Health', services:'Personal services', community:'Nonprofits', finance:'Finance', professional:'Professional'};
+  const INDS=[...new Set(LOCAL.filter(p=>p.pos && p.stop).sort((a,b)=>a.stop-b.stop).map(p=>p.ind))].map(k=>[k,CHIP[k],k]).concat([['all','All clients',null]]);
   let indIdx=0;
   INDS.forEach(([k,n,ic],idx)=>{
     const b=document.createElement('button'); b.type='button'; b.className='chip sprout btn sm'; b.setAttribute('aria-pressed',k==='all'); b.setAttribute('aria-label', n);
     b.innerHTML=(ic?svg(ic,'glyph'):'')+n;
-    b.onclick=()=>{ if(k==='all') return scrollToProg(1); const j=NODES.findIndex(p=>p.ind===k); if(j>=0) scrollToNode(j); };
+    // a chip filters the map: only that industry's pins stay, framed on screen; press it again (or All) to bring the rest back
+    b.onclick=()=>{ if(target<1) scrollToProg(1);
+      // from the Route Preview (or later): jump straight back to the map overview first, so the filtered pins show on the plain map
+      if(dirIdx>=0){ scrollTo({top: hero.offsetTop + (PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
+      filter = (k==='all' || filter===k) ? 'all' : k;
+      [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', INDS[j][0]===filter)); centreChip(chips.children[INDS.findIndex(x=>x[0]===filter)]);
+      // like Google Maps: the open place closes and the matching pins are framed in the middle of the map left visible
+      selected=null; view={type:'list'}; setCollapsed(true); if(W<760) setSheet('peek');
+      render(); refresh(); mapDirty=true;
+      const r=LOCAL.filter(p=>p.pos && matches(p)).map(p=>p.pos), pad=new THREE.Vector3(500,0,500);
+      const fit=()=>{ if(!r.length) return; const bot = W<760 ? Math.max(60, H - sheetTop() + 16) : 56;
+        const top = W<760 ? 124 : 84, padY = (H - top - bot)*.18;   // Google-style: the results sit in the middle with room around them, not stretched to the edges
+        setGoal(viewOf(r.length>1 ? r : [r[0].clone().add(pad), r[0].clone().sub(pad)], mapView.view==='2d' ? 0 : .3, top+padY, bot+padY, W*(W<760 ? .12 : .2))); };
+      fit(); setTimeout(fit, 420); };   // again once the panel has finished moving
     chips.appendChild(b);
   });
   // chevrons step to the previous / next category; the row itself swipes (native horizontal scroll)
@@ -347,7 +377,7 @@ export function createBathurstEngine() {
   function chipEnds(){ const max=chips.scrollWidth-chips.clientWidth-2; chipPrev.hidden = chips.scrollLeft<=2; chipNext.hidden = chips.scrollLeft>=max; }
   chips.addEventListener('scroll', chipEnds, {passive:true, signal});
   addEventListener('resize', chipEnds, {signal});
-  const NODES = [...LOCAL].filter(p=>p.pos).sort((a,b)=>a.pos.z-b.pos.z);   // top of the map first
+  const NODES = LOCAL.filter(p=>p.pos && p.stop).sort((a,b)=>a.stop-b.stop);   // the scroll route, in order
   let nodeIdx=-1;
   // the chip row is the category indicator: it lights the current node's industry
   // centre a chip by scrolling only the chip row (scrollIntoView would also slide the whole map container sideways)
@@ -355,6 +385,7 @@ export function createBathurstEngine() {
   function markChip(k){ const i=Math.max(0, INDS.findIndex(x=>x[0]===k)); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all') chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
   function setNode(i){
     nodeIdx=Math.max(-1, Math.min(NODES.length-1, i));
+    filter='all';   // scrolling to the next stop clears a chip filter
     stick.classList.toggle('nodes', nodeIdx>=0);
     if(nodeIdx<0){ selected=null; markChip('all'); if(view.type==='place') view={type:'list'}; setCollapsed(true); render(); refresh(); resetView(); return; }
     openPlace(NODES[nodeIdx].id);   // focus the marker and open its sidebar
@@ -388,7 +419,7 @@ export function createBathurstEngine() {
   layersEl.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{ layer=b.dataset.layer; layersEl.querySelectorAll('[data-layer]').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); });
   $('mvclose').onclick=()=>{ setLayers(false); layerBtn.focus(); };
   // Map view settings: view (3D / 2D), style (poster / paper), what to show
-  const mapView = {view:'3d', style:'paper', show:{buildings:true, blocks:true, nature:true, contours:true}};
+  const mapView = {view:'3d', style:'paper', show:{buildings:true, blocks:true, nature:true}};
   const pressGroup = (attr, val) => layersEl.querySelectorAll(`[data-${attr}]`).forEach(x=>x.setAttribute('aria-pressed', x.dataset[attr]===val));
   layersEl.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mapView.view=b.dataset.view; pressGroup('view', mapView.view); applyView(); });
   layersEl.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{ mapView.style=b.dataset.style; pressGroup('style', mapView.style); applyStyle(); });
@@ -407,7 +438,6 @@ export function createBathurstEngine() {
       else if(k==='water') m.material.color.copy(pal.water);
       else if(k==='blocks') m.material.color.copy(pal.footprint);
       else if(k?.startsWith('road')) m.material.color.copy(pal.roads[+k.slice(4)]);
-      else if(k==='topo' || k==='topo-index'){ m.material.color.copy(pal.topo.color); m.material.opacity = k==='topo' ? pal.topo.minor : pal.topo.major; }
     }
     city.recolor?.(pal);
     document.getElementById('stick').classList.toggle('paper-map', mapView.style==='paper');
@@ -419,11 +449,10 @@ export function createBathurstEngine() {
       if(k==='buildings') m.visible=mapView.show.buildings;
       else if(k==='blocks') m.visible=mapView.show.blocks;
       else if(k==='park' || k==='water') m.visible=mapView.show.nature;
-      else if(k==='topo' || k==='topo-index') m.visible=mapView.show.contours;
     }
   }
   document.addEventListener('pointerdown', e=>{ if(!layersEl.hidden && !layersEl.contains(e.target) && !layerBtn.contains(e.target)) setLayers(false); }, {signal});
-  function subLine(p){ if(layer==='services') return p.services.slice(0,2).join(' · '); if(layer==='results') return p.result || 'Case study in progress'; return IND[p.ind].name; }
+  function subLine(p){ if(layer==='services') return p.services.slice(0,2).join(' · ') || IND[p.ind].name; if(layer==='results') return p.result || 'Case study in progress'; return IND[p.ind].name; }
 
   // ---------- menu drawer ----------
   // (the menu drawer was retired; the sidebar toggle took its place)
@@ -443,7 +472,7 @@ export function createBathurstEngine() {
   // Sheet actions are text CTAs (STYLE.md: icon-only is for universal actions); the Diagnostic is the one orange CTA.
   const act = (key, label, icon, extra='') => `<button class="act sprout btn sm${key==='pri'?' orange':''}" type="button" data-a="${label}" aria-label="${label}" ${extra}><svg class="glyph" viewBox="0 0 24 24">${icon}</svg>${label}</button>`;
   const thumb = p => `<span class="th single hair">${thumbHTML(p)}</span>`;
-  const item = p => `<button class="item${matches(p)?'':' dim'}" type="button" data-id="${p.id}">${thumb(p)}<span><b>${p.name}${saved.has(p.id)?'<span class="sv-badge">Saved</span>':''}</b><span class="sub">${IND[p.ind].name} · ${p.addr}</span>${p.result?`<span class="res">${p.result}</span>`:`<span class="sub">${p.services.join(' · ')}</span>`}</span></button>`;
+  const item = p => `<button class="item${matches(p)?'':' dim'}" type="button" data-id="${p.id}">${thumb(p)}<span><b>${p.name}${saved.has(p.id)?'<span class="sv-badge">Saved</span>':''}</b><span class="sub">${IND[p.ind].name} · ${p.addr}</span>${p.result?`<span class="res">${p.result}</span>`:p.services.length?`<span class="sub">${p.services.join(' · ')}</span>`:''}</span></button>`;
   const group = (title, list, extra='') => `<div class="sec"><span class="eyebrow">${title} · ${list.length}</span>${extra}</div><div class="items">${list.map(item).join('')}</div>`;
   function listHTML(){
     const loc = LOCAL.filter(p=>!p.group), th = ALL.filter(p=>p.group==='thornhill'), away = AWAY.filter(p=>p.group!=='thornhill');
@@ -457,7 +486,7 @@ export function createBathurstEngine() {
         ${act('','Share',I.share)}
       </div>
     </div>
-    ${group('Along Bathurst', loc, `<button class="sprout link" type="button" id="routecard" aria-label="Show all of Bathurst">Show all</button>`)}
+    ${group('Projects', loc, `<button class="sprout link" type="button" id="routecard" aria-label="Show all of Bathurst">Show all</button>`)}
     ${th.length ? group('Thornhill', th) : ''}
     ${away.length ? group('Elsewhere', away) : ''}
     <p class="sheet-credit">Map data © OpenStreetMap contributors · Elevation: AWS Terrain Tiles</p>`;
@@ -474,12 +503,12 @@ export function createBathurstEngine() {
       overview: `${p.result?`<div class="result"><b>${p.result}</b><small>Published on talkerstein.com/work</small></div>`:''}
         <dl class="kv">
           <dt><svg class="glyph" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="sr-only">Address</span></dt><dd>${p.addr}${/Thornhill|ON$/.test(p.addr)?'':', Toronto'}</dd>
-          <dt><svg class="glyph" viewBox="0 0 24 24"><path d="M14 7l3-3 3 3-3 3M4 20l9-9"/></svg><span class="sr-only">Services</span></dt><dd class="tags">${p.services.map(x=>`<span class="single hair">${x}</span>`).join('')}</dd>
+          ${p.services.length ? `<dt><svg class="glyph" viewBox="0 0 24 24"><path d="M14 7l3-3 3 3-3 3M4 20l9-9"/></svg><span class="sr-only">Services</span></dt><dd class="tags">${p.services.map(x=>`<span class="single hair">${x}</span>`).join('')}</dd>` : ''}
         </dl>`,
       reviews: p.testimonial
         ? `<blockquote class="quote">“${p.testimonial.quote}”<cite>${p.testimonial.who}</cite></blockquote>`
         : `<p class="note">No published review from ${p.name} yet.</p>`,   // TODO(content): client quotes, never written on their behalf
-      about: `<p class="about">${IND[p.ind].name} on Bathurst. Talkerstein handled ${p.services.join(', ').replace(/, ([^,]*)$/, ' and $1').toLowerCase()}.</p>${p.note?`<p class="note">${p.note}</p>`:''}`,
+      about: `<p class="about">${IND[p.ind].name}, ${p.addr}.${p.services.length ? ` Talkerstein handled ${p.services.join(', ').replace(/, ([^,]*)$/, ' and $1').toLowerCase()}.` : ''}</p>${p.note?`<p class="note">${p.note}</p>`:''}`,
     }[tab];
     const T = [['overview','Overview'],['reviews','Reviews'],['about','About']];
     return `<div class="place">
@@ -501,7 +530,7 @@ export function createBathurstEngine() {
     sheetBody.scrollTop = same ? top : 0;
     sheetBody.querySelectorAll('.item').forEach(b=>b.onclick=()=>openPlace(b.dataset.id));
     sheetBody.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>{ placeTab[view.id]=b.dataset.tab; render(); });
-    placeClose.onclick=()=>{ view={type:query?'results':'list'}; selected=null; render(); refresh(); q.focus({preventScroll:true}); };
+    placeClose.onclick=()=>{ if(fPlace) return leaveFPlace(); view={type:query?'results':'list'}; selected=null; render(); refresh(); q.focus({preventScroll:true}); };
     const cq=sheetBody.querySelector('#clearq'); if(cq) cq.onclick=()=>qclear.onclick();
     const rc=sheetBody.querySelector('#routecard'); if(rc) rc.onclick=fitRoute;
     sheetBody.querySelectorAll('[data-a]').forEach(b=>{
@@ -515,11 +544,19 @@ export function createBathurstEngine() {
       };
     });
   }
+  // a clicked pin wins over whatever is on screen (Route Preview, Find Your Way Forward, the heading):
+  // leave the directions for the map, then open that project
+  function pinClick(id){
+    if(dirIdx===DIRECTIONS.length+1) return enterFPlace(id);
+    if(dirIdx>=0){ const j=NODES.findIndex(n=>n.id===id);
+      scrollTo({top: hero.offsetTop + (j>=0 ? PH_A+PH_LEAD+(j+.5)*SLOT : PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
+    openPlace(id);
+  }
   function openPlace(id){
     const p=ALL.find(x=>x.id===id); if(!p) return;
     view={type:'place',id}; selected=id; { const j=NODES.findIndex(n=>n.id===id); if(j>=0) nodeIdx=j; markChip(p.ind); } render(); refresh(); setSheet('half'); setCollapsed(false);
     if(target<1) scrollToProg(1);
-    if(p.pos) flyTo(p.pos, Math.min(goal.dist, 1500));
+    if(p.pos) flyTo(p.pos, nodeIdx>=0 && NODES[nodeIdx]?.id===id ? 4200 : Math.min(goal.dist, 1500));   // scroll stops: wide enough that the neighbouring icons stay on screen
   }
   function refresh(){
     LOCAL.forEach(p=>{ p.el.classList.toggle('dim', !matches(p)); p.el.classList.toggle('sel', selected===p.id); if(p.sub.textContent!==subLine(p)){ p.sub.textContent=subLine(p); p.cw=0; } });
@@ -538,7 +575,7 @@ export function createBathurstEngine() {
   function setCollapsed(c){ mapUI.classList.toggle('pc', c); const et=$('edgetab'); et.setAttribute('aria-label', c?'Expand side panel':'Collapse side panel'); et.setAttribute('aria-expanded', String(!c));  }
   // the TCG mark opens the Talkerstein sidebar (the home listing)
   $('brandbtn').onclick=e=>{ e.preventDefault(); scrollTo({top:0, behavior: reduce?'auto':'smooth'}); };   // the TCG mark: back to the top, nothing else
-  $('edgetab').onclick=()=>setCollapsed(!mapUI.classList.contains('pc'));
+  $('edgetab').onclick=()=>{ if(fPlace) return leaveFPlace(); setCollapsed(!mapUI.classList.contains('pc')); };
   render(); refresh(); stepHint(); chipEnds();
 
   // ---------- camera path (street view → crane → map) ----------
@@ -546,8 +583,8 @@ export function createBathurstEngine() {
   let streetAnchor = {x:X0, z:900};
   // on load the camera glides north up Bathurst at eye level until the visitor scrolls
   const INTRO = {el:0, segs:[], total:0, stopT:{}};
-  { const stops=[520, ...LOCAL.map(p=>p.pos.z+35).sort((a,b)=>b-a)]; let t=0;
-    const order=[...LOCAL].sort((a,b)=>b.pos.z-a.pos.z);
+  const onStreet = LOCAL.filter(p=>p.pos.z<480 && p.pos.z>DATA_N && Math.abs(p.pos.x-xAt(p.pos.z))<60);
+  { const order=[...onStreet].sort((a,b)=>b.pos.z-a.pos.z), stops=[520, ...order.map(p=>p.pos.z+35)]; let t=0;
     for(let i=0;i<stops.length-1;i++){ const a=stops[i], b=stops[i+1], d=Math.abs(b-a), dur=Math.min(14, Math.max(4, 3.2+1.6*Math.sqrt(d/100))); INTRO.segs.push({a,b,t0:t,dur}); t+=dur; if(order[i]) INTRO.stopT[order[i].id]=t; }
     INTRO.total=t; }
   function introZ(t){ for(const s of INTRO.segs){ if(t<=s.t0+s.dur){ const u=(t-s.t0)/s.dur, f=.8*(.5-.5*Math.cos(Math.PI*u))+.2*u; return s.a+(s.b-s.a)*f; } } return INTRO.segs[INTRO.segs.length-1].b; }
@@ -557,7 +594,7 @@ export function createBathurstEngine() {
       // hero: above the rooftops, straight up the middle of Bathurst
       [0.00, [xAt(sz+140), W<760 ? 150 : 110, sz+140], [xAt(sz-650), 0, sz-650]],   // the text now sits beside/above the window, so the view can look down the street   // camera rides the road's own heading
       [0.45, [xAt(sz+300)+260, 700, sz+500],   [xAt(sz-1300)-60, 0, sz-1400]],
-      [1.00, [X0-230, fy, -1350+mz+fy*.59], [X0-230, 0, -1350+mz]],
+      (()=>{ const v=routeView(), p=new THREE.Vector3(), t=new THREE.Vector3(); poseFrom(v,p,t); return [1.00, p.toArray(), t.toArray()]; })(),
     ];
   }
   let posCurve, tgtCurve, KEYS;
@@ -569,8 +606,31 @@ export function createBathurstEngine() {
   const view3 = {cx:0, cz:0, dist:4000, bearing:0, pitch:.5};   // what is drawn
   const goal  = {cx:0, cz:0, dist:4000, bearing:0, pitch:.5};   // where it is easing to
   let mapDirty=false;
-  function defaultView(){ const k=KEYS[KEYS.length-1], p=new THREE.Vector3(...k[1]), t=new THREE.Vector3(...k[2]), d=p.distanceTo(t); return {cx:t.x, cz:t.z, dist:d, bearing:0, pitch:Math.acos((p.y-t.y)/d)}; }
-  function setGoal(v, instant){ Object.assign(goal, v); goal.dist=Math.min(16000,Math.max(300,goal.dist)); goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); if(instant) Object.assign(view3, goal); }
+  // frame a set of ground points (the whole route after the hero; every pin after the directions)
+  // exact fit: project the points through a scratch camera and re-aim / pull in until they fill the safe area
+  // (below the top bar, above the footer), centred on screen
+  const fitCam = new THREE.PerspectiveCamera();
+  function viewOf(list, pitch=.3, topPx, botPx, sidePx){
+    const xs=list.map(p=>p.x), zs=list.map(p=>p.z);
+    const v={cx:(Math.min(...xs)+Math.max(...xs))/2, cz:(Math.min(...zs)+Math.max(...zs))/2, dist:20000, bearing:0, pitch};
+    const top=topPx ?? (W<760?150:84), bot=botPx ?? (W<760?60:56), side=sidePx ?? (W<760?16:48);   // px kept clear for the chrome
+    const P=new THREE.Vector3(), T=new THREE.Vector3(), q=new THREE.Vector3();
+    fitCam.fov=camera.fov; fitCam.aspect=W/H; fitCam.near=10; fitCam.far=1e6; fitCam.updateProjectionMatrix();
+    for(let it=0; it<6; it++){
+      poseFrom(v,P,T); fitCam.position.copy(P); fitCam.up.set(0,1,0); fitCam.lookAt(T); fitCam.updateMatrixWorld();
+      let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+      for(const p of list){ q.set(p.x,0,p.z).project(fitCam); const sx=(q.x+1)/2*W, sy=(1-q.y)/2*H; x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
+      // move the centre so the box sits in the middle of the safe area, then scale the distance to fill it
+      const wantX=W/2, wantY=(top+H-bot)/2, dx=(x0+x1)/2-wantX, dy=(y0+y1)/2-wantY, m=mpp(v.dist), k=1/Math.max(.45,Math.cos(pitch));
+      v.cx += dx*m; v.cz += dy*m*k;
+      v.dist *= Math.max((x1-x0)/(W-2*side), (y1-y0)/(H-top-bot));
+    }
+    v.dist=Math.max(1400, v.dist); return v;
+  }
+  const routeView = () => viewOf(DIR?.pts?.filter((_,i)=>i%8===0).concat([OFFICE_P]) ?? [START, ...NODES.map(n=>n.pos), OFFICE_P], .3, W<760 ? 230 : 150);   // room for the Our Work heading
+  const allView = () => viewOf([START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
+  function defaultView(){ return routeView(); }
+  function setGoal(v, instant){ Object.assign(goal, v); goal.dist=Math.min(40000,Math.max(300,goal.dist)); goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); if(instant) Object.assign(view3, goal); }
   function resetView(){ mapDirty=false; setGoal(defaultView()); }
   const fwd = b => ({x:Math.sin(b), z:-Math.cos(b)}), rgt = b => ({x:Math.cos(b), z:Math.sin(b)});
   function poseFrom(vw, pos, tgt){ const sp=Math.sin(vw.pitch), cp=Math.cos(vw.pitch), f=fwd(vw.bearing); tgt.set(vw.cx,0,vw.cz); pos.set(vw.cx - f.x*vw.dist*sp, vw.dist*cp, vw.cz - f.z*vw.dist*sp); }
@@ -594,14 +654,14 @@ export function createBathurstEngine() {
     flyTo(new THREE.Vector3(cx,0,cz), Math.max(1400, span*1.25));
     if(target<1) scrollToProg(1);
   }
-  function fitRoute(){ if(target<1) scrollToProg(1); mapDirty=true; const zc=-4400; setGoal({...centreFor(new THREE.Vector3(xAt(zc),0,zc), W<760?19000:13500, 0, .35), dist:W<760?19000:13500, bearing:0, pitch:.35}); }
+  function fitRoute(){ if(target<1) scrollToProg(1); mapDirty=true; setGoal(routeView()); }
 
   // ---------- scroll drives everything (in screen heights) ----------
   // A: front page → map · B: one slot per client (focus + sidebar) · C: the cover sheet rises · then the page moves on
   let target=0, prog=0, lastTs=0, covered=false, winPx=null;   // covered: the reviews sheet is fully over the map, nothing to draw
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero=$('hero'), stick=$('stick'), coverEl=$('cover');
-  const PH_A=1.6, PH_LEAD=.2, SLOT=.8, DIR_SLOTS=DIRECTIONS.length+2, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
+  const PH_A=1.6, PH_LEAD=1, SLOT=.8, DIR_SLOTS=DIRECTIONS.length+2, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
   const phB = () => NODES.length*SLOT;
   const DSLOT = () => W<760 ? 1.25 : SLOT;   // route steps: a longer slot on phones, where one swipe covers more of the page
   let coverH=0;
@@ -639,16 +699,27 @@ export function createBathurstEngine() {
   // the indicator: the hero's pulsing runner dot, parked on the last pin and driven along the route
   const nav = runner.clone(true); nav.userData.halo = nav.children[0]; nav.visible=false; scene.add(nav);
   let dirProg=0;   // 0..1 along the whole route, straight from the scroll (no stops until the end)
+  function fitFinale(){ const fit=()=>{ if(dirIdx!==DIRECTIONS.length+1 || fPlace) return; const st=stick.getBoundingClientRect(), b=dirCard.getBoundingClientRect().bottom-st.top;
+      setGoal(viewOf([OFFICE_P, ...LOCAL.map(p=>p.pos)], mapView.view==='2d' ? 0 : .3, Math.max(84, b+24))); };
+    fit(); setTimeout(fit, 520); }
+  // Find Your Way Forward: a clicked pin swaps the card for that project's sidebar; collapsing the sidebar brings the card back
+  let fPlace=false;
+  function enterFPlace(id){ fPlace=true; stick.classList.add('fplace'); dirCard.classList.add('away'); openPlace(id); }
+  function leaveFPlace(refit=true){ if(!fPlace) return; fPlace=false; stick.classList.remove('fplace'); dirCard.classList.remove('away');
+    selected=null; view={type:'list'}; render(); refresh(); setCollapsed(true); if(refit) fitFinale(); }
   function setDir(i){
     if(i===dirIdx) return;
     const was=dirIdx; dirIdx=i;
     stick.classList.toggle('dirs', i>=0);
     if(i<0){ nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
     DIR ??= buildDir(); nav.visible=true;
-    if(was<0){ selected=null; view={type:'list'}; render(); refresh(); setCollapsed(true); markChip('all'); dirD=DIR?DIR.off:0; mapDirty=true; }
+    if(was<0){ selected=null; nodeIdx=-1; view={type:'list'}; render(); refresh(); setCollapsed(true); markChip('all'); dirD=DIR?DIR.off:0; mapDirty=true; }
+    if(fPlace) leaveFPlace(false);
+    if(i===DIRECTIONS.length+1) fitFinale();   // arrived: zoom out to every project, in the map left below the Find Your Way Forward card
     const st=DIRECTIONS[i-1] || (i===DIRECTIONS.length+1 ? 'cta' : null);
     // the steps slide: the old one leaves to the left, the next comes in from the right (reversed when scrolling back)
     dirCard.classList.toggle('on', i>=1);
+    dirCard.classList.toggle('cta', i===DIRECTIONS.length+1);   // Find Your Way Forward stands on its own: no Route Preview heading
     const track=dirCard.querySelector('.dc-track'), back = i < was;   // dirCard is the panel: heading above, the sliding card below
     track.querySelectorAll('.dc-step:not(.out)').forEach(el=>{ el.classList.add('out'); if(back) el.classList.add('back'); setTimeout(()=>el.remove(), 500); });
     if(st==='cta'){ track.appendChild(ctaCard(back)); }
@@ -665,11 +736,9 @@ export function createBathurstEngine() {
         <label class="sprout field-box dir-box"><input class="input" name="from" required placeholder="Your business name" aria-label="Your business name" autocomplete="organization"></label>
         <label class="sprout field-box dir-box"><select class="input" name="goal" required aria-label="Your destination"><option value="" disabled selected>Choose your destination</option>${GOALS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>
           <span class="caret"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></label></div>
-      <button type="submit" class="sprout btn orange dc-go" data-no-tumble aria-label="Get directions"><svg class="glyph" viewBox="0 0 24 24"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z"/><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2"/></svg>Get directions</button>`;
+      <button type="submit" class="sprout btn orange dc-go" data-no-tumble aria-label="Find Your Way Forward"><svg class="glyph" viewBox="0 0 24 24"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z"/><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2"/></svg>Find Your Way Forward</button>`;
     // Get directions opens the booking page with the route filled in
     // the button only appears once both the business name and a destination are filled in
-    const go=el.querySelector('.dc-go'), ready=()=>{ const f=new FormData(el); go.hidden = !(String(f.get('from')||'').trim() && f.get('goal')); };
-    el.addEventListener('input', ready); el.addEventListener('change', ready); ready();
     el.onsubmit=e=>{ e.preventDefault(); const f=new FormData(el); location.href='/book?'+new URLSearchParams({from:String(f.get('from')||''), goal:String(f.get('goal')||'')}); };
     return el;
   }
@@ -687,6 +756,30 @@ export function createBathurstEngine() {
   const toHow=()=>goTo(PH_A+PH_LEAD+phB()+DSLOT()*.5);   // footer "How we work": the start of the directions
   document.addEventListener('click', e=>{ const a=e.target.closest?.('a[href="#how"]'); if(a){ e.preventDefault(); toHow(); } }, {signal});
   addEventListener('scroll', onScroll, {passive:true, signal});
+  // Route Preview: one wheel gesture / swipe = one step. Inside the directions the page glides to the next
+  // step's scroll position and ignores the rest of the gesture (trackpad momentum included) until it settles.
+  { const L=DIRECTIONS.length;
+    const nodesEnd=()=>PH_A+PH_LEAD+phB(), dirEnd=()=>nodesEnd()+DIR_SLOTS*DSLOT();
+    const stepAt = i => i<1 ? PH_A+PH_LEAD+(NODES.length-.5)*SLOT                                   // back to the last project
+      : i<=L ? nodesEnd()+DSLOT()*.5+(i-.5)*DSLOT()*(L-.5)/L                                       // the middle of step i
+      : i===L+1 ? nodesEnd()+L*DSLOT()+DSLOT()*.5                                                  // Find Your Way Forward
+      : dirEnd()+.02;                                                                              // on to the reviews
+    let lockUntil=0, quietT=0;
+    const inDirs = () => { const s=Math.max(0, scrollY-hero.offsetTop)/H; return s>=nodesEnd()-.01 && s<dirEnd(); };
+    const step = dir => { const cur = dirIdx<1 ? 0 : dirIdx; goTo(stepAt(Math.max(0, Math.min(L+2, cur+dir)))); lockUntil=performance.now()+650; };
+    addEventListener('wheel', e=>{
+      if(e.ctrlKey || e.metaKey || !inDirs() || (e.target.closest && e.target.closest('.dircard select, .dircard input'))) return;
+      e.preventDefault();
+      const now=performance.now(), quiet = now-quietT > 220; quietT=now;   // a new gesture starts after a pause in wheel events
+      if(now<lockUntil || !quiet && now<lockUntil+400 || Math.abs(e.deltaY)<4) return;
+      step(e.deltaY>0 ? 1 : -1);
+    }, {passive:false, signal});
+    let ty=null;
+    addEventListener('touchstart', e=>{ ty = e.touches.length===1 && inDirs() ? e.touches[0].clientY : null; }, {passive:true, signal});
+    addEventListener('touchmove', e=>{ if(ty!==null && e.cancelable) e.preventDefault(); }, {passive:false, signal});
+    addEventListener('touchend', e=>{ if(ty===null) return; const dy=ty-(e.changedTouches[0]?.clientY ?? ty); ty=null; if(Math.abs(dy)>30 && performance.now()>=lockUntil) step(dy>0 ? 1 : -1); }, {passive:true, signal});
+    addEventListener('keydown', e=>{ if(!inDirs() || !['ArrowDown','ArrowUp','PageDown','PageUp',' '].includes(e.key) || e.target.closest?.('input,select,textarea')) return;
+      e.preventDefault(); if(performance.now()>=lockUntil) step(e.key==='ArrowUp'||e.key==='PageUp' ? -1 : 1); }, {signal}); }
   stick.addEventListener('scroll', ()=>{ if(stick.scrollLeft||stick.scrollTop){ stick.scrollLeft=0; stick.scrollTop=0; } }, {passive:true, signal});
   // sections below the map ask it to open a place: window.dispatchEvent(new CustomEvent('tcg:open', {detail:{id}}))
   const showPlace = id => { const j=NODES.findIndex(n=>n.id===id); if(j>=0) scrollToNode(j); else openPlace(id); };
@@ -789,7 +882,7 @@ export function createBathurstEngine() {
   function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
   addEventListener('resize', resize, {signal}); resize();
   document.fonts?.ready.then(()=>{ if(!dead) measureWin(); });
-  const sheetTop = () => { const r=sheet.getBoundingClientRect(), s=stick.getBoundingClientRect(); return Math.min(H, r.top - s.top); };
+  const sheetTop = () => { const r=sheet.getBoundingClientRect(), s=stick.getBoundingClientRect(); return r.height ? Math.min(H, r.top - s.top) : H; };   // hidden sheet (route overview): the controls rest at the bottom
   { const h=location.hash.slice(1); if(ALL.some(p=>p.id===h)) setTimeout(()=>showPlace(h), 300); }
 
   // ---------- frame ----------
@@ -804,11 +897,23 @@ export function createBathurstEngine() {
 
   let raf = 0, dead = false;
   const perf={t:0, n:0, slow:0};
+  // render on demand: full rate while anything moves; once settled only the pin pulses run, at a low rate
+  // (none at all on weak devices or with reduced motion). Any input or scroll wakes it straight back up.
+  let settled=0, lastDraw=0, wakeUntil=0;   // wakeUntil: input keeps full rate a moment longer, so CSS transitions (the sheet) are tracked smoothly
+  const IDLE_GAP = reduce || weak ? Infinity : lite ? 1000/15 : 1000/30;
+  function poke(){ wakeUntil = performance.now() + 700; }
+  for(const ev of ['scroll','wheel','pointerdown','pointermove','touchmove','keydown','resize']) addEventListener(ev, poke, {passive:true, signal});
+  const snap = () => target+prog+view3.cx+view3.cz+view3.dist+view3.pitch+view3.bearing+runZ+trailD.value+dirD;
   function frame(ts){
     if(dead) return;
     if(covered){ lastTs=ts; raf = requestAnimationFrame(frame); return; }
+    if(ts>wakeUntil && settled>20 && ts-lastDraw < IDLE_GAP){ raf = requestAnimationFrame(frame); return; }
+    lastDraw=ts;
+    const before = snap();
     const dt=Math.min(.05,(ts-lastTs)/1000||0); lastTs=ts;
-    const k = reduce ? 1 : Math.min(1, dt*5), kg = reduce ? 1 : Math.min(1, dt*6);
+    // exponential easing: frame-rate independent, so uneven phone scroll events land as one smooth glide
+    const ease = r => reduce ? 1 : 1-Math.exp(-dt*r);
+    const k = ease(lite ? 6 : 5), kg = ease(6);
     prog += (target-prog)*k; if(Math.abs(target-prog)<1e-4) prog=target;
     // ease the map camera toward its goal (shortest way round for bearing)
     const db=((goal.bearing-view3.bearing+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
@@ -832,6 +937,9 @@ export function createBathurstEngine() {
     { const nn=Math.max(.5, Math.min(250, alt*.04)); if(Math.abs(camera.near-nn) > nn*.02){ camera.near=nn; camera.updateProjectionMatrix(); } }
     scene.fog.near = Math.max(80, alt*1.1); scene.fog.far = Math.max(1600, alt*3.6);
 
+    { const s=Math.max(0, scrollY - hero.offsetTop)/H, on = prog>.9 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && filter==='all' && (W>=760 || (nodeIdx<0 && !selected));   /* phones have no sidebar to cover it: it slides out at the first project */   // stays through the project stops (the sidebar covers it), leaves for the directions
+      if(stick._work!==on){ $('workhead').classList.toggle('on', on); stick._work=on; } }
+    { const named = alt < 2600 || filter!=='all'; /* zoomed in, or a chip filter is on */ if(stick._named!==named){ stick.classList.toggle('named', named); stick._named=named; } }
     const darkMap = alt > 90; if(darkMap!==stick._dark){ stick.classList.toggle('dark-map', darkMap); stick._dark=darkMap; }
     // building ink thins with altitude so the 3D corridor never reads as a dark stripe from far away
     if(city.ink){ const io = .8 - .68*smooth(1500, 7000, alt); if(Math.abs(city.ink.material.opacity-io)>.01) city.ink.material.opacity = io; }
@@ -870,23 +978,31 @@ export function createBathurstEngine() {
       else runner.position.set(roadX(z), .5, z); /* on the painted road itself, not the smoothed line */ const sc=Math.max(10, alt*.018); runner.scale.setScalar(sc);
       const pul=(ts*.0012)%1; runner.userData.halo.scale.setScalar(1+pul*1.4); runner.userData.halo.material.opacity=.5*(1-pul); }
     routeGlow.material.opacity = .10*mapK + .06;
-    if(!DIR && city.data && mapK>.1){ DIR=buildDir(); onScroll(); }   /* re-aim the journey now its pin distances exist */
-    if(ghost){ ghost.material.opacity=.5*mapK; trail.visible = mapK>.15;
+    if(!DIR && city.data && mapK>.1){ DIR=buildDir(); buildCurves(); if(!mapDirty) setGoal(defaultView()); onScroll(); }   /* re-aim the journey now its pin distances exist */
+    const finale = dirIdx===DIRECTIONS.length+1;   // "Find Your Way Forward": no path, just the project icons by industry
+    if(ghost){ ghost.material.opacity=.45*smooth(.05,.4,prog); trail.visible = mapK>.15 && !finale; ghost.visible = !finale;
+      // scroll-triggered, not scroll-driven: once the crane starts, the route draws start → office in one timed motion
+      // (never parked halfway); scrolling back to the hero resets it for next time
+      { const s=Math.max(0, scrollY - hero.offsetTop)/H;
+        if(s<.05){ ghostRun=-1; ghostD.value=0; }
+        else if(ghostRun<0) ghostRun=0;
+        if(ghostRun>=0 && ghostRun<1){ ghostRun = reduce ? 1 : Math.min(1, ghostRun + dt/2.4); const e=1-Math.pow(1-ghostRun,3); ghostD.value = ghostRun>=1 ? 1e9 : DIR.total*e; wakeUntil = performance.now()+100; } }
+      routeW.value = Math.max(5, mpp(pos.distanceTo(tgt))*3.5);   // about 7px wide on screen
       if(dirIdx<0){ trailD.value += (jTarget-trailD.value)*(reduce?1:Math.min(1, dt*3)); }
       const end=DIR.pts[DIR.pts.length-1], sp=project(end), on=mapK>.15 && sp.ok;
-      destEl.style.opacity = on ? '1' : '0'; if(on) destEl.style.transform=`translate3d(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px,0)`; }
+      destEl.style.opacity = on ? '1' : '0'; destEl.classList.toggle('named', dirIdx<0 ? nodeIdx<0 && filter==='all' : dirIdx>=DIRECTIONS.length);   /* the office name: on the overview, then only once the route reaches step 4 */ if(on) destEl.style.transform=`translate3d(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px,0)`; }
     if(dirIdx>=0){
       DIR ??= buildDir();
       const tgt = DIR ? DIR.off + dirProg*(DIR.total-DIR.off) : 0;
       dirD += (tgt-dirD)*(reduce?1:Math.min(1, dt*3)); if(Math.abs(tgt-dirD)<.5) dirD=tgt;
       const {p, i} = dirAt(dirD); dirPos.copy(p);
       trailD.value = dirD;
-      nav.position.set(p.x, .6, p.z); nav.scale.setScalar(Math.max(10, alt*.02));
+      nav.visible = !finale; nav.position.set(p.x, .6, p.z); nav.scale.setScalar(Math.max(10, alt*.02));
       const pul=(ts*.0012)%1; nav.userData.halo.scale.setScalar(1+pul*1.4); nav.userData.halo.material.opacity=.5*(1-pul);
       // follow the dot
       // inclined, facing the way it drives (south), never rotating; the dot sits in the middle of the map left
       // visible below the Route Preview card (so the tall last step never covers it)
-      if(!drag){ const dist=700, pitch = mapView.view==='2d' ? 0 : 1.05, bearing=Math.PI;
+      if(!drag && dirIdx<=DIRECTIONS.length){ const dist=700, pitch = mapView.view==='2d' ? 0 : 1.05, bearing=Math.PI;
         const cardB = dirCard.classList.contains('on') ? dirCard.getBoundingClientRect().bottom - stick.getBoundingClientRect().top : 0;
         // feedback: measure where the dot actually lands and nudge the look-ahead until it sits mid-way below the card
         const want=(cardB + H)/2, sy=project(dirPos).y, f=fwd(bearing);
@@ -898,7 +1014,7 @@ export function createBathurstEngine() {
     LOCAL.forEach(p=>{
       const sel = selected===p.id, on = matches(p), pulse = (ts*0.001 + p.pos.z*0.001)%1;
       p.ring.scale.setScalar(s*(sel ? 1.6+pulse*3.2 : 0.8+pulse*1.4));
-      const inFocus = (dirIdx<0 && nodeIdx<0) || (dirIdx<0 && sel);
+      const inFocus = dirIdx<0 && sel;   // minimal: only the project in focus pulses
       p.ring.material.opacity = inFocus ? (on ? (sel? .9 : .55) : .1) * (1-pulse) * (mapK>.15 ? 1 : 0) : 0;
     });
 
@@ -909,15 +1025,18 @@ export function createBathurstEngine() {
       .sort((a,b)=> (selected===b.p.id) - (selected===a.p.id) || b.sp.y - a.sp.y);
     order.forEach(({p, sp, dist})=>{
       // walking the clients: only the one in focus is on screen; on the route, none (the dot is the focus)
-      const focusOnly = dirIdx>=0 || nodeIdx>=0;
-      const visible = stick._mapped && (!focusOnly || (dirIdx<0 && selected===p.id)) && sp.ok && sp.x>-260 && sp.x<W+260 && sp.y>-160 && sp.y<H+200 && dist < (streetMode ? 2600 : 1e9);
+      const overviewAll = dirIdx===DIRECTIONS.length+1;
+      // the project in focus gets the full callout; every other pin is a small service icon (none while driving the directions)
+      const full = (dirIdx<0 || fPlace) && selected===p.id;
+      if(p._full!==full){ p.el.classList.toggle('mini', !full); p._full=full; }
+      const visible = stick._mapped && (matches(p) || selected===p.id) && (overviewAll || filter!=='all' || (dirIdx<0 && (nodeIdx>=0 || selected || !!p.stop))) && sp.ok && sp.x>-260 && sp.x<W+260 && sp.y>-160 && sp.y<H+200 && dist < (streetMode ? 2600 : 1e9);
       if(p._vis!==visible){ p.el.classList.toggle('hide', !visible); p._vis=visible; }
       const passing = streetMode && Math.abs(camera.position.z-p.pos.z)<180; if(p._near!==passing){ p.el.classList.toggle('near', passing); p._near=passing; }
       if(!visible) return;
       const sc = streetMode ? Math.min(1.5, Math.max(.6, 260/dist)) : 1;
       if(!p.cw){ p.cw=p.co.offsetWidth; p.ch=p.co.offsetHeight; }
       let L = 44, side = p._side || p.side;
-      if(!streetMode){
+      if(!streetMode && full){
         // obstacles: cards and leaders already placed, plus every marker; try both sides, keep the shorter leader
         const box = (sd, L) => { const x0 = sd==='r' ? sp.x-18 : sp.x-p.cw+18; return {x0, x1:x0+p.cw, y0:sp.y-L-p.ch, y1:sp.y-L}; };
         const hits = b => placedCards.some(o=> b.x0<o.x1+8 && b.x1>o.x0-8 && b.y0<o.y1+8 && b.y1>o.y0-8)
@@ -973,7 +1092,7 @@ export function createBathurstEngine() {
       t.el.querySelector('.ar').style.transform=`rotate(${Math.atan2(dy,dx).toFixed(3)}rad)`;
     });
 
-    if(phone){ setStyle(ctrls,'transform', `translateY(${Math.round(Math.max(190, st - ctrls.offsetHeight - 14))}px)`); }
+    setStyle(ctrls,'transform', phone ? `translateY(${Math.round(Math.max(190, st - ctrls.offsetHeight - 14))}px)` : '');   // phones: resting at the bottom, pushed up by the project sheet
 
     const yaw = Math.atan2(tgt.x-pos.x, -(tgt.z-pos.z));
     needle.style.transform=`rotate(${(-yaw).toFixed(3)}rad)`;
@@ -992,6 +1111,9 @@ export function createBathurstEngine() {
     // adaptive quality: if frames keep running long (a slow GPU), step the resolution down once or twice
     perf.t += dt; perf.n++; if(dt > 1/40) perf.slow++;
     if(perf.t > 2){ if(perf.slow/perf.n > .35 && dprCap > 1){ dprCap = Math.max(1, dprCap - .25); renderer.setPixelRatio(dprCap); resize(); } perf.t=perf.n=perf.slow=0; }
+    // settled: nothing eased this frame, no drag, and the hero fly-through is not playing
+    const flying = !reduce && target<=.005 && prog<=.005;
+    settled = !flying && !drag && Math.abs(snap()-before) < 1e-3 ? settled+1 : 0;
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);

@@ -157,7 +157,6 @@ export default function BathurstHero() {
                 <Toggle show="buildings" label="3D buildings" />
                 <Toggle show="blocks" label="City blocks" />
                 <Toggle show="nature" label="Parks & water" />
-                <Toggle show="contours" label="Contours" />
               </fieldset>
               <fieldset><legend className="eyebrow">Callouts show</legend>
                 <div className="seg seg-3">
@@ -200,6 +199,8 @@ export default function BathurstHero() {
           <h2 className="dc-title">Route Preview</h2>
           <div className="dc-track" />
         </div>
+        {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
+        <h2 className="workhead" id="workhead">Our Work Across the Map</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
       </div>

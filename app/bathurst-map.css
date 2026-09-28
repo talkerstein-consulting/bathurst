@@ -12,10 +12,12 @@
 :where(#hero) canvas { display: block; }
 :where(#hero) button { font: inherit; color: inherit; }
 #stage canvas { transition: opacity .7s cubic-bezier(.22,1,.36,1); }
+#stage canvas { opacity: 0; }   /* until the city is built (engine adds .city): the paper stage shows instead of an empty ground */
+#stage.city canvas { opacity: 1; }
 #stage.fadeout canvas { opacity: 0; }
 #stick.grabbing #stage { cursor: grabbing; }
 #stick.mapready #stage { cursor: grab; }
-#stage:focus-visible { outline: 2px solid var(--orange); outline-offset: -12px; }
+#stage:focus, #stage:focus-visible { outline: none; }
 /* sea halo so map text reads over the city (a legibility knockout, not a shadow) */
 #hero { --halo: 0 0 2px var(--sea), 0 0 3px var(--sea), 0 0 4px var(--sea), 0 0 6px var(--sea); }
 
@@ -878,3 +880,61 @@
   .hero-grid .sv-hero p { margin-left: auto; margin-right: auto; max-width: 60ch; }
   .hero-proofrow { justify-content: center; }
 }
+
+/* Phones: everything that moves with the map every frame is repainted every frame, so keep it cheap.
+   The grunge SVG filter and the four-layer text halo are the costly parts; a single soft halo reads the same at phone size. */
+@media (max-width: 759px) {
+  #hero { --halo: 0 0 3px var(--sea), 0 0 5px var(--sea); }
+  .pin .ld { filter: none; }
+  .road, .youhere, .pin { contain: layout style; }
+}
+
+/* service-icon pins (Google Maps style): every pin except the project in focus */
+.pin .mk, .pin.mini .ld, .pin.mini .co { display: none; }
+/* the icon stays under the callout: the leader rises from its top */
+.pin:not(.mini) .ld { bottom: 12px; height: calc(var(--L) - 12px); }
+.pin.sel .ic { background: var(--orange); }
+.pin .ic { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--steel); color: var(--sea); box-shadow: 0 0 0 1.5px var(--sea); pointer-events: auto; cursor: pointer; transition: background .2s ease; }
+.pin .ic .glyph { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); }
+.pin.pop .ic { animation: pin-in .42s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
+/* icon pins: the name as a tooltip on hover, and always once the map is zoomed in */
+.pin .nm { display: none; }
+.pin.mini .nm { display: block; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+  background: var(--sea); color: var(--steel); font-size: 12px; font-weight: 600; box-shadow: 0 0 0 1px var(--steel-15); pointer-events: none;
+  opacity: 0; transition: opacity .15s ease; }
+.pin.mini .nm { top: 0; }
+.pin.mini:hover .nm, .pin.mini:focus-visible .nm, #stick.named .pin.mini .nm { opacity: 1; }
+.pin.mini:hover { z-index: 300000 !important; }
+
+/* "Our Work Across the Map": slides down in over the route overview, back up and out when the first project opens */
+.workhead { position: absolute; left: 32px; top: 84px; z-index: 2;   /* under the map chrome: the sidebar slides over it */ margin: 0; padding: 10px 24px; border-radius: var(--frame-radius, 14px);
+  font: 700 44px/1.05 var(--head); color: var(--steel); text-shadow: var(--halo); max-width: 300px;   /* two lines, as narrow as the sidebar that covers it */ pointer-events: none;
+  opacity: 0; transform: translateX(-40px); transition: opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1); }
+.workhead.on { opacity: 1; transform: none; }
+@media (max-width: 759px) { .workhead { left: 16px; top: 124px; padding: 0; font-size: 30px; max-width: 260px; } }   /* phones: under the chips, text lined up with the TCG mark */
+@media (prefers-reduced-motion: reduce) { .workhead { transition: opacity .2s ease; transform: none; } }
+
+/* Testimonials (from /our-process): logo tabs, quote beside that client's own video */
+.rv-tab-logo { height: 22px; width: auto; max-width: 96px; object-fit: contain; display: block; margin: 0 auto;
+  filter: grayscale(1) contrast(.9); opacity: .45; transition: filter .3s ease, opacity .3s ease; }
+.rv-tabs .sp-tab { padding-inline: var(--s3); }
+.rv-tab-logo.tall { height: 44px; max-width: 64px; }   /* square / stacked marks read as small next to wordmarks */
+.rv-tabs .sp-tab:hover .rv-tab-logo { opacity: .75; }
+.rv-tabs .sp-tab.on .rv-tab-logo { filter: none; opacity: 1; }
+.rv-slide:has(.rv-video) { grid-template-columns: minmax(0, 1fr) minmax(0, 320px); align-items: center; }
+.rv-slide .rv-video { aspect-ratio: 9 / 16; max-height: 72svh; overflow: hidden; background: #000; padding: 0; grid-column: auto; }
+.rv-slide .rv-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 900px) {
+  .rv-slide:has(.rv-video) { grid-template-columns: minmax(0, 1fr); }
+  .rv-slide .rv-video { max-width: 320px; width: 100%; justify-self: center; aspect-ratio: 9 / 16; }
+}
+.dest-pin span { transition: opacity .3s ease; }
+.dest-pin:not(.named) span { opacity: 0; }
+.dircard .dc-title { transition: opacity .3s ease; }
+.dircard.cta .dc-title { opacity: 0; height: 0; margin: 0; overflow: hidden; }
+/* Find Your Way Forward with a project open: the card steps aside, the sidebar and its collapse tab come back */
+.dircard { transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); }
+.dircard.away { opacity: 0; transform: translateY(-16px); pointer-events: none; }
+#stick.dirs.fplace .edgetab { display: grid; }
