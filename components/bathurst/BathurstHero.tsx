@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
-import { CtaButton, CtaLink } from "@/components/style/Cta";
+import { CtaButton } from "@/components/style/Cta";
 import DirectionsPanel from "@/components/bathurst/DirectionsPanel";
 import Testimonials from "@/components/bathurst/Testimonials";
 import { CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
@@ -87,7 +87,7 @@ export default function BathurstHero() {
             <div className="sv-hero" id="svhero">
               <h1 className="h1">Find your way to the right customers.</h1>
               <p>We build bespoke systems that use AI, automation, and technology to create a clearer path between your business and the right customers.</p>
-              <CtaLink href="/book" label="Book a free call" accent className="hero-cta" data-no-tumble />
+              <CtaButton label="Book a free call" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:offer"))} />   {/* opens the offer modal (CornerOffer) */}
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               <div className="hero-proofrow">
                 <div className="hero-ratings">
@@ -169,13 +169,13 @@ export default function BathurstHero() {
           </div>
 
           <div className="ctrls">
-            <button type="button" id="compass" aria-label="Compass: drag to rotate the map, press to face north" title="Drag to rotate · click for north"><span id="needle" className="rose" dangerouslySetInnerHTML={{ __html: COMPASS_ROSE }} /></button>
-            <CtaButton variant="icon" id="pegman" label="Street View" title="Drop into Street View"><Glyph g="peg" /></CtaButton>
-            <CtaButton variant="icon" id="recenter" label="Recenter on Bathurst" title="Recenter on Bathurst"><Glyph g="recenter" /></CtaButton>
+            <button type="button" id="compass" aria-label="Compass: drag to rotate the map, press to face north" data-tip="Drag to rotate · click for north"><span id="needle" className="rose" dangerouslySetInnerHTML={{ __html: COMPASS_ROSE }} /></button>
+            <CtaButton variant="icon" id="pegman" label="Street View" data-tip="Street View"><Glyph g="peg" /></CtaButton>
+            <CtaButton variant="icon" id="recenter" label="Recenter on Bathurst" data-tip="Recenter the map"><Glyph g="recenter" /></CtaButton>
             <div className="zoomgrp frame" role="group" aria-label="Zoom">
-              <button type="button" id="zin" aria-label="Zoom in"><Glyph g="plus" /></button>
+              <button type="button" id="zin" aria-label="Zoom in" data-tip="Zoom in"><Glyph g="plus" /></button>
               <i aria-hidden="true" />
-              <button type="button" id="zout" aria-label="Zoom out"><Glyph g="minus" /></button>
+              <button type="button" id="zout" aria-label="Zoom out" data-tip="Zoom out"><Glyph g="minus" /></button>
             </div>
           </div>
           <div className="foot" aria-label="Map information">
@@ -199,6 +199,8 @@ export default function BathurstHero() {
           <h2 className="dc-title">Route Preview</h2>
           <div className="dc-track" />
         </div>
+        {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
+        <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
         <h2 className="workhead" id="workhead">Our Work Across the Map</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>

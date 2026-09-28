@@ -335,7 +335,7 @@
 #stick:not(.mapped) .ctrls { translate: calc(100% + var(--inset) + 16px) 0; opacity: 0; pointer-events: none; }
 #stick:not(.mapped) .foot { translate: 0 calc(100% + var(--inset) + 16px); opacity: 0; }
 /* the sidebar and its tab only belong to the client walk-through */
-#stick:not(.nodes) .edgetab { display: none; }
+#stick:not(.nodes) #mapui.pc .edgetab { display: none; }   /* every open sidebar has its collapse tab */
 #stick.open .panel .sheet { display: none; }
 .pin { visibility: visible; }
 
@@ -364,7 +364,8 @@
 
 /* direction button: orange fill, steel line, white glyph */
 .layers-top .btn.dirbtn { background: var(--orange); color: #fff; --ink: var(--steel); }
-.dirbtn:hover { --ink: var(--steel); filter: brightness(1.06); }
+/* hover follows STYLE.md: only the outer line sprouts (LineSystem); no tint, no colour change */
+.layers-top .btn.dirbtn:hover { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
 
 /* tablet: a narrower search column and tighter chips so the two groups never meet */
 @media (min-width: 761px) and (max-width: 1100px) {
@@ -473,7 +474,7 @@
    front page: "Get directions" (orange CTA) opposite the logo; on the first scroll it shrinks into the icon CTA */
 .layers-top { top: var(--inset); transition: top .55s cubic-bezier(.65,0,.35,1); }
 #stick.open .layers-top { top: calc(var(--inset) + (var(--mark-open) - var(--icon-btn)) / 2); }
-.layers-top .btn.dirbtn { width: auto; min-width: var(--icon-btn); padding: 0 13px; gap: 0; justify-content: flex-start; overflow: hidden; }
+.layers-top .btn.dirbtn { width: auto; min-width: var(--icon-btn); padding: 0 13px; gap: 0; justify-content: flex-start; overflow: visible; }   /* visible: the hover outer line sits just outside the edge */
 .dirlabel { display: block; max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap; font: 500 15px/1 var(--body); color: #fff;
   transition: max-width .55s cubic-bezier(.65,0,.35,1), margin .55s cubic-bezier(.65,0,.35,1), opacity .25s ease; }
 #stick.open .dirlabel { max-width: 160px; margin-left: var(--s1); opacity: 1; transition-delay: 0s, 0s, .15s; }
@@ -607,7 +608,7 @@
 .dc-step h3 { margin: 4px 0; font-size: 26px; line-height: 1.05; }
 .dc-step p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--steel-70); max-width: 70ch; }
 /* directions mode: the map is the stage; the sidebar and its notch stay out of the way */
-#stick.dirs .edgetab { display: none; }
+#stick.dirs #mapui.pc .edgetab { display: none; }
 @media (max-width: 760px) {
   /* phones: on top, under the chip row */
   .dircard { top: calc(var(--inset) + var(--icon-btn) + var(--s1) + 40px + var(--s2)); left: var(--s2); right: var(--s2); }
@@ -938,3 +939,91 @@
 .dircard { transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); }
 .dircard.away { opacity: 0; transform: translateY(-16px); pointer-events: none; }
 #stick.dirs.fplace .edgetab { display: grid; }
+
+/* ================= testimonials (STYLE.md): framed Sea Breeze cards in a masonry wall, flat bottom edge ================= */
+.rv-wall { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: var(--s3); height: clamp(1000px, 150vh, 1500px); }
+.rv-col { display: flex; flex-direction: column; gap: var(--s3); min-height: 0; }
+.rv-cell { flex-basis: 0; flex-shrink: 1; min-height: 0; display: grid; }
+.rv-cell.rating { flex: none; }   /* rating tiles keep their own height; the video cards absorb the rest */
+.rv-tile { min-height: 0; }
+.rv-wall .rv-score { padding: var(--s3); color: var(--steel); text-decoration: none; display: grid; align-content: center; justify-items: start; gap: 6px; }
+.rv-wall .rv-score b { font-size: 72px; line-height: .9; }
+.rv-wall .rv-score > span { display: grid; gap: 4px; }
+.rv-wall .rv-score:hover { --ink: var(--orange); }
+/* a card: the poster (hairline frame) takes the height left over; one row under it for who + play */
+.rv-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s2); color: var(--steel); outline: none; }
+.rv-media { flex: 1 1 0; min-height: 120px; border-radius: var(--btn-radius); overflow: hidden; }
+.rv-media.single > .rv-thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform .6s cubic-bezier(.22,1,.36,1); }
+.rv-card:hover .rv-thumb { transform: scale(1.03); }
+/* hover / focus: the quote, truncated, on a Sea Breeze band over the poster's foot */
+.rv-media.single > .rv-quote { position: absolute; left: 8px; right: 8px; bottom: 8px; top: auto; z-index: 2; margin: 0; padding: 10px 12px; border-radius: 8px;
+  background: var(--sea); color: var(--steel); font-size: 14px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  opacity: 0; transform: translateY(8px); transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+.rv-card:hover .rv-quote, .rv-card:focus-within .rv-quote { opacity: 1; transform: none; }
+.rv-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rv-who { display: grid; line-height: 1.25; min-width: 0; flex: 1; }
+.rv-who b { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-who small { font-size: 13px; color: var(--steel-70); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-logo { width: 44px; height: 44px; flex: none; border-radius: var(--btn-radius); display: grid; place-items: center; padding: 6px; }
+.rv-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.rv-id .btn.icon { flex: none; }
+/* the modal: the video and the whole testimonial */
+.rv-modal { padding: 0; border: 0; background: transparent; max-width: min(980px, calc(100vw - 32px)); width: 100%; overflow: visible; color: var(--steel); }
+.rv-modal::backdrop { background: rgba(25,37,74,.55); }
+.rv-modal-in { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: var(--s4); padding: var(--s4); align-items: start; }
+.rv-modal-video { aspect-ratio: 9 / 16; border-radius: var(--btn-radius); overflow: hidden; }
+.rv-modal-video.single > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--steel); border-radius: inherit; }
+.rv-modal-text { display: grid; gap: var(--s3); align-content: start; }
+.rv-full { margin: 0; font-size: 20px; line-height: 1.6; }
+@media (max-width: 759px) {
+  .rv-wall { gap: var(--s2); height: clamp(980px, 210vw, 1500px); }
+  .rv-col { gap: var(--s2); }
+  .rv-card { padding: 8px; gap: 8px; }
+  .rv-wall .rv-score { padding: var(--s2); }
+  .rv-wall .rv-score b { font-size: 44px; } .rv-wall .rv-score .stars { font-size: 15px; } .rv-wall .rv-score small { font-size: 12px; }
+  .rv-logo { display: none; }   /* narrow columns: name + play only */
+  .rv-who b { font-size: 13px; } .rv-who small { font-size: 11px; }
+  .rv-id .btn.icon { width: 44px; height: 44px; }
+  .rv-media .rv-quote { font-size: 12px; -webkit-line-clamp: 4; }
+  .rv-modal-in { grid-template-columns: 1fr; padding: var(--s2); gap: var(--s2); max-height: calc(100svh - 32px); overflow: auto; }
+  .rv-modal-video { aspect-ratio: 9 / 14; }
+  .rv-full { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .rv-media .rv-quote, .rv-thumb { transition: opacity .2s ease; transform: none !important; } }
+/* phone sheet handle: a drag here is the panel's, not the page's */
+.grab, .cover-grab { touch-action: none; }
+/* Find Your Way Forward: outline "Scroll down" cue in the lower-right corner */
+.dc-more { position: absolute; right: calc(var(--inset) + 8px); bottom: calc(var(--inset) + 8px); z-index: 6; display: none; gap: 8px; background: var(--sea); color: var(--steel); pointer-events: auto; }
+.dc-more .glyph { width: 18px; height: 18px; }
+#stick.finale:not(.fplace) .dc-more { display: inline-flex; animation: dc-in .55s cubic-bezier(.22,1,.36,1) both; }
+
+/* ================= services: clip-out coupons (dashed cut line, scissors on the top edge) ================= */
+.svc-row { padding: 18px 4px 4px; }   /* room for the scissors above the first cut line */
+.svc-coupon { position: relative; flex: 0 0 min(320px, 80vw); scroll-snap-align: start; display: grid; padding: 12px;
+  border: 2px dashed var(--steel); border-radius: calc(var(--frame-radius) + 12px); }
+.svc-coupon .svc { flex: none; display: flex; flex-direction: column; }
+.svc-scissors { position: absolute; top: -13px; left: 28px; width: 24px; height: 24px; padding: 0 4px; box-sizing: content-box; background: var(--sea);
+  fill: none; stroke: var(--steel); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transform: rotate(0deg); transition: transform .4s cubic-bezier(.22,1,.36,1); }
+.svc-coupon:hover .svc-scissors { transform: translateX(24px); }
+.svc-body { margin: 0 var(--s2) var(--s2); font-size: 15px; line-height: 1.55; color: var(--steel); }
+.svc-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: var(--s2); padding: 0 var(--s2) var(--s2);
+  border-top: 2px dashed var(--steel-15, rgba(25,37,74,.15)); padding-top: var(--s2); }
+.svc-foot .svc-price { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .svc-scissors { transition: none; } .svc-coupon:hover .svc-scissors { transform: none; } }
+
+/* services share the testimonials' side margins, so the coupon row is bound to the same edges */
+.cover-body #services .wrap { padding-inline: var(--s5); }
+@media (max-width: 759px) { .cover-body #services .wrap { padding-inline: var(--s3); } }
+
+/* map control tooltips: a small Sea Breeze label to the left of the control on hover / keyboard focus */
+.ctrls [data-tip] { position: relative; }
+.ctrls [data-tip]::after { content: attr(data-tip); position: absolute; right: calc(100% + 10px); top: 50%; z-index: 20; transform: translate(4px, -50%);
+  padding: 5px 10px; border-radius: 6px; background: var(--sea); color: var(--steel); box-shadow: 0 0 0 1px var(--steel-15, rgba(25,37,74,.15));
+  font: 600 12px/1.2 var(--body); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s ease, transform .2s ease; }
+.ctrls [data-tip]:hover::after, .ctrls [data-tip]:focus-visible::after { opacity: 1; transform: translate(0, -50%); transition-delay: .25s; }
+#compass.turning::after { opacity: 0; }
+@media (hover: none) { .ctrls [data-tip]::after { display: none; } }   /* touch: no hover, no stuck tooltips */
+/* the coupon row starts on the margin but scrolls out to the screen edges (full-bleed track, margin-aligned snap) */
+.cover-body #services .svc-row { margin-inline: calc(-1 * var(--s5)); padding-inline: var(--s5); scroll-padding-inline: var(--s5); }
+@media (max-width: 759px) { .cover-body #services .svc-row { margin-inline: calc(-1 * var(--s3)); padding-inline: var(--s3); scroll-padding-inline: var(--s3); } }

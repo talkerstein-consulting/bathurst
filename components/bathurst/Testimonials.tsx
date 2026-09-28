@@ -1,111 +1,113 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
 
-const ROTATE_MS = 7000;
-const SLIDE_MS = 420;
+type Item = (typeof TESTIMONIALS)[number];
+type Tile = { key: string; weight: number; node: ReactNode; rating?: boolean };
 
-type Slide = (typeof TESTIMONIALS)[number];
+/** Share of its column each video card takes; cycles so neighbouring columns stagger like a masonry wall. */
+const WEIGHTS = [7, 6, 5, 6, 7, 5, 6];
+
+/** The hover teaser: the quote cut at a word boundary with an ellipsis (the whole testimonial is in the modal). */
+const teaser = (q: string, n = 110) => (q.length <= n ? q : q.slice(0, q.lastIndexOf(" ", n)).replace(/[\s,.;:!?-]+$/, "") + "…");
+
+const Play = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>;
+const Close = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
 /**
- * Reviews on the cover sheet (replaces the old "Word on the Street" spotlight, same carousel mechanics):
- * the rating summary, then one slide per client. Left: owner photo, name, company, a short heading and the
- * testimonial. Right: the video slot and project photos. Only real quotes are shown as quotes; clients without
- * one show their published work until their words are supplied (never written on their behalf).
+ * Reviews on the cover sheet (STYLE.md: Sea Breeze surfaces, double-line frames, outline CTAs).
+ * A masonry wall of framed video cards with the two ratings as tiles in it; every column stretches to the same
+ * height (flat bottom edge). A card: the video's own poster in a hairline frame, then one row with the logo,
+ * name and position, and the outline play button. On hover the quote shows, truncated, over the poster's foot.
+ * Play opens a dialog with the video and the whole testimonial. Only real quotes are shown.
  */
 export default function Testimonials() {
-  const slides: Slide[] = TESTIMONIALS;
-  const videos = useRef<(HTMLVideoElement | null)[]>([]);
-  const [playing, setPlaying] = useState(false);
-  const [index, setIndex] = useState(0);
-  const [leaving, setLeaving] = useState<number | null>(null);
-  const [reduced, setReduced] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  // keep the active client tab in view as the carousel moves
+  const [cols, setCols] = useState(3);
+  const [open, setOpen] = useState<Item | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
-    const row = tabsRef.current, tab = row?.children[index] as HTMLElement | undefined;   // only the tab row scrolls, never the page
-    if (row && tab) row.scrollTo({ left: tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2, behavior: "smooth" });
-  }, [index]);
-  useEffect(() => setReduced(matchMedia("(prefers-reduced-motion: reduce)").matches), []);
+    const m = matchMedia("(max-width: 759px)"), set = () => setCols(m.matches ? 2 : 3);
+    set(); m.addEventListener("change", set); return () => m.removeEventListener("change", set);
+  }, []);
   useEffect(() => {
-    if (leaving === null) return;
-    const t = setTimeout(() => setLeaving(null), SLIDE_MS);
-    return () => clearTimeout(t);
-  }, [leaving, index]);
-  useEffect(() => {
-    if (reduced || playing) return;
-    const t = setTimeout(() => go((index + 1) % slides.length), ROTATE_MS);
-    return () => clearTimeout(t);
+    const d = dialog.current; if (!d) return;
+    if (open && !d.open) { d.showModal(); video.current?.play().catch(() => {}); }
+    if (!open && d.open) d.close();
+  }, [open]);
+
+  const rating = (key: string, href: string, score: string, label: string, stars: string | undefined, muted = false): Tile => ({
+    key, weight: 0, rating: true,
+    node: (
+      <a className="rv-score rv-tile frame" href={href} target="_blank" rel="noopener">
+        <b>{score}</b>
+        <span><span className={`stars${muted ? " muted" : ""}`} aria-label={stars}>★★★★★</span><small>{label}</small></span>
+      </a>
+    ),
   });
-  const go = (next: number) => {
-    if (next === index) return;
-    panelRef.current?.style.setProperty("--slide", `${panelRef.current.offsetWidth}px`);
-    videos.current[index]?.pause();
-    setPlaying(false);
-    setLeaving(index);
-    setIndex(next);
-  };
+
+  const cards: Tile[] = TESTIMONIALS.map((s, i) => ({
+    key: s.id, weight: WEIGHTS[i % WEIGHTS.length],
+    node: (
+      <article className="rv-card rv-tile frame" tabIndex={0} aria-label={`${s.who}, ${s.role}`}>
+        <div className="rv-media single hair">
+          <img className="rv-thumb" src={s.poster} alt="" loading="lazy" decoding="async" />
+          <p className="rv-quote">“{teaser(s.quote)}”</p>
+        </div>
+        <div className="rv-id">
+          <span className="rv-logo single hair"><img src={s.logo} alt="" /></span>
+          <span className="rv-who"><b>{s.who}</b><small>{s.role}</small></span>
+          <button type="button" className="sprout btn icon rv-playbtn" aria-label={`Play video from ${s.who}`} onClick={() => setOpen(s)}><Play /></button>
+        </div>
+      </article>
+    ),
+  }));
+
+  const clutch = rating("clutch", "https://clutch.co/profile/talkerstein-consulting", REVIEW.rating.toFixed(1), `${REVIEW.count} ratings on Clutch`, `${REVIEW.rating} out of 5`);
+  const google = rating("google", GOOGLE.url, GOOGLE.rating ? GOOGLE.rating.toFixed(1) : "–", GOOGLE.count ? `${GOOGLE.count} ratings on Google` : "Rating on Google",
+    GOOGLE.rating ? `${GOOGLE.rating} out of 5` : undefined, !GOOGLE.rating);
+
+  // deal the cards into columns, then give the ratings to the shortest columns (Clutch on top, Google mid-way)
+  const columns: Tile[][] = Array.from({ length: cols }, () => []);
+  cards.forEach((c, i) => columns[i % cols].push(c));
+  const short = columns.map((c, i) => [c.length, i]).sort((a, b) => a[0] - b[0] || b[1] - a[1]).map(([, i]) => i);
+  columns[short[0]].unshift(clutch);
+  columns[short[1]].splice(1, 0, google);
 
   return (
     <div className="rv">
-      <div className="rv-top">
-        <div className="rv-scores">
-          <div className="rv-score">
-            <b>{REVIEW.rating.toFixed(1)}</b>
-            <span><span className="stars" aria-label="5 out of 5">★★★★★</span><small>{REVIEW.count} ratings on Clutch</small></span>
+      <div className="rv-wall" style={{ "--cols": cols } as CSSProperties} aria-label="Video testimonials">
+        {columns.map((col, c) => (
+          <div className="rv-col" key={c}>
+            {col.map((t) => (
+              <div key={t.key} className={`rv-cell${t.rating ? " rating" : ""}`} style={t.rating ? undefined : { flexGrow: t.weight }}>{t.node}</div>
+            ))}
           </div>
-          <div className="rv-score">
-                        <b>{GOOGLE.rating ? GOOGLE.rating.toFixed(1) : "–"}</b>
-            <span><span className={`stars${GOOGLE.rating ? "" : " muted"}`} aria-label={GOOGLE.rating ? `${GOOGLE.rating} out of 5` : undefined}>★★★★★</span><small><a href={GOOGLE.url} target="_blank" rel="noopener">{GOOGLE.count ? `${GOOGLE.count} ratings on Google` : "Rating on Google"}</a></small></span>
-          </div>
-        </div>
-        <button type="button" className="sprout btn orange rv-dir" data-no-tumble aria-label="Get directions" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
-          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Get directions
-        </button>
-      </div>
-
-      {/* client tabs across the top; the carousel advances on its own, no stepper */}
-      <div className="rv-sel">
-      <button type="button" className="sprout btn icon rv-chev" aria-label="Previous review" onClick={() => go((index - 1 + slides.length) % slides.length)}>
-        <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" /></svg>
-      </button>
-      <div role="tablist" aria-label="Clients" className="sp-row rv-tabs" ref={tabsRef}>
-        {slides.map((s, i) => (
-          <button key={s.id} role="tab" id={`rv-tab-${i}`} aria-controls={`rv-panel-${i}`} aria-selected={i === index} type="button" onClick={() => go(i)}
-            className={`sp-tab ${i === index ? "on" : ""}`}>
-            <img className={`rv-tab-logo${s.tall ? " tall" : ""}`} src={s.logo} alt={s.role} />
-          </button>
         ))}
       </div>
-      <button type="button" className="sprout btn icon rv-chev" aria-label="Next review" onClick={() => go((index + 1) % slides.length)}>
-        <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6" /></svg>
-      </button>
-      </div>
 
-      <div ref={panelRef} className="rv-panel">
-        {slides.map((s, i) => (
-          <article key={s.id} role="tabpanel" id={`rv-panel-${i}`} aria-labelledby={`rv-tab-${i}`} aria-hidden={i !== index}
-            className={`rv-slide ${i === index ? "sp-in" : i === leaving ? "sp-out" : "invisible"}`}>
-            <div className="rv-left">
-              <div className="rv-person">
-                <span><b>{s.who}</b><small>{s.role}</small></span>
+      {/* the video with the rest of the testimonial; a native modal dialog (top layer, so the sheet's transform never clips it) */}
+      <dialog ref={dialog} className="rv-modal" aria-label={open ? `Video testimonial from ${open.who}` : "Video testimonial"}
+        onClose={() => setOpen(null)} onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}>
+        {open && (
+          <div className="rv-modal-in frame">
+            <div className="rv-modal-video single hair">
+              <video ref={video} key={open.id} src={open.video} poster={open.poster} controls playsInline autoPlay onEnded={() => {}} />
+            </div>
+            <div className="rv-modal-text">
+              <div className="rv-id">
+                <span className="rv-logo single hair"><img src={open.logo} alt="" /></span>
+                <span className="rv-who"><b>{open.who}</b><small>{open.role}</small></span>
+                <button type="button" className="sprout btn icon" aria-label="Close" onClick={() => setOpen(null)}><Close /></button>
               </div>
-              <p className="rv-body">“{s.quote}”</p>
+              <blockquote className="rv-full">“{open.quote}”</blockquote>
             </div>
-            <div className="rv-video single hair">
-              <video ref={(el) => { videos.current[i] = el; }} src={s.video} poster={s.poster} controls playsInline preload="none"
-                onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
-                aria-label={`Video testimonial from ${s.who}, ${s.role}`} />
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <button type="button" className="sprout btn orange rv-dir rv-dir-below" data-no-tumble aria-label="Get directions" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
-        <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Get directions
-      </button>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

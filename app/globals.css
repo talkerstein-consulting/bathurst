@@ -396,7 +396,8 @@
 
 /* orange (filled) CTAs: solid fill; the edge is the same grunge-printed double line as every other CTA
    (LineSystem draws it on .sprout), inset slightly so the fill's clean edge never shows past the texture */
-html body .layers-top .btn.dirbtn, html body .rv-dir { --ink: var(--steel); background: var(--orange) padding-box; }
+html body .rv-dir { --ink: var(--steel); background: var(--orange) padding-box; }
+html body .layers-top .btn.dirbtn { --ink: var(--steel); background: var(--orange) padding-box; }
 html body .dir-ctas .btn.fill { --ink: var(--steel); }
 @media (max-width: 560px) { .offer-corner { width: 150px; height: 150px; } .offer-lbl .l2 { font-size: 20px; } .offer-lbl .l1 { font-size: 11px; } .offer-x { top: 39px; } }
 

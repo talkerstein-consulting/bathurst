@@ -21,6 +21,8 @@ export default function CornerOffer() {
   const opener = useRef<HTMLButtonElement>(null);
   const modal = useRef<HTMLDivElement>(null);
   const [atFooter, setAtFooter] = useState(false);
+  // other CTAs (the hero's Book a free call) open this modal: window.dispatchEvent(new Event("tcg:offer"))
+  useEffect(() => { const on = () => setOpen(true); addEventListener("tcg:offer", on); return () => removeEventListener("tcg:offer", on); }, []);
   useEffect(() => { try { setHidden(localStorage.getItem(HIDE_KEY) === "1"); } catch { setHidden(false); } }, []);
   // the corner only shows while the footer is on screen
   useEffect(() => {

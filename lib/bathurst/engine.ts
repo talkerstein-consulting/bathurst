@@ -567,6 +567,7 @@ export function createBathurstEngine() {
   function setSheet(st){ sheet.dataset.state=st; }
   { const grab=$('grab'); let y0=null, moved=false;
     grab.addEventListener('pointerdown', e=>{ y0=e.clientY; moved=false; grab.setPointerCapture(e.pointerId); });
+    grab.addEventListener('touchmove', e=>{ if(e.cancelable) e.preventDefault(); }, {passive:false});   // the handle moves the panel, never scrolls the page
     grab.addEventListener('pointermove', e=>{ if(y0!==null && Math.abs(e.clientY-y0)>6) moved=true; });
     grab.addEventListener('pointerup', e=>{ if(y0===null) return; const dy=e.clientY-y0, i=ORDER.indexOf(sheet.dataset.state); y0=null;
       if(!moved) setSheet(ORDER[(i+1)%3]); else setSheet(ORDER[Math.max(0,Math.min(2, i + (dy<0?1:-1)))]); });
@@ -691,6 +692,7 @@ export function createBathurstEngine() {
     }
     // after the last direction step, the reviews (and services) sheet slides in
     const k1=Math.min(1, Math.max(0, (s-dirEnd)/PH_C)); covered = k1>=1;
+    if(k1>0 && fPlace) leaveFPlace(false);   // the reviews sheet takes over: close the project opened on Find Your Way Forward
     const up=Math.min(Math.max(0, coverH-H+16), Math.max(0, (s-dirEnd-PH_C)*H));   // once it is up, it keeps rising with the scroll
     coverEl.style.transform=`translate3d(0,${((1-k1)*H - up).toFixed(1)}px,0)`; coverEl.style.visibility = k1>0 ? 'visible' : 'hidden';
   }
@@ -711,7 +713,7 @@ export function createBathurstEngine() {
     if(i===dirIdx) return;
     const was=dirIdx; dirIdx=i;
     stick.classList.toggle('dirs', i>=0);
-    if(i<0){ nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
+    if(i<0){ stick.classList.remove('finale'); nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
     DIR ??= buildDir(); nav.visible=true;
     if(was<0){ selected=null; nodeIdx=-1; view={type:'list'}; render(); refresh(); setCollapsed(true); markChip('all'); dirD=DIR?DIR.off:0; mapDirty=true; }
     if(fPlace) leaveFPlace(false);
@@ -719,7 +721,7 @@ export function createBathurstEngine() {
     const st=DIRECTIONS[i-1] || (i===DIRECTIONS.length+1 ? 'cta' : null);
     // the steps slide: the old one leaves to the left, the next comes in from the right (reversed when scrolling back)
     dirCard.classList.toggle('on', i>=1);
-    dirCard.classList.toggle('cta', i===DIRECTIONS.length+1);   // Find Your Way Forward stands on its own: no Route Preview heading
+    dirCard.classList.toggle('cta', i===DIRECTIONS.length+1); stick.classList.toggle('finale', i===DIRECTIONS.length+1);   // Find Your Way Forward stands on its own: no Route Preview heading
     const track=dirCard.querySelector('.dc-track'), back = i < was;   // dirCard is the panel: heading above, the sliding card below
     track.querySelectorAll('.dc-step:not(.out)').forEach(el=>{ el.classList.add('out'); if(back) el.classList.add('back'); setTimeout(()=>el.remove(), 500); });
     if(st==='cta'){ track.appendChild(ctaCard(back)); }
@@ -752,6 +754,7 @@ export function createBathurstEngine() {
   function scrollToProg(p){ goTo(p>=1 ? PH_A+.05 : p*PH_A); }
   function scrollToNode(j){ goTo(PH_A+PH_LEAD+(j+.5)*SLOT); }
   { const ro=new ResizeObserver(()=>{ if(!dead){ sizeHero(); onScroll(); } }); ro.observe(coverEl); signal.addEventListener('abort', ()=>ro.disconnect()); }   // the sheet's height sets the page length
+  $('dcmore').onclick=()=>goTo(PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+.02);   // Find Your Way Forward → the reviews
   $('covergrab').onclick=()=>goTo(PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C);
   const toHow=()=>goTo(PH_A+PH_LEAD+phB()+DSLOT()*.5);   // footer "How we work": the start of the directions
   document.addEventListener('click', e=>{ const a=e.target.closest?.('a[href="#how"]'); if(a){ e.preventDefault(); toHow(); } }, {signal});
@@ -763,7 +766,7 @@ export function createBathurstEngine() {
     const stepAt = i => i<1 ? PH_A+PH_LEAD+(NODES.length-.5)*SLOT                                   // back to the last project
       : i<=L ? nodesEnd()+DSLOT()*.5+(i-.5)*DSLOT()*(L-.5)/L                                       // the middle of step i
       : i===L+1 ? nodesEnd()+L*DSLOT()+DSLOT()*.5                                                  // Find Your Way Forward
-      : dirEnd()+.02;                                                                              // on to the reviews
+      : dirEnd()+PH_C+.02;                                                                         // on to the reviews, sheet fully up
     let lockUntil=0, quietT=0;
     const inDirs = () => { const s=Math.max(0, scrollY-hero.offsetTop)/H; return s>=nodesEnd()-.01 && s<dirEnd(); };
     const step = dir => { const cur = dirIdx<1 ? 0 : dirIdx; goTo(stepAt(Math.max(0, Math.min(L+2, cur+dir)))); lockUntil=performance.now()+650; };
@@ -775,7 +778,7 @@ export function createBathurstEngine() {
       step(e.deltaY>0 ? 1 : -1);
     }, {passive:false, signal});
     let ty=null;
-    addEventListener('touchstart', e=>{ ty = e.touches.length===1 && inDirs() ? e.touches[0].clientY : null; }, {passive:true, signal});
+    addEventListener('touchstart', e=>{ ty = e.touches.length===1 && inDirs() && !e.target.closest?.('.sheet,.grab,.cover') ? e.touches[0].clientY : null; }, {passive:true, signal});
     addEventListener('touchmove', e=>{ if(ty!==null && e.cancelable) e.preventDefault(); }, {passive:false, signal});
     addEventListener('touchend', e=>{ if(ty===null) return; const dy=ty-(e.changedTouches[0]?.clientY ?? ty); ty=null; if(Math.abs(dy)>30 && performance.now()>=lockUntil) step(dy>0 ? 1 : -1); }, {passive:true, signal});
     addEventListener('keydown', e=>{ if(!inDirs() || !['ArrowDown','ArrowUp','PageDown','PageUp',' '].includes(e.key) || e.target.closest?.('input,select,textarea')) return;
