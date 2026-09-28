@@ -1032,7 +1032,6 @@
 /* phones: the reviews/services sheet is large and moves with the scroll; drop the costly effects inside it
    (grunge SVG filter re-rasterised on every line, poster zoom) so it scrolls smoothly */
 @media (max-width: 759px) {
-  .cover .stroke g, .cover .single > .lines g { filter: none; }   /* big frames keep the grunge; buttons and hairline tiles draw clean */
   .rv-thumb { transition: none; }
   .rv-card:hover .rv-thumb { transform: none; }
 }
@@ -1082,3 +1081,20 @@
   .rv-modal-in { grid-template-columns: auto minmax(0, 1fr); }
   .rv-modal-video { height: min(640px, calc(100svh - 32px - 2 * var(--s4) - 8px)); width: auto; aspect-ratio: 9 / 16; }   /* the whole video always fits on screen */
 }
+/* touch: the chip row, the testimonial cards and the service coupons swipe left/right only (never up/down) */
+.chips, .rv-phone .rv-swipe, .svc-row, .cover-body #services .svc-row { touch-action: pan-x; overscroll-behavior-x: contain; }
+/* phones: every outline draws clean (no grunge filter), for legibility and scroll performance */
+@media (max-width: 759px) {
+  .lines g, .stroke g, .ld, .rule::before, .sp-row::before, .sp-tab.on::before { filter: none !important; }
+}
+/* Find Your Way Forward: no service chips (the card is the only thing to act on) */
+#stick.finale .chipbar { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s; }
+/* Find Your Way Forward (every size): no search bar and no wordmark, only the TCG mark stays */
+#stick.finale .search { clip-path: inset(-4px 100% -4px -4px); transform: translateX(-24px); opacity: 0; pointer-events: none; transition-delay: 0s; }
+#stick.finale .wordclip { opacity: 0 !important; transition: opacity .15s ease; }
+/* Route Preview (every size): no chips, no search; the TCG wordmark slides back out beside the mark
+   (Find Your Way Forward keeps the mark alone, see #stick.finale above) */
+#stick.dirs .chipbar { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s; }
+#stick.dirs .search { clip-path: inset(-4px 100% -4px -4px); transform: translateX(-24px); opacity: 0; pointer-events: none; transition-delay: 0s; }
+#stick.dirs:not(.finale) .wordclip { opacity: 1; transition: opacity .15s ease; }
+#stick.dirs .wordclip .word { transform: none; transition-delay: .15s; }

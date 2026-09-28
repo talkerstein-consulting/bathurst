@@ -997,7 +997,7 @@ export function createBathurstEngine() {
         if(ghostRun>=0 && ghostRun<1){ ghostRun = reduce ? 1 : Math.min(1, ghostRun + dt/2.4); const e=1-Math.pow(1-ghostRun,3); ghostD.value = ghostRun>=1 ? 1e9 : DIR.total*e; wakeUntil = performance.now()+100; } }
       routeW.value = Math.max(5, mpp(pos.distanceTo(tgt))*3.5);   // about 7px wide on screen
       if(dirIdx<0){ trailD.value += (jTarget-trailD.value)*(reduce?1:Math.min(1, dt*3)); }
-      const end=DIR.pts[DIR.pts.length-1], sp=project(end), on=mapK>.15 && sp.ok;
+      const end=DIR.pts[DIR.pts.length-1], sp=project(end), on=mapK>.15 && sp.ok && !finale;   /* Find Your Way Forward: no map indicator */
       destEl.style.opacity = on ? '1' : '0'; destEl.classList.toggle('named', dirIdx<0 ? nodeIdx<0 && filter==='all' : dirIdx>=DIRECTIONS.length);   /* the office name: on the overview, then only once the route reaches step 4 */ if(on) destEl.style.transform=`translate3d(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px,0)`; }
     if(dirIdx>=0){
       DIR ??= buildDir();
