@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Talkerstein Consulting Group landing page
 
-## Getting Started
-
-First, run the development server:
+Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn · React Bits Pro · three.js
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Path | What it is |
+|---|---|
+| `app/page.tsx` | Page composition, top to bottom |
+| `app/globals.css` | Brand tokens (Sea Breeze / Steel Blue / Muted Orange) mapped into Tailwind and shadcn |
+| `app/bathurst-map.css` | Styles for the hero + maps-app chrome driven by the engine |
+| `components/bathurst/BathurstHero.tsx` | Hero markup (Street View → crane → live map); mounts the engine |
+| `lib/bathurst/engine.ts` | three.js scene, fly-through, map camera, gestures, industry scroll steps |
+| `lib/bathurst/data.ts` | Clients, cross streets, services, steps, review. Single source for map and sections |
+| `components/bathurst/*.tsx` | Sections: Bathurst line, Directions, Services, Saved places, Reviews, Contact, Footer |
+| `components/react-bits/` | React Bits Pro components (Staggered Text, Blur Highlight) |
+| `reference/prototype-v15.html` | The approved single-file prototype the engine was ported from |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sections ask the map to open a client with `openOnMap(id)` (a `tcg:open` window event).
 
-## Learn More
+## React Bits Pro
 
-To learn more about Next.js, take a look at the following resources:
+The license key lives in `.env.local` (git-ignored) as `REACTBITS_LICENSE_KEY`. Install more with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx shadcn@latest add @reactbits-starter/<slug>-tw   # components
+npx shadcn@latest add @reactbits-pro/<slug>          # blocks
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Open items
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Brand header font (ITC Cheltenham Std Bold Condensed) and Slowly Signature files: add via `next/font/local`.
+- White logo lockup for dark grounds (footer currently uses the colored lockup on a Sea Breeze panel).
+- Real buildings: Toronto 3D Massing + OpenStreetMap to replace the placeholder massing.
+- Case-study photography, the other six Clutch reviews, and a real submit target for the contact form.
+- Confirm Paula's Wig Boutique location (Miami on /work vs 3405 Bathurst in email) and Eli's Barbershop engagement.
+- Type `lib/bathurst/engine.ts` (ported untyped for this first pass).
