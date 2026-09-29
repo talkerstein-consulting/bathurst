@@ -893,16 +893,16 @@
 /* service-icon pins (Google Maps style): every pin except the project in focus */
 .pin .mk, .pin.mini .ld, .pin.mini .co { display: none; }
 /* the icon stays under the callout: the leader rises from its top */
-.pin:not(.mini) .ld { bottom: 12px; height: calc(var(--L) - 12px); }
+.pin:not(.mini) .ld { bottom: 18px; height: calc(var(--L) - 18px); }
 .pin.sel .ic { background: var(--orange); }
-.pin .ic { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
-  background: var(--steel); color: var(--sea); box-shadow: 0 0 0 1.5px var(--sea); pointer-events: auto; cursor: pointer; transition: background .2s ease; }
-.pin .ic .glyph { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pin .ic { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--steel); color: var(--sea); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--steel), 0 4px 12px rgba(0,0,0,.28); pointer-events: auto;   /* big, double-ringed and lifted so each client reads at a glance */ cursor: pointer; transition: background .2s ease; }
+.pin .ic .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); }
 .pin.pop .ic { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
 /* icon pins: the name as a tooltip on hover, and always once the map is zoomed in */
 .pin .nm { display: none; }
-.pin.mini .nm { display: block; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+.pin.mini .nm { display: block; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
   background: var(--sea); color: var(--steel); font-size: 12px; font-weight: 600; box-shadow: 0 0 0 1px var(--steel-15); pointer-events: none;
   opacity: 0; transition: opacity .15s ease; }
 .pin.mini .nm { top: 0; }

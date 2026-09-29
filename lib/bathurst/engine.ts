@@ -809,7 +809,7 @@ export function createBathurstEngine() {
       : dirEnd()+PH_C+.02;                                                                         // on to the reviews, sheet fully up
     let lockUntil=0, quietT=0;
     const inDirs = () => { const s=Math.max(0, scrollY-hero.offsetTop)/H; return s>=nodesEnd()-.01 && s<dirEnd(); };
-    const step = dir => { const cur = dirIdx<1 ? 0 : dirIdx; goTo(stepAt(Math.max(0, Math.min(L+2, cur+dir)))); lockUntil=performance.now()+650; };
+    const step = dir => { const cur = dirIdx<1 ? 0 : dirIdx; goTo(stepAt(Math.max(0, Math.min(L+2, cur+dir)))); lockUntil=performance.now()+400; };   // one step per gesture, then a short lock so a flick cannot skip two
     addEventListener('wheel', e=>{
       if(e.ctrlKey || e.metaKey || !inDirs() || (e.target.closest && e.target.closest('.dircard select, .dircard input'))) return;
       e.preventDefault();
