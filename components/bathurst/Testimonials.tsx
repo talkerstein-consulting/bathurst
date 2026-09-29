@@ -54,10 +54,10 @@ export default function Testimonials() {
     node: (
       <article className="rv-card rv-tile frame" tabIndex={0} aria-label={`${s.who}, ${s.role}`}>
         <div className="rv-media single hair">
-          {/* phones get a 400px poster (the full frames are 848×1498, costly to decode and scale on a phone) */}
+          {/* cards get a 600px poster (phones 400px); the full 848×1498 frame is only the video's poster in the modal */}
           <picture className="rv-pic">
             <source media="(max-width: 759px)" srcSet={s.poster.replace(/\.jpg$/, "-sm.jpg")} />
-            <img className="rv-thumb" src={s.poster} alt="" loading="lazy" decoding="async" />
+            <img className="rv-thumb" src={s.poster.replace(/\.jpg$/, "-md.jpg")} alt="" loading="lazy" decoding="async" />
           </picture>
           <p className="rv-quote">“{teaser(s.quote)}”</p>
         </div>

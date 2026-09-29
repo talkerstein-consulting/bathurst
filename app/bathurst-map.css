@@ -284,7 +284,7 @@
 @media (max-width: 760px) { .chip { height: 36px; padding: 0 12px; font-size: 14px; } }
 
 /* callouts arrive one by one, top to bottom (engine sets --d per pin) */
-.pin.pop .mk, .pin.pop .ld, .pin.pop .co { animation: pin-in .42s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
+.pin.pop .mk, .pin.pop .ld, .pin.pop .co { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
 .pin.pop .ld { transform-origin: bottom; animation-name: pin-line; }
 @keyframes pin-in { from { opacity: 0; transform: translateY(10px) scale(.92); } }
 @keyframes pin-line { from { opacity: 0; transform: scaleY(0); } }
@@ -899,7 +899,7 @@
   background: var(--steel); color: var(--sea); box-shadow: 0 0 0 1.5px var(--sea); pointer-events: auto; cursor: pointer; transition: background .2s ease; }
 .pin .ic .glyph { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); }
-.pin.pop .ic { animation: pin-in .42s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
+.pin.pop .ic { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
 /* icon pins: the name as a tooltip on hover, and always once the map is zoomed in */
 .pin .nm { display: none; }
 .pin.mini .nm { display: block; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
@@ -911,10 +911,10 @@
 
 /* "Our Work Across the Map": slides down in over the route overview, back up and out when the first project opens */
 .workhead { position: absolute; left: 32px; top: 84px; z-index: 2;   /* under the map chrome: the sidebar slides over it */ margin: 0; padding: 10px 24px; border-radius: var(--frame-radius, 14px);
-  font: 700 44px/1.05 var(--head); color: var(--steel); text-shadow: var(--halo); max-width: 300px;   /* two lines, as narrow as the sidebar that covers it */ pointer-events: none;
+  font: 700 44px/1.05 var(--head); color: var(--steel); text-shadow: var(--halo); white-space: nowrap;   /* one line */ pointer-events: none;
   opacity: 0; transform: translateX(-40px); transition: opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1); }
 .workhead.on { opacity: 1; transform: none; }
-@media (max-width: 759px) { .workhead { left: 16px; top: 124px; padding: 0; font-size: 30px; max-width: 260px; } }   /* phones: under the chips, text lined up with the TCG mark */
+@media (max-width: 759px) { .workhead { left: 16px; top: 124px; padding: 0; font-size: 26px; white-space: normal; max-width: 300px; } }   /* phones: under the chips, text lined up with the TCG mark */
 @media (prefers-reduced-motion: reduce) { .workhead { transition: opacity .2s ease; transform: none; } }
 
 /* Testimonials (from /our-process): logo tabs, quote beside that client's own video */
@@ -1115,3 +1115,6 @@
   .place .ptabs { margin-top: -4px; }
 }
 @media (max-width: 759px) { .sheet[data-state="peek"] { transform: translateY(calc(100% - 118px)); } }   /* closed: the handle, the name and its industry */
+
+/* Find Your Way Forward: every pin stays on the map with its hover name, but none is clickable */
+#stick.finale .pin .ic, #stick.finale .pin .co { cursor: default; }

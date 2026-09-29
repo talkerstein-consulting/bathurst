@@ -25,15 +25,30 @@ const slowly = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Talkerstein Consulting Group · Find your way to the right customers",
+  title: "Toronto Web Design, AI & Automation Consulting | Talkerstein",
   description:
-    "We build bespoke systems that use AI, automation, and technology to create a clearer path between your business and the right customers.",
+    "Talkerstein helps Toronto businesses grow through web design, AI, automation, branding and strategic consulting. Based in North York, serving businesses across the GTA.",
+};
+
+// Local business entity for search engines: the same name, address and phone the footer shows
+const LOCAL_BUSINESS = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "Talkerstein Consulting Group",
+  url: "https://talkerstein.com",
+  telephone: "+1-416-937-7676",
+  email: "hi@talkerstein.ca",
+  address: { "@type": "PostalAddress", streetAddress: "5050 Dufferin Street", addressLocality: "Toronto", addressRegion: "ON", postalCode: "M3H 5T5", addressCountry: "CA" },
+  areaServed: ["Toronto", "North York", "Greater Toronto Area"],
+  knowsAbout: ["Web design", "Web development", "SEO", "Branding", "Business automation", "AI implementation", "Business consulting"],
+  sameAs: ["https://www.instagram.com/talkersteinconsulting", "https://www.facebook.com/Talkersteinconsulting/", "https://clutch.co/profile/talkerstein-consulting"],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jost.variable} ${cheltenham.variable} ${slowly.variable} antialiased`}>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS) }} />
         <LineSystem />
         {children}
       </body>

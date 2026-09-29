@@ -437,3 +437,19 @@ html, body { overflow-x: clip; max-width: 100%; }
 @keyframes sig-trace { to { stroke-dashoffset: 0; } }
 @keyframes sig-ink { to { fill-opacity: 1; stroke-width: .4; } }
 @media (prefers-reduced-motion: reduce) { .sig-line text { stroke-dashoffset: 0; fill-opacity: 1; } .sig-line.on text { animation: none; } }
+
+/* SEO copy pass: hero place line, closing CTA copy, the North York block, intake fine print */
+.sv-hero p.hero-where, .hero-grid .sv-hero p.hero-where { margin: 0 0 var(--s2); font-size: 11px; font-weight: 600; letter-spacing: .14em; color: var(--steel); }
+.sig > .eyebrow { font-size: 11px; color: var(--steel); margin-bottom: calc(var(--s3) * -1); }
+.sig-body { margin: calc(var(--s2) * -1) 0 0; max-width: 46ch; text-align: center; font-size: 18px; line-height: 1.55; }
+.sig-ctas { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--s3); }
+.ft-local { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: var(--s2) var(--s3); padding: var(--s4) var(--s3); border-bottom: var(--rule); color: var(--steel); }
+.ft-local > div { grid-column: span 2; }
+.ft-local > p { grid-column: span 2; margin: 0; max-width: 62ch; font-size: 17px; line-height: 1.6; }
+.ft-local .eyebrow { font-size: 11px; color: var(--steel); margin-bottom: var(--s2); }
+.ft-local .h2 { margin: 0; display: flex; align-items: center; gap: .3em; }
+.ft-flag { width: 1.1em; height: .55em; flex: none; border-radius: 3px; }
+@media (max-width: 760px) { .ft-local { grid-template-columns: 1fr; } .ft-local > div, .ft-local > p { grid-column: auto; } }
+.ft-local address, .ft-brand address { font-style: normal; font-size: 14px; line-height: 1.6; }
+.ft-brand .ft-serving { margin: var(--s2) 0 0; }
+.book-fine { margin: 0; font-size: 13px; color: var(--steel-70); }

@@ -85,8 +85,9 @@ export default function BathurstHero() {
           <div className="mast-space" aria-hidden="true" />
           <div className="hero-grid">
             <div className="sv-hero" id="svhero">
+              <p className="eyebrow hero-where">Toronto · North York · Greater Toronto Area</p>
               <h1 className="h1">Find your way to the right customers.</h1>
-              <p>We build bespoke systems that use AI, automation, and technology to create a clearer path between your business and the right customers.</p>
+              <p>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
               <CtaButton label="Get directions" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:directions"))} />   {/* opens the Find Your Way Forward sheet (DirectionsPanel) */}
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               <div className="hero-proofrow">
@@ -201,7 +202,7 @@ export default function BathurstHero() {
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className="workhead" id="workhead">Our Work Across the Map</h2>
+        <h2 className="workhead" id="workhead">Our Work Across Toronto</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
       </div>

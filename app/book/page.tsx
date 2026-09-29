@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CONTACT } from "@/lib/bathurst/data";
 
-export const metadata: Metadata = { title: "Book · Talkerstein Consulting Group" };
+export const metadata: Metadata = {
+  title: "Start a Conversation | Talkerstein Consulting Group, Toronto",
+  description: "Tell us about your business and where you want to go next. Talkerstein works with businesses across Toronto and the GTA on websites, branding, SEO, automation and AI.",
+};
 
 const GOALS: Record<string, string> = {
   engagement: "Engagement", sales: "Sales", marketing: "Marketing", leads: "Lead generation",
@@ -21,8 +24,9 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
     <main className="book">
       <Link href="/" className="book-back">← Back to the map</Link>
       <div className="book-card frame">
-        <p className="eyebrow">Booking</p>
-        <h1 className="h2">Find Your Way Forward</h1>
+        <p className="eyebrow">Find your next move</p>
+        <h1 className="h2">Let’s see where you’re going.</h1>
+        <p className="book-note">Tell us a little about your business, what you’re trying to change, and where you want to go next. We’ll use it to understand whether we’re the right fit and where we can help.</p>
         {service && <dl className="book-route"><div><dt>Inquiry</dt><dd>{service}</dd></div></dl>}
         {(from || goal) && (
           <dl className="book-route">
@@ -35,6 +39,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           <a className="book-btn" href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(service ? `Inquiry: ${service}` : `Booking: ${from || "my business"}${goal ? ` → ${goal}` : ""}`)}`}>Email {CONTACT.email}</a>
           <a className="book-link" href={CONTACT.tel}>Call {CONTACT.phone}</a>
         </div>
+        <p className="book-fine">A few questions first. No hard sell.</p>
       </div>
     </main>
   );

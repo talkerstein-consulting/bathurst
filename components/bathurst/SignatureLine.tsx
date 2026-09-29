@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CtaButton } from "@/components/style/Cta";
+import { CtaButton, CtaLink } from "@/components/style/Cta";
 
 /**
  * "Built for what's next." in Slowly Signature, written like ink on paper: each letter's outline is traced
@@ -45,9 +45,11 @@ export default function SignatureLine() {
 
   let n = 0;   // index among the visible (non-space) letters, for the stagger
   return (
-    <section className="sig" aria-label="Built for what’s next.">
+    <section className="sig" aria-labelledby="sig-h">
+      <p className="eyebrow">Ready for what’s next?</p>
+      <h2 id="sig-h" className="sr-only">Built for what’s next.</h2>
       <div ref={box} className={`sig-line${play ? " on" : ""}`}>
-        <svg viewBox={`0 0 ${size.w} ${size.h}`} role="img" aria-label={TEXT} style={{ fontFamily: size.family }}>
+        <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true" style={{ fontFamily: size.family }}>
           {glyphs.map((g, i) => {
             if (g.ch === " ") return null;
             const d = n++;
@@ -58,10 +60,14 @@ export default function SignatureLine() {
           })}
         </svg>
       </div>
-      {/* orange, like the map's Find Your Way Forward CTA (.dc-go) */}
-      <CtaButton label="Find Your Way Forward" className="dc-go sig-go" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
-        <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Find Your Way Forward
-      </CtaButton>
+      <p className="sig-body">Tell us where the business is going. We’ll help you work out what needs to happen next.</p>
+      <div className="sig-ctas">
+        {/* orange, like the map's Find Your Way Forward CTA (.dc-go) */}
+        <CtaButton label="Start a conversation" className="dc-go sig-go" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
+          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Start a conversation
+        </CtaButton>
+        <CtaLink href="https://talkerstein.com/work" variant="link" label="Explore our work" />
+      </div>
     </section>
   );
 }
