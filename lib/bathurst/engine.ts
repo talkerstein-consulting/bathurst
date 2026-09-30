@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS, ROUTE_START, OFFICE } from "./data";
 import { BATHURST_LINE } from "./bathurst-line";
+import { CONTENT } from "./client-content";
 import { loadCity, buildBuildings, buildFlatLayers } from "./osm-layer";
 
 export function createBathurstEngine() {
@@ -31,6 +32,7 @@ export function createBathurstEngine() {
     beauty:'<path d="M12 3c-3 4-5 6.5-5 9.5a5 5 0 0010 0C17 9.5 15 7 12 3z"/>',
     community:'<path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6"/>',
     professional:'<path d="M4 8h16v11H4zM9 8V5h6v3"/>',
+    wheel:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3.8 7.5l5.6 3M14.6 13.5l5.6 3M3.8 16.5l5.6-3M14.6 10.5l5.6-3"/>',   // client icon override (Client.icon)
   };
   const svg = (k,cls='') => `<svg class="${cls}" viewBox="0 0 24 24">${ICON[k]}</svg>`;
   const IND = {
@@ -235,8 +237,8 @@ export function createBathurstEngine() {
     { let prev=START; for(const n of NODES){ hop(prev, n.pos); pinD.push(len()); prev=n.pos; } }
     const walkLen=len(), walk=pts.length;
     // directions: the last project → the TCG office on real streets, cut into one equal leg per step
-    // …by way of AR26 (Finch W), so the drive passes one more client on its way in
-    { const via=LOCAL.find(p=>p.id==='ar26')?.pos; if(via){ leg(S, via); leg(via, OFFICE_P); } else leg(S, OFFICE_P); }
+    // (straight in, no detour past AR26, so the line stays smooth)
+    leg(S, OFFICE_P);
     const dirLen=len()-walkLen; for(let k=1;k<=DIRECTIONS.length;k++) at.push(dirLen*k/DIRECTIONS.length);
     const cum=[0]; for(let i=1;i<pts.length;i++) cum.push(cum[i-1]+pts[i].distanceTo(pts[i-1]));
     // the whole journey, faint; the solid trail fills it as you scroll (the page's progress indicator)
@@ -258,7 +260,7 @@ export function createBathurstEngine() {
     trail = routeRibbon(trailD, 0.3, 1);
     return {pts, cum, at, off:walkLen, walk, pinD, total:cum[cum.length-1]};
   }
-  const dirPos=new THREE.Vector3(); let dirIdx=-1, dirD=0, dirLook=0;   // dirLook: metres the camera looks past the dot so it clears the card   // current step (-1 off, 0 = parked on the last pin, 1..4 = legs) and the dot's distance along the route
+  const dirPos=new THREE.Vector3(), camRide=new THREE.Vector3(); let dirIdx=-1, dirD=0, dirLook=0;   // dirLook: metres the camera looks past the dot so it clears the card   // current step (-1 off, 0 = parked on the last pin, 1..4 = legs) and the dot's distance along the route
   const dirAt = d => { if(!DIR) { const p=lastPin(); return {p, i:1, head:Math.PI}; } let i=1; while(i<DIR.cum.length-1 && DIR.cum[i]<d) i++; const a=DIR.pts[i-1], b=DIR.pts[i], f=(d-DIR.cum[i-1])/Math.max(1e-6, DIR.cum[i]-DIR.cum[i-1]); return {p:new THREE.Vector3().lerpVectors(a,b,Math.min(1,Math.max(0,f))), i, head:Math.atan2(b.x-a.x, -(b.z-a.z))}; };
   let runZ = XREF.z0;
   // Paint the orange straight onto Bathurst's own road geometry from the map data (the same polylines the
@@ -277,7 +279,7 @@ export function createBathurstEngine() {
     const pos=[], idx=[]; const w=11, y=.22;
     for(const r of data.roads){ if(r.cls!==2) continue;
       if(!r.pts.every(([x,z])=>Math.abs(x-xAt(z))<24)) continue;
-      const pts=r.pts; let base=pos.length/3;
+      const pts=r.pts, base=pos.length/3;
       pts.forEach(([x,z],i)=>{ const a=pts[Math.max(0,i-1)], b=pts[Math.min(pts.length-1,i+1)]; let dx=b[0]-a[0], dz=b[1]-a[1]; const L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
         pos.push(x-dz*w/2,y,z+dx*w/2, x+dz*w/2,y,z-dx*w/2); if(i<pts.length-1){ const k=base+i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); } });
       // round caps where ways meet, so joints never show a notch
@@ -306,10 +308,10 @@ export function createBathurstEngine() {
   destEl.innerHTML=`<svg viewBox="0 0 24 32"><path d="M12 31s-10-10.2-10-18A10 10 0 0112 3a10 10 0 0110 10c0 7.8-10 18-10 18z"/><circle cx="12" cy="13" r="3.6"/></svg><span>Talkerstein Consulting Group</span>`;
   labels.appendChild(destEl);
   [...LOCAL].sort((a,b)=>b.pos.z-a.pos.z).forEach((p,i)=>{ p.side = i%2 ? 'l' : 'r'; });
-  const thumbHTML = p => p.thumb ? `<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.ind,'glyph');
+  const thumbHTML = p => (p.thumb = p.thumb || (CONTENT[p.id] && CONTENT[p.id].banner.replace(/\.webp$/, '-sm.webp'))) ? `<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.icon||p.ind,'glyph');
   LOCAL.forEach(p=>{
     const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':''); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
-    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small></span></div>`;
+    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small></span></div>`;
     el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
     labels.appendChild(el); p.el=el; p.sub=el.querySelector('small'); p.co=el.querySelector('.co');
   });
@@ -446,6 +448,9 @@ export function createBathurstEngine() {
   function applyStyle(){
     const pal = PALETTES[mapView.style];
     ground.material.color.copy(pal.ground);
+    // one seamless grey: sky, fog, the clear colour and the page behind all match the land, so far-out views have no edge
+    HAZE.copy(pal.ground); scene.fog.color.copy(pal.ground); renderer.setClearColor(pal.ground, 1);
+    document.documentElement.style.setProperty('--map-ground', '#'+pal.ground.getHexString());
     for(const m of city.meshes){
       const k=m.userData.kind;
       if(k==='park') m.material.color.copy(pal.park);
@@ -466,7 +471,7 @@ export function createBathurstEngine() {
     }
   }
   document.addEventListener('pointerdown', e=>{ if(!layersEl.hidden && !layersEl.contains(e.target) && !layerBtn.contains(e.target)) setLayers(false); }, {signal});
-  function subLine(p){ if(layer==='services') return p.services.slice(0,2).join(' · ') || IND[p.ind].name; if(layer==='results') return p.result || 'Case study in progress'; return IND[p.ind].name; }
+  function subLine(p){ if(layer==='services') return p.services.slice(0,2).join(' · ') || IND[p.ind].name; if(layer==='results') return p.result || 'Case study in progress'; return CONTENT[p.id]?.gcat || IND[p.ind].name; }
 
   // ---------- menu drawer ----------
   // (the menu drawer was retired; the sidebar toggle took its place)
@@ -510,27 +515,86 @@ export function createBathurstEngine() {
     if(!r.length) return `<div class="results-h"><p><b>No results for “${term}”</b></p><p>Try a service like “website” or “menu”.</p><button class="sprout link" type="button" id="clearq" aria-label="Clear the search">Clear the search</button></div>`;
     return `<div class="results-h"><p><b>${r.length}</b> result${r.length===1?'':'s'} for “${term}”</p></div><div class="items">${r.map(item).join('')}</div>`;
   }
-  // a client's sidebar: gallery, name, then Overview / Reviews / About tabs (maps-listing style, no action buttons)
+  // a client's sidebar, Google Maps style: a big lifestyle banner, a photo row whose last tile is "+N",
+  // the name with the Google category and rating, then Overview (SEO copy) / Reviews (published) / About (their words)
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const sm = u => u.replace(/\.webp$/, '-sm.webp');
+  const stars = (r, cls='') => `<span class="gstars${cls}" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${r>=i-.25?'f':r>=i-.75?'h':''}">★</i>`).join('')}</span>`;
+  // everything the place can show: banner, then the scrolling-website clip, then photos and screenshots
+  const mediaOf = c => c ? [...(c.video ? [{ video: c.video, poster: c.video.replace(/\.mp4$/, '.jpg') }] : []), { src: c.banner }, ...c.photos.map(src => ({ src }))] : [];
+  const host = u => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
   function placeHTML(p){
-    const tab = placeTab[p.id] || 'overview';
+    const tab = placeTab[p.id] || 'overview', c = CONTENT[p.id];
+    const addr = `${p.addr}${/Thornhill|ON$|Concord|Mississauga|Richmond Hill|North York|Toronto/.test(p.addr)?'':', Toronto'}`;
+    const pin = '<svg class="glyph" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+    const globe = '<svg class="glyph" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>';
+    const tool = '<svg class="glyph" viewBox="0 0 24 24"><path d="M14 7l3-3 3 3-3 3M4 20l9-9"/></svg>';
+    const rating = c && c.rating ? `<span class="grate"><b>${c.rating.toFixed(1)}</b>${stars(c.rating)}<span>(${c.count.toLocaleString('en-CA')})</span></span>` : '';
     const panel = {
-      overview: `${p.result?`<div class="result"><b>${p.result}</b><small>Published on talkerstein.com/work</small></div>`:''}
+      overview: `${c ? `<p class="seo">${esc(c.overview)}</p>` : ''}
+        ${p.result?`<div class="result"><b>${p.result}</b><small>Published on talkerstein.com/work</small></div>`:''}
         <dl class="kv">
-          <dt><svg class="glyph" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="sr-only">Address</span></dt><dd>${p.addr}${/Thornhill|ON$/.test(p.addr)?'':', Toronto'}</dd>
-          ${p.services.length ? `<dt><svg class="glyph" viewBox="0 0 24 24"><path d="M14 7l3-3 3 3-3 3M4 20l9-9"/></svg><span class="sr-only">Services</span></dt><dd class="tags">${p.services.map(x=>`<span class="single hair">${x}</span>`).join('')}</dd>` : ''}
+          <dt>${pin}<span class="sr-only">Address</span></dt><dd>${esc(addr)}</dd>
+          ${c ? `<dt>${globe}<span class="sr-only">Website</span></dt><dd><a class="plink" href="${c.site}" target="_blank" rel="noopener">${host(c.site)}</a></dd>` : ''}
+          ${p.services.length ? `<dt>${tool}<span class="sr-only">Services</span></dt><dd class="tags">${p.services.map(x=>`<span class="single hair">${x}</span>`).join('')}</dd>` : ''}
         </dl>`,
-      reviews: p.testimonial
-        ? `<blockquote class="quote">“${p.testimonial.quote}”<cite>${p.testimonial.who}</cite></blockquote>`
-        : `<p class="note">No published review from ${p.name} yet.</p>`,   // TODO(content): client quotes, never written on their behalf
-      about: `<p class="about">${IND[p.ind].name}, ${p.addr}.${p.services.length ? ` Talkerstein handled ${p.services.join(', ').replace(/, ([^,]*)$/, ' and $1').toLowerCase()}.` : ''}</p>${p.note?`<p class="note">${p.note}</p>`:''}`,
+      reviews: c && c.reviews.length
+        ? `${c.rating ? `<div class="rsum"><b>${c.rating.toFixed(1)}</b><span>${stars(c.rating)}<small>${c.count.toLocaleString('en-CA')} reviews on Google</small></span></div>` : ''}
+           <ul class="revs">${c.reviews.map(r=>`<li><div class="rh"><span class="av" aria-hidden="true">${esc(r.who.trim()[0])}</span><span><b>${esc(r.who)}</b><small>${r.source==='Google'?'Google review':'Review on '+esc(host(c.site))}</small></span></div><p>${esc(r.quote)}</p></li>`).join('')}</ul>`
+        : p.testimonial ? `<blockquote class="quote">“${p.testimonial.quote}”<cite>${p.testimonial.who}</cite></blockquote>`
+        : `<p class="note">No published reviews for ${p.name} yet.</p>`,
+      about: c ? `${c.about.map(t=>`<p class="about">${esc(t)}</p>`).join('')}<p class="note">From <a class="plink" href="${c.site}" target="_blank" rel="noopener">${host(c.site)}</a></p>`
+        : `<p class="about">${IND[p.ind].name}, ${p.addr}.</p>`,
     }[tab];
     const T = [['overview','Overview'],['reviews','Reviews'],['about','About']];
+    const media = mediaOf(c);
+    // the grid: the website clip across the full width, a row of four tiles under it; the fourth carries the rest as "+N"
+    const SHOWN = 5, more = media.length - SHOWN;
+    const plus = i => i === SHOWN - 2 && more > 0 ? `<span class="pmore">+${more}</span>` : '';
+    // the hero: the website scrolling (poster first, the branded play button starts it in place), else the banner
+    const hero = media[0].video
+      ? `<div class="pban phero single hair"><video src="${media[0].video}" poster="${media[0].poster}" muted loop playsinline preload="none" aria-label="${esc(p.name)} website, scrolling"></video>
+          <span class="pvid">${esc(host(c.site))}</span>
+          <button type="button" class="sprout btn icon orange pplay" aria-label="Play the ${esc(p.name)} website"><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
+          <button type="button" class="pexp" data-ph="0" aria-label="Open the website video full size"><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>`
+      : `<button type="button" class="pban single hair" data-ph="0" aria-label="Photos of ${esc(p.name)}"><img src="${c.banner}" alt="" decoding="async"></button>`;
+    const gallery = c ? `<div class="pgal">
+        ${hero}
+        ${media.slice(1, SHOWN).map((m,i)=>`<button type="button" class="ptile single hair" data-ph="${i+1}" aria-label="Photo ${i+2} of ${media.length}"><img src="${sm(m.src)}" alt="" loading="lazy" decoding="async">${plus(i)}</button>`).join('')}
+      </div>` : `<div class="gallery"><div class="single hair">${thumbHTML(p)}</div></div>`;
+    const cta = c ? `<a class="sprout btn orange pcta" href="${c.site}" target="_blank" rel="noopener">${globe}<span>Visit website</span></a>` : '';
     return `<div class="place">
-      <div class="gallery"><div class="single hair">${thumbHTML(p)}<span>Case study image</span></div><div class="single hair"><span>Before</span></div><div class="single hair"><span>After</span></div></div>
-      <div class="hd"><div><h2>${p.name}</h2><div class="meta">${IND[p.ind].name}${p.maybe?' · <b>to confirm</b>':''}</div></div></div>
+      ${gallery}
+      <div class="hd"><div><h2>${p.name}</h2><div class="meta">${rating}${c?`<span class="gcat">${esc(c.gcat)}</span>`:IND[p.ind].name}${p.maybe?' · <b>to confirm</b>':''}</div></div>${cta}</div>
       <div class="ptabs" role="tablist" aria-label="${p.name}">${T.map(([k,n])=>`<button type="button" role="tab" class="ptab" data-tab="${k}" aria-selected="${k===tab}">${n}</button>`).join('')}</div>
       <div class="ppanel" role="tabpanel">${panel}</div>
     </div>`;
+  }
+  // the photo viewer: every image of the place; arrows, swipe or keys to step, Esc or the backdrop closes
+  function openPhotos(p, at){
+    const c = CONTENT[p.id]; if(!c) return;
+    const media = mediaOf(c), imgs = media.map(m => m.src || m.poster); let i = at;
+    const d = document.createElement('dialog'); d.className = 'phbox';
+    d.innerHTML = `<div class="phin frame"><div class="phtop"><b>${esc(p.name)}</b><span class="phn"></span><button type="button" class="sprout btn icon" data-x aria-label="Close photos"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="phstage"><button type="button" class="sprout btn icon phprev" aria-label="Previous photo"><svg class="glyph" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><img alt=""><video muted loop playsinline controls hidden></video><button type="button" class="sprout btn icon phnext" aria-label="Next photo"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+      <div class="phstrip">${media.map((m,k)=>`<button type="button" data-k="${k}" aria-label="${m.video?'Website video':`Photo ${k+1}`}"${m.video?' class="isvid"':''}><img src="${m.video?m.poster:sm(m.src)}" alt="" loading="lazy"></button>`).join('')}</div></div>`;
+    document.body.appendChild(d);
+    const img = d.querySelector('.phstage img'), vid = d.querySelector('.phstage video'), n = d.querySelector('.phn');
+    vid.muted = true;   // the attribute alone (from innerHTML) doesn't let Chrome autoplay
+    vid.oncanplay = () => { if(!vid.hidden) vid.play().catch(()=>{}); };   // a play() before the clip has loaded can be dropped
+    const show = k => { i = (k + imgs.length) % imgs.length; const m = media[i];
+      img.hidden = !!m.video; vid.hidden = !m.video;
+      if(m.video){ if(vid.getAttribute('src')!==m.video){ vid.src = m.video; vid.poster = m.poster; } vid.play().catch(()=>{}); } else { vid.pause(); img.src = m.src; }
+      n.textContent = `${i+1} / ${imgs.length}`;
+      d.querySelectorAll('.phstrip button').forEach((b,j)=>{ b.classList.toggle('on', j===i); if(j===i) b.scrollIntoView({block:'nearest',inline:'center'}); }); };
+    d.querySelector('.phprev').onclick = () => show(i-1); d.querySelector('.phnext').onclick = () => show(i+1);
+    d.querySelectorAll('.phstrip button').forEach(b => b.onclick = () => show(+b.dataset.k));
+    d.querySelector('[data-x]').onclick = () => d.close();
+    d.onclick = e => { if(e.target === d) d.close(); };
+    d.onkeydown = e => { if(e.key==='ArrowLeft') show(i-1); if(e.key==='ArrowRight') show(i+1); };
+    let x0 = null; img.onpointerdown = e => { x0 = e.clientX; }; img.onpointerup = e => { if(x0!==null && Math.abs(e.clientX-x0)>40) show(i + (e.clientX<x0?1:-1)); x0 = null; };
+    d.onclose = () => d.remove();
+    d.showModal(); show(i);
   }
   const placeTab = {};
   function render(){
@@ -544,6 +608,13 @@ export function createBathurstEngine() {
     sheetBody.scrollTop = same ? top : 0;
     sheetBody.querySelectorAll('.item').forEach(b=>b.onclick=()=>openPlace(b.dataset.id));
     sheetBody.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>{ placeTab[view.id]=b.dataset.tab; render(); });
+    if(p) sheetBody.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>openPhotos(p, +b.dataset.ph));
+    // the hero clip: the play button starts it in place; a click on the playing clip pauses it again
+    const hv = sheetBody.querySelector('.phero');
+    if(hv){ const v = hv.querySelector('video'), pb = hv.querySelector('.pplay'); v.muted = true;
+      pb.onclick = () => { v.play().catch(()=>{}); };
+      v.onclick = () => { if(!v.paused) v.pause(); else v.play().catch(()=>{}); };
+      v.onplay = () => hv.classList.add('playing'); v.onpause = () => hv.classList.remove('playing'); }
     placeClose.onclick=()=>{ if(fPlace) return leaveFPlace(); if(resumeRoute()) return; view={type:query?'results':'list'}; selected=null; render(); refresh(); q.focus({preventScroll:true}); };
     const cq=sheetBody.querySelector('#clearq'); if(cq) cq.onclick=()=>qclear.onclick();
     const rc=sheetBody.querySelector('#routecard'); if(rc) rc.onclick=fitRoute;
@@ -1048,8 +1119,15 @@ export function createBathurstEngine() {
         const cardB = dirCard.classList.contains('on') ? dirCard.getBoundingClientRect().bottom - stick.getBoundingClientRect().top : 0;
         // feedback: measure where the dot actually lands and nudge the look-ahead until it sits mid-way below the card
         const want=(cardB + H)/2, sy=project(dirPos).y, f=fwd(bearing);
-        if(sy>0 && sy<H*1.5) dirLook = Math.min(2500, Math.max(-800, dirLook + (want - sy)*mpp(dist)*.12));
-        setGoal({cx: p.x + f.x*dirLook, cz: p.z + f.z*dirLook, dist, pitch, bearing}); }
+        // a gentle, dead-banded nudge (a hard per-frame correction fought the camera ease and shook the view)
+        if(sy>0 && sy<H*1.5 && Math.abs(want - sy) > 24) dirLook = Math.min(2500, Math.max(-800, dirLook + (want - sy)*mpp(dist)*.02));
+        // the camera rides a straightened line: the route averaged over ±1.2 km around the dot, so the street grid's
+        // zig-zags move the dot, not the whole map
+        const q = new THREE.Vector3(); let n = 0;
+        if(DIR) for(let k=-1200; k<=1200; k+=150){ q.add(dirAt(Math.min(DIR.total, Math.max(DIR.off, dirD+k))).p); n++; } else { q.copy(p); n=1; }
+        q.multiplyScalar(1/n);
+        camRide.lerp(q, camRide.lengthSq() ? Math.min(1, dt*2) : 1);
+        setGoal({cx: camRide.x + f.x*dirLook, cz: camRide.z + f.z*dirLook, dist, pitch, bearing}); }
     }
 
     const s = Math.max(1, alt/55);

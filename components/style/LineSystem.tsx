@@ -46,15 +46,17 @@ export default function LineSystem() {
         svg.setAttribute("aria-hidden", "true");
         svg.innerHTML = '<g filter="url(#grunge)"><path class="inner"/></g>';
         el.prepend(svg);
+        // a surrounding [data-sprout-host] (e.g. a whole testimonial card) hovers the button too
+        const host = el.closest<HTMLElement>("[data-sprout-host]");
         // re-seed once the line has fully retracted, never on the way in (fresh paths would skip the grow)
         const sync = () =>
           setTimeout(() => {
-            const on = el.matches(":hover, :focus-visible") || (el.classList.contains("field-box") && el.matches(":focus-within"));
+            const on = el.matches(":hover, :focus-visible") || !!host?.matches(":hover, :focus-visible") || (el.classList.contains("field-box") && el.matches(":focus-within"));
             el.classList.toggle("on", on);
             clearTimeout(el._t);
             if (!on) el._t = window.setTimeout(() => { if (!el.classList.contains("on")) seedOuter(el); }, cssNum("--cta-draw") + 150);
           }, 0);
-        ["pointerenter", "pointerleave", "focusin", "focusout"].forEach((e) => el.addEventListener(e, sync));
+        ["pointerenter", "pointerleave", "focusin", "focusout"].forEach((e) => { el.addEventListener(e, sync); host?.addEventListener(e, sync); });
       }
       const svg = el.querySelector(":scope > .stroke") as SVGSVGElement | null;
       if (!svg) return;

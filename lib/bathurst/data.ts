@@ -18,6 +18,8 @@ export type Client = {
   group?: "thornhill" | "mississauga";
   /** Position on the scroll route (1 = first project the path visits). Pins without it only show in the final overview. */
   stop?: number;
+  /** Pin icon when the industry's own doesn't fit (a key of the engine's ICON set, e.g. "wheel"). */
+  icon?: string;
   hidden?: string;
   /** Thumbnail for the map callout and sheet row, e.g. "/clients/bubbys.jpg". TODO(content): add storefront photos. */
   thumb?: string;
@@ -50,7 +52,7 @@ export const CLIENTS: Client[] = [
   { id: "hoh", name: "House of Hair Extensionz", addr: "7181 Yonge St #218, Thornhill", lat: 43.8032, lon: -79.4194, ind: "beauty", services: ["Branding", "Shopify", "AI photoshoot"], result: "2.3× sales growth", stop: 7 },
   // always pinned, off the scroll route
   { id: "uzbek", name: "Uzbek Delight", addr: "382 Enford Rd, Richmond Hill", lat: 43.89, lon: -79.4384, ind: "food", services: ["Website", "Branding", "Food truck", "POS"] },
-  { id: "ar26", name: "AR26 / A&R Motors", addr: "1100 Finch Ave W Unit 6A, North York", lat: 43.7685, lon: -79.4733, ind: "services", services: [] },
+  { id: "ar26", name: "AR26 / A&R Motors", addr: "1100 Finch Ave W Unit 6A, North York", lat: 43.7685, lon: -79.4733, ind: "services", icon: "wheel", services: [] },
   { id: "familytree", name: "Family Tree Dispute Resolution", addr: "Toronto, ON", lat: 43.7280, lon: -79.4200, ind: "professional", services: [], note: "Address not publicly verified; placeholder. Confirm." },
   { id: "umc", name: "Unionville Music Competition", addr: "74 Starwood Rd, Thornhill", lat: 43.8451, lon: -79.4669, ind: "community", services: [] },
   { id: "morgan", name: "Morgan Property Law", addr: "1454 Dundas St E, Unit 112, Mississauga", lat: 43.6100, lon: -79.5814, ind: "professional", services: [] },
@@ -149,3 +151,6 @@ export const TESTIMONIALS: { id: string; who: string; role: string; quote: strin
   {"tall": true, "id": "uzbek", "who": "Joseph, Toronto", "role": "Owner of Uzbek Delight", "quote": "Rishon and his team built us a beautiful website, brand design and food truck. The team went above and beyond building for us everything from nothing. I truly recommend them for everything from branding to implementing POS systems!", "logo": "/testimonials/uzbek-logo.webp", "video": "/testimonials/uzbek-video.mp4", "poster": "/testimonials/uzbek-poster.jpg"},
   {"id": "iconrocklear", "who": "Skaf, Quebec", "role": "Co-owner of Icon Rocklear", "quote": "C'est des gars qui savent ce qu'ils font. Il n'y a pas eu de problème, toujours courtois. Quand on a besoin d'eux pour ajouter, modifier ou enlever des choses sur notre site web, ils sont toujours présents.", "logo": "/testimonials/iconrocklear-logo.webp", "video": "/testimonials/iconrocklear-video.mp4", "poster": "/testimonials/iconrocklear-poster.jpg"}
 ];
+
+/** Reels on @talkersteinconsulting, shown under the reviews as Instagram's own embeds (loaded lazily). */
+export const REELS = ["DYI5BWehMep", "DZ_AYCLSBL2", "DVCq69sj_QD", "DVQyZAADmhB", "DU3p8OCj3ix"];

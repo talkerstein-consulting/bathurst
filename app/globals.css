@@ -453,3 +453,14 @@ html, body { overflow-x: clip; max-width: 100%; }
 .ft-local address, .ft-brand address { font-style: normal; font-size: 14px; line-height: 1.6; }
 .ft-brand .ft-serving { margin: var(--s2) 0 0; }
 .book-fine { margin: 0; font-size: 13px; color: var(--steel-70); }
+
+/* hero: the centre "Get directions" is the filled orange CTA; the one in the top bar is an outline button */
+html body .hero-cta.btn { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
+html body .hero-cta.btn:hover { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
+html body .layers-top .btn.dirbtn, html body .layers-top .btn.dirbtn:hover { --ink: var(--steel); background: var(--sea) padding-box; color: var(--steel); }
+
+/* the page takes the map's land grey (set live by the engine as --map-ground; #DDE2E2 = Sea Breeze with 10% Steel),
+   so the hero, Find Your Way Forward and every far-out map view sit on one seamless background */
+:root { --map-ground: #DDE2E2; }
+html, body { background: var(--map-ground); }
+html body #stick { background: var(--map-ground); }
