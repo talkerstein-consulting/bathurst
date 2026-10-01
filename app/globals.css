@@ -283,16 +283,6 @@
 .sp-tab:focus-visible { outline: 2px solid var(--orange); outline-offset: -4px; }
 @media (prefers-reduced-motion: reduce) { .sp-in, .sp-out { animation: none; } .sp-fill { animation: none; } }
 
-/* services: sideswipe card row (Google Maps place cards) */
-.svc-row { display: flex; gap: var(--s2); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px; margin: 0; list-style: none; }
-.svc-row::-webkit-scrollbar { display: none; }
-.svc { flex: 0 0 min(300px, 78vw); scroll-snap-align: start; overflow: hidden; padding: 0; display: grid; align-content: start; }
-.svc-img { aspect-ratio: 4 / 3; display: grid; place-items: center; color: rgb(25 37 74 / .6); border-radius: calc(var(--frame-radius) - 2px) calc(var(--frame-radius) - 2px) 0 0; overflow: hidden;
-  background: repeating-linear-gradient(135deg, var(--steel-08) 0 10px, transparent 10px 20px); }
-.svc-img img { width: 100%; height: 100%; object-fit: cover; }
-.svc h3 { margin: var(--s2) var(--s2) 4px; font-size: 24px; line-height: 1.1; }
-.svc-price { margin: 0 var(--s2) var(--s2); font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--steel-70); }   /* fine print */
-.svc-price.tbd { color: rgb(25 37 74 / .55); font-weight: 500; }
 
 /* ================= footer (after vacation.inc): a ruled grid like a printed form, in a style-guide frame =================
    One 4-column grid so every rule lines up: logo+contact (2 cols) | Explore | Company; newsletter: label | email (2) | submit. */
@@ -440,7 +430,6 @@ html, body { overflow-x: clip; max-width: 100%; }
 
 /* SEO copy pass: hero place line, closing CTA copy, the North York block, intake fine print */
 .sv-hero p.hero-where, .hero-grid .sv-hero p.hero-where { margin: 0 0 var(--s2); font-size: 11px; font-weight: 600; letter-spacing: .14em; color: var(--steel); }
-.sig > .eyebrow { font-size: 11px; color: var(--steel); margin-bottom: calc(var(--s3) * -1); }
 .sig-body { margin: calc(var(--s2) * -1) 0 0; max-width: 46ch; text-align: center; font-size: 18px; line-height: 1.55; }
 .sig-ctas { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--s3); }
 .ft-local { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: var(--s2) var(--s3); padding: var(--s4) var(--s3); border-bottom: var(--rule); color: var(--steel); }
@@ -464,3 +453,18 @@ html body .layers-top .btn.dirbtn, html body .layers-top .btn.dirbtn:hover { --i
 :root { --map-ground: #DDE2E2; }
 html, body { background: var(--map-ground); }
 html body #stick { background: var(--map-ground); }
+
+/* footer on phones: the link columns fit their text, the social ticks show without hover, and the last line clears the
+   "Get 10% off" corner badge */
+@media (max-width: 760px) {
+  .ft-grid { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+  .ft-cell { padding: var(--s3) var(--s2); }
+  .ft-link { font-size: 19px; line-height: 1.35; padding-block: 4px; overflow-wrap: break-word; hyphens: auto; }
+  .ft-social { gap: var(--s2) var(--s3); }
+  .ft-legal { gap: var(--s1) var(--s3); padding-bottom: var(--s3); }
+  .ft-legal nav { flex-wrap: wrap; gap: var(--s1) var(--s3); }
+  .ft-legal small { line-height: 1.5; }
+  .ft { padding-bottom: 150px; }
+}
+/* touch screens can't hover: the social ticks are drawn from the start */
+@media (hover: none) { .ft-check svg { stroke-dashoffset: 0; } .ft-check i { border-color: var(--orange); } }

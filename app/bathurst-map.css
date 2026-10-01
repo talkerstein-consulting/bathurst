@@ -955,12 +955,6 @@
 .rv-media { flex: 1 1 0; min-height: 120px; border-radius: var(--btn-radius); overflow: hidden; }
 .rv-media.single .rv-thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform .6s cubic-bezier(.22,1,.36,1); }
 .rv-card:hover .rv-thumb { transform: scale(1.03); }
-/* hover / focus: the quote, truncated, on a Sea Breeze band over the poster's foot */
-.rv-media.single > .rv-quote { position: absolute; left: 8px; right: 8px; bottom: 8px; top: auto; z-index: 2; margin: 0; padding: 10px 12px; border-radius: 8px;
-  background: var(--sea); color: var(--steel); font-size: 14px; line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  opacity: 0; transform: translateY(8px); transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); pointer-events: none; }
-.rv-card:hover .rv-quote, .rv-card:focus-within .rv-quote { opacity: 1; transform: none; }
 .rv-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .rv-who { display: grid; line-height: 1.25; min-width: 0; flex: 1; }
 .rv-who b { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -985,12 +979,11 @@
   .rv-logo { display: none; }   /* narrow columns: name + play only */
   .rv-who b { font-size: 13px; } .rv-who small { font-size: 11px; }
   .rv-id .btn.icon { width: 44px; height: 44px; }
-  .rv-media .rv-quote { font-size: 12px; -webkit-line-clamp: 4; }
   .rv-modal-in { grid-template-columns: 1fr; padding: var(--s2); gap: var(--s2); max-height: calc(100svh - 32px); overflow: auto; }
   .rv-modal-video { aspect-ratio: 9 / 14; }
   .rv-full { font-size: 16px; }
 }
-@media (prefers-reduced-motion: reduce) { .rv-media .rv-quote, .rv-thumb { transition: opacity .2s ease; transform: none !important; } }
+@media (prefers-reduced-motion: reduce) { .rv-thumb { transition: none; transform: none !important; } }
 /* phone sheet handle: a drag here is the panel's, not the page's */
 .grab, .cover-grab { touch-action: none; }
 /* Find Your Way Forward: outline "Scroll down" cue in the lower-right corner */
@@ -998,21 +991,7 @@
 .dc-more .glyph { width: 18px; height: 18px; }
 #stick.finale:not(.fplace) .dc-more { display: inline-flex; animation: dc-in .55s cubic-bezier(.22,1,.36,1) both; }
 
-/* ================= services: clip-out coupons (dashed cut line, scissors on the top edge) ================= */
-.svc-row { padding: 18px 4px 4px; }   /* room for the scissors above the first cut line */
-.svc-coupon { position: relative; flex: 0 0 min(320px, 80vw); scroll-snap-align: start; display: grid; padding: 12px;
-  border: 2px dashed var(--steel); border-radius: calc(var(--frame-radius) + 12px); }
-.svc-coupon .svc { flex: none; display: flex; flex-direction: column; }
-.svc-scissors { position: absolute; top: -13px; left: 28px; width: 24px; height: 24px; padding: 0 4px; box-sizing: content-box; background: var(--sea);
-  fill: none; stroke: var(--steel); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transform: rotate(0deg); transition: transform .4s cubic-bezier(.22,1,.36,1); }
-.svc-coupon:hover .svc-scissors { transform: translateX(24px); }
-.svc-body { margin: 0 var(--s2) var(--s2); font-size: 15px; line-height: 1.55; color: var(--steel); }
-.svc-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: var(--s2); padding: 0 var(--s2) var(--s2);
-  border-top: 2px dashed var(--steel-15, rgba(25,37,74,.15)); padding-top: var(--s2); }
-.svc-foot .svc-price { margin: 0; }
-@media (prefers-reduced-motion: reduce) { .svc-scissors { transition: none; } .svc-coupon:hover .svc-scissors { transform: none; } }
-
-/* services share the testimonials' side margins, so the coupon row is bound to the same edges */
+/* services share the testimonials' side margins */
 .cover-body #services .wrap { padding-inline: var(--s5); }
 @media (max-width: 759px) { .cover-body #services .wrap { padding-inline: var(--s3); } }
 
@@ -1024,9 +1003,6 @@
 .ctrls [data-tip]:hover::after, .ctrls [data-tip]:focus-visible::after { opacity: 1; transform: translate(0, -50%); transition-delay: .25s; }
 #compass.turning::after { opacity: 0; }
 @media (hover: none) { .ctrls [data-tip]::after { display: none; } }   /* touch: no hover, no stuck tooltips */
-/* the coupon row starts on the margin but scrolls out to the screen edges (full-bleed track, margin-aligned snap) */
-.cover-body #services .svc-row { margin-inline: calc(-1 * var(--s5)); padding-inline: var(--s5); scroll-padding-inline: var(--s5); }
-@media (max-width: 759px) { .cover-body #services .svc-row { margin-inline: calc(-1 * var(--s3)); padding-inline: var(--s3); scroll-padding-inline: var(--s3); } }
 /* the <picture> wrapper stays out of layout: the img inside fills the frame as before */
 .rv-media.single > .rv-pic { display: contents; }
 /* phones: the reviews/services sheet is large and moves with the scroll; drop the costly effects inside it
@@ -1060,7 +1036,6 @@
 .rv-phone .rv-logo { display: grid; width: 40px; height: 40px; }
 .rv-phone .rv-who b { font-size: 15px; white-space: normal; }
 .rv-phone .rv-who small { font-size: 12px; white-space: normal; }
-.rv-phone .rv-media.single > .rv-quote { font-size: 13px; }
 .rv.rv-phone { min-height: 0; grid-template-rows: none; align-content: start; }   /* no full-screen stretch: the section ends under the card row */
 /* phones: a swipe on the chip row is always sideways (never handed to the page's vertical scroll) */
 @media (max-width: 759px) { .chips { touch-action: pan-x; } }
@@ -1082,7 +1057,6 @@
   .rv-modal-video { height: min(640px, calc(100svh - 32px - 2 * var(--s4) - 8px)); width: auto; aspect-ratio: 9 / 16; }   /* the whole video always fits on screen */
 }
 /* touch: the chip row, the testimonial cards and the service coupons swipe left/right only (never up/down) */
-.chips, .rv-phone .rv-swipe, .svc-row, .cover-body #services .svc-row { touch-action: pan-x; overscroll-behavior-x: contain; }
 /* phones: every outline draws clean (no grunge filter), for legibility and scroll performance */
 @media (max-width: 759px) {
   .lines g, .stroke g, .ld, .rule::before, .sp-row::before, .sp-tab.on::before { filter: none !important; }
@@ -1148,21 +1122,14 @@
 /* ================= edge-to-edge sideways rows on the cover sheet (Services coupons, Instagram cards) =================
    the row bleeds to the sheet's edges and scrolls; its first card still lines up with the section heading */
 .cover-body { container-type: inline-size; container-name: cover; }
-.cover-body #services .svc-row, .cover-body .tc-row {
+.cover-body .tc-row {
   --gut: calc((100cqi - min(100cqi, 1200px)) / 2 + var(--s5));
   margin-inline: calc(50% - 50cqi); padding-inline: var(--gut); scroll-padding-inline: var(--gut);
   scroll-snap-type: x mandatory; scrollbar-width: none; }
-.cover-body #services .svc-row::-webkit-scrollbar, .tc-row::-webkit-scrollbar { display: none; }
-.cover-body #services .svc-row::after, .cover-body .tc-row::after { content: ""; flex: 0 0 1px; }   /* keeps the end gutter at the last card */
-@media (max-width: 759px) { .cover-body #services .svc-row, .cover-body .tc-row { --gut: var(--s3); } }
 
 /* ================= Instagram reels as trading cards ================= */
 .rv-reels { display: grid; gap: var(--s3); margin-top: var(--s4); }
 .rv-reels-h { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
-.rv-reels-h h3 { margin: 0; font-size: 28px; }
-.tc-ctl { display: flex; align-items: center; gap: 8px; }
-.tc-handle { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
-.tc-handle .glyph { width: 18px; height: 18px; }
 /* the scroller clips, so it carries room for the cards' shadows and tilt, and gives it back with negative margins */
 .tc-row { list-style: none; display: flex; gap: var(--s3); overflow-x: auto; padding-block: 28px 56px; margin-block: -14px -34px; touch-action: pan-x; overscroll-behavior-x: contain; }
 .tc-row > li { flex: 0 0 clamp(236px, 22vw, 290px); scroll-snap-align: start; perspective: 900px; }
@@ -1204,10 +1171,8 @@
 .tc-ig { justify-self: start; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .tc-ig .glyph { width: 18px; height: 18px; }
 @media (max-width: 759px) {
-  .rv-reels-h h3 { font-size: 22px; }
   .tc-row { gap: var(--s2); }
-  .tc-handle span { display: none; } .tc-handle { padding-inline: 12px; }
-  .tc-mh { padding-right: 0; } .tc-mh b { font-size: 24px; } .tc-mcap { font-size: 14px; max-height: none; }
+    .tc-mh { padding-right: 0; } .tc-mh b { font-size: 24px; } .tc-mcap { font-size: 14px; max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) { .tc, .tc:hover { transform: none; transition: none; } .tc-art img { transition: none; } }
 
@@ -1329,3 +1294,174 @@
 /* the outline "Get directions" in the top bar: steel label and glyph on the Sea Breeze fill */
 .layers-top .btn.dirbtn .dirlabel, .layers-top .btn.dirbtn .glyph { color: var(--steel); }
 .layers-top .btn.dirbtn .glyph { stroke: var(--steel); }
+/* phones: the bottom sheet behaves like Google Maps. It owns every touch on it (the page never scrolls from it);
+   below full height a drag moves the sheet, at full height the content scrolls and a pull from the top closes it */
+@media (max-width: 760px) {
+  #stick .sheet { touch-action: none; }
+  #stick .sheet:not([data-state="full"]) .sheet-body { overflow: hidden; }
+  #stick .sheet[data-state="full"] .sheet-body { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  /* the three stops: full rises to just under the search bar (the chip row steps aside), half shows half the
+     screen, peek keeps the handle, the name and its category */
+  #stick .sheet { margin-top: var(--s1); }
+  #stick .sheet[data-state="full"] { transform: translateY(0); }
+  #stick .sheet[data-state="half"] { transform: translateY(calc(100% - 50svh)); }
+  #stick .sheet[data-state="peek"] { transform: translateY(calc(100% - 118px)); }
+  #stick .chipbar { transition: opacity .25s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s; }
+  /* hidden, not just faded: the chips set pointer-events themselves, so a faded row would still catch taps */
+  #stick:has(.sheet[data-state="full"]) .chipbar { opacity: 0; transform: translateY(-8px); visibility: hidden; transition: opacity .25s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s .25s; }
+}
+/* desktop, on the tour: once the sidebar's text has scrolled to its end, the wheel carries on to the next stop */
+@media (min-width: 761px) { #stick.nodes #mapui .sheet-body { overscroll-behavior-y: auto; } }
+/* trading cards: every card the same size and layout, whatever its text (the ratio sets the height; overflow can't grow it) */
+.tc-row { align-items: flex-start; }
+.tc { min-height: 0; height: auto; overflow: hidden; }
+.tc-in { grid-template-rows: auto minmax(0, 1fr) auto auto auto; }
+.tc-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-cap { min-height: calc(2 * 1.45em); }
+.tc-row > li { min-width: 0; }            /* one-line text can't widen a card */
+.tc-in > * { min-width: 0; }
+@media (max-width: 759px) { .tc-row > li { flex-basis: min(72vw, 290px); } }
+/* map cards: the rating line and the View / Next actions exist on phones only */
+.co-rate, .co-act { display: none; }
+@media (max-width: 760px) {
+  /* the selected card is the preview on a phone: bigger, with its rating and a View button that opens the case study */
+  .pin.sel .co { gap: 12px; padding: 10px 12px 10px 10px; align-items: stretch; white-space: normal; width: min(78vw, 300px); }
+  .pin.sel .co .th { width: 76px; height: auto; min-height: 76px; align-self: stretch; }
+  .pin.sel .co .txt { gap: 3px; flex: 1; min-width: 0; align-content: center; }
+  .pin.sel .co .txt b { font-family: var(--head); font-size: 19px; line-height: 1.05; }
+  .pin.sel .co .txt small { font-size: 12px; }
+  .pin.sel .co-rate { display: block; font-size: 12px; color: var(--steel-70); }
+  .pin.sel .co-rate b { font: 600 12px/1 var(--body) !important; color: var(--steel); }
+  .pin.sel .co-rate { color: var(--orange); }
+  .pin.sel .co-rate span { color: var(--steel-70); }
+  .pin.sel .co-act { display: flex; gap: 6px; margin-top: 6px; }
+  .co-view { flex: 1; min-height: 38px; padding: 0 12px; font-size: 14px; }
+  .co-next { width: 38px; height: 38px; flex: none; }
+  .co-next .glyph { width: 16px; height: 16px; }
+}
+/* the sheet's Next, and the card's View: filled orange CTAs */
+html body .pnext.btn, html body .co-view.btn { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
+@media (max-width: 760px) { .pin.sel .co { left: var(--dx, -18px) !important; right: auto !important; } }
+/* icon pins as map pins: a dot on the address, a stem, and the round head above it; --pl (the stem) is set by the engine
+   so crowded pins stand taller and their heads never stack */
+.pin.mini .ic { width: 40px; height: 40px; left: -20px; top: calc(-1 * (var(--pl, 16px) + 42px)); transition: background .2s ease, top .35s cubic-bezier(.22,1,.36,1); }
+.pin.mini .ic .glyph { width: 21px; height: 21px; }
+.pin.mini::before { content: ""; position: absolute; left: -1px; top: calc(-1 * var(--pl, 16px) - 2px); width: 2px; height: calc(var(--pl, 16px) + 2px); background: var(--steel);
+  transition: top .35s cubic-bezier(.22,1,.36,1), height .35s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+.pin.mini::after { content: ""; position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--steel); box-shadow: 0 0 0 2px var(--sea), 0 1px 4px rgba(0,0,0,.25); pointer-events: none; }
+.pin.mini:hover::before, .pin.mini:focus-visible::before { background: var(--orange); }
+.pin.mini:hover::after, .pin.mini:focus-visible::after { background: var(--orange); }
+.pin.mini .nm { top: calc(-1 * (var(--pl, 16px) + 22px)); }
+@media (prefers-reduced-motion: reduce) { .pin.mini .ic, .pin.mini::before { transition: none; } }
+
+/* sideways rows (Services, Instagram): the ‹ › pair sits together at the right of the header and greys out at each end;
+   phones swipe instead (the next card peeks in), so there the pair steps aside */
+.row-arrows { display: flex; gap: 8px; flex: none; }
+.row-arrows .btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+@media (max-width: 759px) { .row-arrows { display: none; } }
+/* Instagram: the section opens with its call to action, Follow us on Instagram */
+.rv-reels-h { align-items: center; }
+.tc-follow { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.tc-follow .glyph { width: 20px; height: 20px; }
+html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
+@media (max-width: 759px) { .tc-follow { width: 100%; justify-content: center; } }
+/* phones: the clip and snapshots are the site's own mobile layout, so they sit in portrait frames */
+@media (max-width: 760px) {
+  .pgal .pban.phero.port { aspect-ratio: 4 / 5; max-height: 62svh; }
+  .pgal .ptile.port { aspect-ratio: 3 / 4; }
+  .pgal .ptile.port img, .phero.port video { object-position: top; }
+  .phbox.port .phstage, .phbox.port:has(.phstage video:not([hidden])) .phstage { height: min(72svh, 640px); aspect-ratio: auto; }
+  .phbox.port .phstage video { width: auto; height: 100%; max-width: 100%; margin-inline: auto; object-fit: contain; }
+  .phbox.port .phstage img { height: 100%; width: auto; max-width: 100%; }
+}
+
+/* the end of a case study: Visit website, then Previous / Next (Next names the stop it leads to); read the case on the way */
+.pfoot { display: grid; gap: var(--s2); padding-top: var(--s3); border-top: 1px solid rgba(25,37,74,.12); }
+.pfoot .pcta { width: 100%; justify-content: center; min-height: 48px; }
+.pnav { display: grid; grid-template-columns: auto 1fr; gap: var(--s1); padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.pprev { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding-inline: 14px 18px; }
+.pprev .glyph, .pnext .glyph { width: 16px; height: 16px; flex: none; }
+.pnext { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding-inline: 18px 14px; min-width: 0; }
+.pnext .pn-t { display: grid; text-align: left; line-height: 1.2; min-width: 0; }
+.pnext .pn-t small { font: 600 10px/1.2 var(--body); letter-spacing: .1em; text-transform: uppercase; color: rgb(255 255 255 / .8); }
+.pnext .pn-t b { font-size: 15px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the × that closes the sheet: phones (desktop keeps the search bar's ×, as Google does) */
+.pclose { display: none; }
+@media (max-width: 760px) {
+  .place .hd { flex-wrap: nowrap; align-items: flex-start; }
+  .place .hd > div { min-width: 0; }
+  .pclose { display: inline-flex; flex: none; width: 44px; height: 44px; margin-top: -2px; }
+  .pclose .glyph { width: 18px; height: 18px; }
+}
+/* phones: while the case study sheet is open, the map card above it is just a label (its View / Next would repeat the sheet's) */
+@media (max-width: 760px) { #stick:has(#mapui:not(.pc) .sheet) .pin.sel .co-act { display: none; } }
+/* Businesses in Bathurst: the heading and arrows on top, Follow us on Instagram after the interviews */
+.tc-foot-cta { display: flex; justify-content: flex-start; padding-top: var(--s1); }
+@media (max-width: 759px) { .tc-foot-cta { justify-content: stretch; } .tc-foot-cta .tc-follow { width: 100%; } }
+
+/* testimonial cards: the play button sits on the video poster (the whole card opens the video) */
+.rv-media .rv-playbtn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: 60px; height: 60px; background: var(--sea); transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.rv-media .rv-playbtn .glyph { width: 24px; height: 24px; fill: var(--orange); stroke: none; margin-left: 3px; }
+.rv-card:hover .rv-media .rv-playbtn { transform: translate(-50%, -50%) scale(1.08); }
+@media (max-width: 759px) { .rv-media .rv-playbtn { width: 52px; height: 52px; } }
+/* Businesses in Bathurst: the same heading as What Gets You There, the arrows aligned like Services */
+.rv-reels-h { align-items: flex-end; }
+.rv-reels-h .h2 { margin: 0; }
+
+/* ================= What Gets You There: three stages in the page's own parts =================
+   heading + the filled orange CTA on one line (desktop); each stage a .frame with eyebrow + Cheltenham heading;
+   each service a printed-rule row set like the footer's service links */
+.svc-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3) var(--s4); flex-wrap: wrap; }
+.svc-head .h2 { margin: 0; }
+.svc-stages { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); align-items: start; }
+.svc-stage { display: grid; align-content: start; }   /* the stage heading sits on the page background */
+.svc-stage .eyebrow { font-size: 11px; color: var(--steel-70); margin: 0 0 var(--s1); }
+.svc-stage .h3 { margin: 0; color: var(--steel); }
+.svc-stage-line { margin: 6px 0 var(--s3); font-size: 15px; line-height: 1.5; color: var(--steel-70); }
+.svc-stage ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+/* a scope: the page's outline CTA (.sprout .btn: inner line at rest, outer line sprouts on hover), sized as a box with the
+   Cheltenham name over one line of body text and an arrow; its label keeps the CTA's tumble but wraps */
+.btn.svc-scope { width: 100%; justify-content: space-between; align-items: center; gap: var(--s2); padding: 16px 18px; min-height: 72px;
+  white-space: normal; text-align: left; color: var(--steel); }
+.svc-scope .label { flex: 1; min-width: 0; white-space: normal; clip-path: inset(-0.15em -1em -0.4em); }
+.svc-scope .label > span { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); width: 100%; }
+.svc-scope-t { display: grid; gap: 3px; min-width: 0; }
+.svc-scope-t b { font: 400 22px/1.15 var(--head); }
+.svc-scope-t small { font: 400 14px/1.4 var(--body); color: var(--steel-70); }
+.svc-scope .glyph { width: 20px; height: 20px; flex: none; }
+.svc-scope:hover, .svc-scope:focus-visible { --ink: var(--orange); color: var(--orange); }
+.svc-scope:hover .svc-scope-t small { color: var(--orange); opacity: .8; }
+@media (max-width: 900px) {
+  .svc-stages { grid-template-columns: 1fr; }
+  .svc-cta { width: 100%; justify-content: center; }
+}
+/* Word on the Street: the testimonials' heading, the same .h2 as the other sections */
+.rv-title { margin: 0; color: var(--steel); }
+/* service buttons: the outline CTA's lines, without the text tumble (the label stays put; its twin is hidden) */
+.svc-scope .label > span + span { display: none; }
+.svc-scope.on .label > span:first-child, .svc-scope:hover .label > span:first-child { transform: none; opacity: 1; }
+/* the groups divided by a printed line (vertical between columns; horizontal once they stack) */
+.svc-stages { gap: 0; align-items: stretch; }
+.svc-stage { padding-inline: var(--s3); position: relative; }
+.svc-stage:first-child { padding-left: 0; }
+.svc-stage:last-child { padding-right: 0; }
+.svc-stage + .svc-stage::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--outer-stroke); background: var(--steel); opacity: .35; filter: url(#grunge); }
+/* after the list: "Not sure where to start?" and the one filled CTA, on a printed rule */
+.svc-after { position: relative; margin-top: var(--s4); padding-top: var(--s3); display: flex; align-items: center; justify-content: space-between; gap: var(--s2) var(--s3); flex-wrap: wrap; }
+.svc-after::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--outer-stroke); background: var(--steel); opacity: .35; filter: url(#grunge); }
+.svc-after-t { margin: 0; font: 400 28px/1.1 var(--head); color: var(--steel); }
+@media (max-width: 900px) {
+  .svc-stage, .svc-stage:first-child, .svc-stage:last-child { padding: var(--s3) 0; }
+  .svc-stage:first-child { padding-top: 0; }
+  .svc-stage + .svc-stage::before { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: var(--outer-stroke); }
+  .svc-after { flex-direction: column; align-items: stretch; }
+  .svc-after-t { font-size: 24px; }
+  .svc-after .svc-cta { width: 100%; justify-content: center; }
+}
+/* the closing CTAs (Start a conversation, Explore our work): full width, stacked, on phones */
+@media (max-width: 759px) {
+  .sig-ctas { flex-direction: column; align-items: stretch; width: 100%; max-width: 420px; }
+  .sig-ctas > .btn { width: 100%; justify-content: center; }
+}
+/* the reviews sheet: no outer double line (it read as a stray box around Word on the Street); the sheet keeps its surface and handle */
+.cover.frame > .lines { display: none; }

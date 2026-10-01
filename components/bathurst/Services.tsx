@@ -1,45 +1,48 @@
-"use client";
+import { SERVICES, SERVICE_STAGES } from "@/lib/bathurst/data";
+import { CtaLink } from "@/components/style/Cta";
 
-import { useRef } from "react";
-import { SERVICES } from "@/lib/bathurst/data";
-import { CtaButton, CtaLink } from "@/components/style/Cta";
-import { Icon } from "./Icon";
+const book = (service: string) => `/book?${new URLSearchParams({ service })}`;
 
-/** Services as a row of clip-out coupons: swipe sideways, or step with the chevrons. Image, heading, body, price range and an Inquire CTA. */
+/**
+ * "What Gets You There": the services in three stages (Plan, Build, Run), all visible at once, in the page's own parts:
+ * the heading; the section's one filled orange CTA after the list (the .dc-go style of "Start a conversation");
+ * each stage's eyebrow and Cheltenham heading sit on the page background (like the footer's "Built in Toronto"); each
+ * service is its own CTA, the page's outline button (.sprout .btn) holding its name and one line, the whole box a link to book it.
+ */
 export default function Services() {
-  const row = useRef<HTMLUListElement>(null);
-  const page = (d: number) => row.current?.scrollBy({ left: d * row.current.clientWidth * 0.8, behavior: "smooth" });
-  const chev = (d: string) => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg>;
   return (
-    <section id="services" className="section">
+    <section id="services" className="section svc-sec">
       <div className="wrap">
-        <div className="flex items-end justify-between gap-6">
-          <div><p className="eyebrow">What we do</p><h2 className="h2 mt-2">Services</h2></div>
-          <div className="flex gap-2">
-            <CtaButton variant="icon" label="Previous services" onClick={() => page(-1)}>{chev("M14 6l-6 6 6 6")}</CtaButton>
-            <CtaButton variant="icon" label="Next services" onClick={() => page(1)}>{chev("M10 6l6 6-6 6")}</CtaButton>
-          </div>
-        </div>
-        <ul ref={row} className="svc-row mt-6">
-          {SERVICES.map((s, i) => (
-            // a clip-out coupon: dashed cut line around the card; one pair of scissors, on the first coupon's top edge
-            <li key={s.name} id={s.slug} className="svc-coupon">
-              {i === 0 && <svg className="svc-scissors" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M8.6 7.6L20 17M8.6 16.4L20 7M13.5 12h.01" />
-              </svg>}
-              <div className="svc frame">
-                {/* TODO(content): an image per service in /public/services/<slug>.jpg */}
-                <div className="svc-img">{s.image ? <img src={s.image} alt="" /> : <Icon d={s.icon} className="size-10 [stroke-width:1.2]" />}</div>
-                <h3>{s.title}</h3>
-                <p className="svc-body">{s.body}</p>
-                <div className="svc-foot">
-                  <p className="svc-price">{s.price ?? "Starts at $1,500"}</p>
-                  <CtaLink href={`/book?${new URLSearchParams({ service: s.name })}`} label={`Inquire about ${s.name}`} small>Inquire</CtaLink>
-                </div>
-              </div>
+        <header className="svc-head">
+          <h2 className="h2">What Gets You There</h2>
+        </header>
+        <ol className="svc-stages">
+          {SERVICE_STAGES.map((st, i) => (
+            <li key={st.key} className="svc-stage">
+              <p className="eyebrow">Step {String(i + 1).padStart(2, "0")}</p>
+              <h3 className="h3">{st.name}</h3>
+              <p className="svc-stage-line">{st.line}</p>
+              <ul>
+                {st.order.map((slug) => SERVICES.find((s) => s.slug === slug)!).map((s) => (
+                  <li key={s.slug} id={s.slug}>
+                    {/* each scope is its own CTA: the page's outline button, the whole box a link to book it */}
+                    <CtaLink href={book(s.name)} label={`${s.short}: ${s.line}`} className="svc-scope">
+                      <span className="svc-scope-t"><b>{s.short}</b><small>{s.line}</small></span>
+                      <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    </CtaLink>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
-        </ul>
+        </ol>
+        {/* after the services: the one filled CTA, for anyone not sure where to start */}
+        <div className="svc-after">
+          <p className="svc-after-t">Not sure where to start?</p>
+          <CtaLink href={book("Diagnostics")} label="Book a Diagnostic" className="dc-go svc-cta">
+            <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Book a Diagnostic
+          </CtaLink>
+        </div>
       </div>
     </section>
   );

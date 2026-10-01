@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import { CONTACT } from "@/lib/bathurst/data";
-import { CtaButton } from "@/components/style/Cta";
+import RowArrows from "./RowArrows";
 import REELS from "@/lib/bathurst/reels.json";
 
 type Reel = (typeof REELS)[number];
@@ -22,8 +22,6 @@ export default function ReelCards() {
   const [open, setOpen] = useState<Reel | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const row = useRef<HTMLUListElement>(null);
-  const page = (d: number) => row.current?.scrollBy({ left: d * row.current.clientWidth * 0.8, behavior: "smooth" });
-  const chev = (d: string) => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg>;
 
   useEffect(() => {
     const d = dialog.current; if (!d) return;
@@ -43,14 +41,10 @@ export default function ReelCards() {
   const untilt = (e: PointerEvent<HTMLButtonElement>) => { ["--rx", "--ry"].forEach((k) => e.currentTarget.style.setProperty(k, "0deg")); };
 
   return (
-    <section className="rv-reels tc-sec" aria-label="Reels on Instagram">
+    <section className="rv-reels tc-sec" aria-label="Businesses in Bathurst: interviews on Instagram">
       <div className="rv-reels-h">
-        <h3>From our Instagram</h3>
-        <div className="tc-ctl">
-          <a className="sprout btn tc-handle" href={CONTACT.instagram} target="_blank" rel="noopener"><Ig /><span>@talkersteinconsulting</span></a>
-          <CtaButton variant="icon" label="Previous reels" onClick={() => page(-1)}>{chev("M14 6l-6 6 6 6")}</CtaButton>
-          <CtaButton variant="icon" label="Next reels" onClick={() => page(1)}>{chev("M10 6l6 6-6 6")}</CtaButton>
-        </div>
+        <h2 className="h2">Businesses in Bathurst</h2>
+        <RowArrows row={row} what="interviews" />
       </div>
       <ul ref={row} className="tc-row">
         {REELS.map((r, i) => (
@@ -73,6 +67,12 @@ export default function ReelCards() {
           </li>
         ))}
       </ul>
+      {/* after the interviews: follow the account for the next ones */}
+      <div className="tc-foot-cta">
+        <a className="sprout btn orange tc-follow" href={CONTACT.instagram} target="_blank" rel="noopener" aria-label="Follow us on Instagram, @talkersteinconsulting">
+          <Ig /><span>Follow us on Instagram</span>
+        </a>
+      </div>
 
       <dialog ref={dialog} className="rv-modal tc-modal" aria-label={open ? `Reel: ${open.brand}` : "Reel"}
         onClose={() => setOpen(null)} onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}>

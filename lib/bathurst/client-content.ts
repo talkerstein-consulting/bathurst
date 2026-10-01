@@ -13,6 +13,9 @@ export type ClientContent = {
   photos: string[];
   /** A silent clip scrolling down the homepage (scripts/record-scroll.mjs); its poster is the same path as .jpg. */
   video?: string;
+  /** Phone versions: the homepage clip and snapshots in the site's own mobile layout (portrait); used on phones. */
+  mvideo?: string;
+  mphotos?: string[];
 };
 
 export const CONTENT: Record<string, ClientContent> = {
@@ -44,7 +47,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/yjc/site-3.webp",
       "/clients/yjc/site-4.webp"
     ],
-    "video": "/clients/yjc/scroll.mp4"
+    "video": "/clients/yjc/scroll.mp4",
+    "mvideo": "/clients/yjc/scroll-m.mp4",
+    "mphotos": [
+      "/clients/yjc/site-m-1.webp",
+      "/clients/yjc/site-m-2.webp",
+      "/clients/yjc/site-m-3.webp",
+      "/clients/yjc/site-m-4.webp"
+    ]
   },
   "fringe": {
     "gcat": "Clothing store",
@@ -77,7 +87,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/fringe/photo-3.webp",
       "/clients/fringe/site-4.webp"
     ],
-    "video": "/clients/fringe/scroll.mp4"
+    "video": "/clients/fringe/scroll.mp4",
+    "mvideo": "/clients/fringe/scroll-m.mp4",
+    "mphotos": [
+      "/clients/fringe/site-m-1.webp",
+      "/clients/fringe/site-m-2.webp",
+      "/clients/fringe/site-m-3.webp",
+      "/clients/fringe/site-m-4.webp"
+    ]
   },
   "hilys": {
     "gcat": "Children's party service",
@@ -116,7 +133,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/hilys/photo-3.webp",
       "/clients/hilys/site-4.webp"
     ],
-    "video": "/clients/hilys/scroll.mp4"
+    "video": "/clients/hilys/scroll.mp4",
+    "mvideo": "/clients/hilys/scroll-m.mp4",
+    "mphotos": [
+      "/clients/hilys/site-m-1.webp",
+      "/clients/hilys/site-m-2.webp",
+      "/clients/hilys/site-m-3.webp",
+      "/clients/hilys/site-m-4.webp"
+    ]
   },
   "mes": {
     "gcat": "Electrical supply store",
@@ -149,7 +173,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/mes/photo-3.webp",
       "/clients/mes/site-4.webp"
     ],
-    "video": "/clients/mes/scroll.mp4"
+    "video": "/clients/mes/scroll.mp4",
+    "mvideo": "/clients/mes/scroll-m.mp4",
+    "mphotos": [
+      "/clients/mes/site-m-1.webp",
+      "/clients/mes/site-m-2.webp",
+      "/clients/mes/site-m-3.webp",
+      "/clients/mes/site-m-4.webp"
+    ]
   },
   "royaldairy": {
     "gcat": "Cafe",
@@ -187,7 +218,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/royaldairy/site-3.webp",
       "/clients/royaldairy/site-4.webp"
     ],
-    "video": "/clients/royaldairy/scroll.mp4"
+    "video": "/clients/royaldairy/scroll.mp4",
+    "mvideo": "/clients/royaldairy/scroll-m.mp4",
+    "mphotos": [
+      "/clients/royaldairy/site-m-1.webp",
+      "/clients/royaldairy/site-m-2.webp",
+      "/clients/royaldairy/site-m-3.webp",
+      "/clients/royaldairy/site-m-4.webp"
+    ]
   },
   "kapara": {
     "gcat": "Israeli restaurant",
@@ -226,7 +264,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/kapara/photo-3.webp",
       "/clients/kapara/site-4.webp"
     ],
-    "video": "/clients/kapara/scroll.mp4"
+    "video": "/clients/kapara/scroll.mp4",
+    "mvideo": "/clients/kapara/scroll-m.mp4",
+    "mphotos": [
+      "/clients/kapara/site-m-1.webp",
+      "/clients/kapara/site-m-2.webp",
+      "/clients/kapara/site-m-3.webp",
+      "/clients/kapara/site-m-4.webp"
+    ]
   },
   "hoh": {
     "gcat": "Hair extension technician",
@@ -265,7 +310,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/hoh/site-3.webp",
       "/clients/hoh/site-4.webp"
     ],
-    "video": "/clients/hoh/scroll.mp4"
+    "video": "/clients/hoh/scroll.mp4",
+    "mvideo": "/clients/hoh/scroll-m.mp4",
+    "mphotos": [
+      "/clients/hoh/site-m-1.webp",
+      "/clients/hoh/site-m-2.webp",
+      "/clients/hoh/site-m-3.webp",
+      "/clients/hoh/site-m-4.webp"
+    ]
   },
   "uzbek": {
     "gcat": "Catering food and drink supplier",
@@ -299,7 +351,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/uzbek/photo-3.webp",
       "/clients/uzbek/site-4.webp"
     ],
-    "video": "/clients/uzbek/scroll.mp4"
+    "video": "/clients/uzbek/scroll.mp4",
+    "mvideo": "/clients/uzbek/scroll-m.mp4",
+    "mphotos": [
+      "/clients/uzbek/site-m-1.webp",
+      "/clients/uzbek/site-m-2.webp",
+      "/clients/uzbek/site-m-3.webp",
+      "/clients/uzbek/site-m-4.webp"
+    ]
   },
   "ar26": {
     "gcat": "Mechanic",
@@ -326,7 +385,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/ar26/site-3.webp",
       "/clients/ar26/site-4.webp"
     ],
-    "video": "/clients/ar26/scroll.mp4"
+    "video": "/clients/ar26/scroll.mp4",
+    "mvideo": "/clients/ar26/scroll-m.mp4",
+    "mphotos": [
+      "/clients/ar26/site-m-1.webp",
+      "/clients/ar26/site-m-2.webp",
+      "/clients/ar26/site-m-3.webp",
+      "/clients/ar26/site-m-4.webp"
+    ]
   },
   "familytree": {
     "gcat": "Mediation service",
@@ -348,7 +414,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/familytree/photo-3.webp",
       "/clients/familytree/site-4.webp"
     ],
-    "video": "/clients/familytree/scroll.mp4"
+    "video": "/clients/familytree/scroll.mp4",
+    "mvideo": "/clients/familytree/scroll-m.mp4",
+    "mphotos": [
+      "/clients/familytree/site-m-1.webp",
+      "/clients/familytree/site-m-2.webp",
+      "/clients/familytree/site-m-3.webp",
+      "/clients/familytree/site-m-4.webp"
+    ]
   },
   "umc": {
     "gcat": "Music instructor",
@@ -367,7 +440,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/umc/site-3.webp",
       "/clients/umc/site-4.webp"
     ],
-    "video": "/clients/umc/scroll.mp4"
+    "video": "/clients/umc/scroll.mp4",
+    "mvideo": "/clients/umc/scroll-m.mp4",
+    "mphotos": [
+      "/clients/umc/site-m-1.webp",
+      "/clients/umc/site-m-2.webp",
+      "/clients/umc/site-m-3.webp",
+      "/clients/umc/site-m-4.webp"
+    ]
   },
   "morgan": {
     "gcat": "Legal services",
@@ -403,7 +483,14 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/morgan/site-3.webp",
       "/clients/morgan/site-4.webp"
     ],
-    "video": "/clients/morgan/scroll.mp4"
+    "video": "/clients/morgan/scroll.mp4",
+    "mvideo": "/clients/morgan/scroll-m.mp4",
+    "mphotos": [
+      "/clients/morgan/site-m-1.webp",
+      "/clients/morgan/site-m-2.webp",
+      "/clients/morgan/site-m-3.webp",
+      "/clients/morgan/site-m-4.webp"
+    ]
   },
   "amritsari": {
     "gcat": "Indian restaurant",
@@ -440,6 +527,13 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/amritsari/site-3.webp",
       "/clients/amritsari/site-4.webp"
     ],
-    "video": "/clients/amritsari/scroll.mp4"
+    "video": "/clients/amritsari/scroll.mp4",
+    "mvideo": "/clients/amritsari/scroll-m.mp4",
+    "mphotos": [
+      "/clients/amritsari/site-m-1.webp",
+      "/clients/amritsari/site-m-2.webp",
+      "/clients/amritsari/site-m-3.webp",
+      "/clients/amritsari/site-m-4.webp"
+    ]
   }
 };

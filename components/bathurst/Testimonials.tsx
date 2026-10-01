@@ -11,8 +11,6 @@ type Tile = { key: string; weight: number; node: ReactNode; rating?: boolean };
 /** Share of its column each video card takes; cycles so neighbouring columns stagger like a masonry wall. */
 const WEIGHTS = [7, 6, 5, 6, 7, 5, 6];
 
-/** The hover teaser: the quote cut at a word boundary with an ellipsis (the whole testimonial is in the modal). */
-const teaser = (q: string, n = 110) => (q.length <= n ? q : q.slice(0, q.lastIndexOf(" ", n)).replace(/[\s,.;:!?-]+$/, "") + "…");
 
 const Play = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>;
 const Prev = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>;
@@ -75,12 +73,12 @@ export default function Testimonials() {
             <source media="(max-width: 759px)" srcSet={s.poster.replace(/\.jpg$/, "-sm.jpg")} />
             <img className="rv-thumb" src={s.poster.replace(/\.jpg$/, "-md.jpg")} alt="" loading="lazy" decoding="async" />
           </picture>
-          <p className="rv-quote">“{teaser(s.quote)}”</p>
+          {/* the play button sits on the video itself; the whole card opens it */}
+          <button type="button" className="sprout btn icon orange rv-playbtn" tabIndex={-1} aria-hidden="true" onClick={(e) => { e.stopPropagation(); setOpen(s); }}><Play /></button>
         </div>
         <div className="rv-id">
           <span className="rv-logo single hair"><img src={s.logo} alt="" /></span>
           <span className="rv-who"><b>{s.who}</b><small>{s.role}</small></span>
-          <button type="button" className="sprout btn icon rv-playbtn" tabIndex={-1} aria-hidden="true" onClick={(e) => { e.stopPropagation(); setOpen(s); }}><Play /></button>
         </div>
       </article>
     ),
@@ -130,6 +128,7 @@ export default function Testimonials() {
   // phones: the ratings side by side, then one swipeable row of full-size video cards
   if (cols === 1) return (
     <div className="rv rv-phone">
+      <h2 className="h2 rv-title">Word on the Street</h2>
       <div className="rv-rates">{clutch.node}{google.node}</div>
       <div className="rv-swipe" aria-label="Video testimonials">
         {cards.map((t) => <div key={t.key} className="rv-slot">{t.node}</div>)}
@@ -148,6 +147,7 @@ export default function Testimonials() {
 
   return (
     <div className="rv">
+      <h2 className="h2 rv-title">Word on the Street</h2>
       <div className="rv-wall" style={{ "--cols": cols } as CSSProperties} aria-label="Video testimonials">
         {columns.map((col, c) => (
           <div className="rv-col" key={c}>

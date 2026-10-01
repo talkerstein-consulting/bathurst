@@ -46,7 +46,6 @@ export default function SignatureLine() {
   let n = 0;   // index among the visible (non-space) letters, for the stagger
   return (
     <section className="sig" aria-labelledby="sig-h">
-      <p className="eyebrow">Ready for what’s next?</p>
       <h2 id="sig-h" className="sr-only">Built for what’s next.</h2>
       <div ref={box} className={`sig-line${play ? " on" : ""}`}>
         <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true" style={{ fontFamily: size.family }}>
@@ -66,7 +65,7 @@ export default function SignatureLine() {
         <CtaButton label="Start a conversation" className="dc-go sig-go" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
           <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Start a conversation
         </CtaButton>
-        <CtaLink href="https://talkerstein.com/work" variant="link" label="Explore our work" />
+        <CtaLink href="https://talkerstein.com/work" label="Explore our work" />
       </div>
     </section>
   );

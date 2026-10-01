@@ -194,9 +194,9 @@ export default function BathurstHero() {
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
           <div className="cover-body" id="coverbody"><Testimonials /><Services /><SignatureLine /><SiteFooter /></div>
         </div>
-        {/* directions: the Route Preview heading, then one framed card per leg that slides in and out (filled by the engine) */}
+        {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
         <div className="dircard" id="dircard" role="status" aria-live="polite">
-          <h2 className="dc-title">Route Preview</h2>
+          <h2 className="dc-title">The Way Forward</h2>
           <div className="dc-track" />
         </div>
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}

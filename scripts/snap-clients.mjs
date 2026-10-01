@@ -16,7 +16,7 @@ const HIDE = `
   [id*="cookie" i], [class*="cookie" i], [id*="consent" i], [class*="consent" i], [aria-label*="cookie" i],
   #onetrust-consent-sdk, .cky-consent-container, #CybotCookiebotDialog, .cc-window, #hubspot-messages-iframe-container,
   [class*="klaviyo" i][role="dialog"], .needsclick[role="dialog"], iframe[title*="chat" i], #tidio-chat, .intercom-lightweight-app,
-  .shopify-pc__banner, .pum-overlay, [class*="newsletter-popup" i], [class*="popup" i][role="dialog"], [class*="announcement" i][class*="popup" i]
+  .shopify-pc__banner, shopify-forms-embed, .pum-overlay, [class*="newsletter-popup" i], [class*="popup" i][role="dialog"], [class*="announcement" i][class*="popup" i]
   { display: none !important; visibility: hidden !important; }
   html, body { overflow: auto !important; }`;
 
