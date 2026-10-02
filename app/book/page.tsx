@@ -5,6 +5,8 @@ import { CONTACT } from "@/lib/bathurst/data";
 export const metadata: Metadata = {
   title: "Start a Conversation | Talkerstein Consulting Group, Toronto",
   description: "Tell us about your business and where you want to go next. Talkerstein works with businesses across Toronto and the GTA on websites, branding, SEO, automation and AI.",
+  alternates: { canonical: "/book" },   // the root layout's canonical is "/", so this page needs its own
+  openGraph: { title: "Start a Conversation | Talkerstein Consulting Group, Toronto", url: "/book" },
 };
 
 const GOALS: Record<string, string> = {

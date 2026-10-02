@@ -1493,3 +1493,12 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 @media (max-width: 760px) {
   .hero-grid .sv-hero .hero-cta { display: flex; width: 100%; box-sizing: border-box; justify-content: center; align-self: stretch; }
 }
+
+/* preheader: one line on phones ("GTA" stands in for Greater Toronto Area); the badge row is centred */
+.gta-short { display: none; text-decoration: none; }
+@media (max-width: 760px) {
+  .gta-long { display: none; }
+  .gta-short { display: inline; }
+  .sv-hero p.hero-where, .hero-grid .sv-hero p.hero-where { white-space: nowrap; }
+  .sv-hero .hero-proofrow .hero-certs { width: 100%; justify-content: center; }
+}

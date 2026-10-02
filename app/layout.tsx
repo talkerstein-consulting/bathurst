@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Jost } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -24,11 +24,26 @@ const slowly = localFont({
   preload: false,   // only the accent script and the closing signature line use it, so it loads on demand
 });
 
+const SITE = "https://talkerstein.com";
+const TITLE = "Toronto Web Design, AI & Automation Consulting | Talkerstein";
+const DESCRIPTION =
+  "Talkerstein helps Toronto businesses grow through web design, AI, automation, branding and strategic consulting. Explore our work along Bathurst Street, from North York to Thornhill.";
+const OG_IMAGE = { url: "/brand/og-bathurst.jpg", width: 1200, height: 630, alt: "A vintage illustration of Bathurst Street in Toronto, with a streetcar and brick storefronts" };
+
 export const metadata: Metadata = {
-  title: "Toronto Web Design, AI & Automation Consulting | Talkerstein",
-  description:
-    "Talkerstein helps Toronto businesses grow through web design, AI, automation, branding and strategic consulting. Based in North York, serving businesses across the GTA.",
+  metadataBase: new URL(SITE),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Talkerstein Consulting Group",
+  alternates: { canonical: "/" },
+  keywords: ["Toronto web design", "AI consulting Toronto", "business automation", "branding", "SEO", "North York", "GTA"],
+  openGraph: { type: "website", siteName: "Talkerstein Consulting Group", locale: "en_CA", url: "/", title: TITLE, description: DESCRIPTION, images: [OG_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [OG_IMAGE.url] },
+  robots: { index: true, follow: true },
+  // favicons: app/favicon.ico + app/icon.png + app/apple-icon.png (the TCG lion mark) are picked up by file convention
 };
+
+export const viewport: Viewport = { themeColor: "#19254A", colorScheme: "light" };
 
 // Local business entity for search engines: the same name, address and phone the footer shows
 const LOCAL_BUSINESS = {

@@ -85,7 +85,7 @@ export default function BathurstHero() {
           <div className="mast-space" aria-hidden="true" />
           <div className="hero-grid">
             <div className="sv-hero" id="svhero">
-              <p className="eyebrow hero-where">Toronto · North York · Greater Toronto Area</p>
+              <p className="eyebrow hero-where">Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></p>
               <h1 className="h1">Find your way to the right customers.</h1>
               <p>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
               <CtaButton label="Get directions" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:directions"))} />   {/* opens the Find Your Way Forward sheet (DirectionsPanel) */}
