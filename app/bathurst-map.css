@@ -914,6 +914,10 @@
   font: 700 44px/1.05 var(--head); color: var(--steel); text-shadow: var(--halo); white-space: nowrap;   /* one line */ pointer-events: none;
   opacity: 0; transform: translateX(-40px); transition: opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1); }
 .workhead.on { opacity: 1; transform: none; }
+/* a soft sea-breeze wash behind the heading so it reads over the roads, labels and pin lines; it sits above the pins (z-index 2 vs #labels 1) */
+.workhead::before { content: ""; position: absolute; z-index: -1; inset: -14px -56px -22px -40px; pointer-events: none;
+  background: linear-gradient(90deg, rgb(243 247 243 / .94) 0%, rgb(243 247 243 / .88) 55%, rgb(243 247 243 / 0) 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%); }
 @media (max-width: 759px) { .workhead { left: 16px; top: 124px; padding: 0; font-size: 26px; white-space: normal; max-width: 300px; } }   /* phones: under the chips, text lined up with the TCG mark */
 @media (prefers-reduced-motion: reduce) { .workhead { transition: opacity .2s ease; transform: none; } }
 
@@ -1465,3 +1469,27 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 }
 /* the reviews sheet: no outer double line (it read as a stray box around Word on the Street); the sheet keeps its surface and handle */
 .cover.frame > .lines { display: none; }
+
+/* Way Forward sequence (route steps + Find Your Way Forward): the client nodes step aside so only the route and the card remain */
+#stick.dirs .pin, #stick.dirs .etab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility 0s .3s; }
+
+/* Way Forward route cards on phones: bigger type, a roomier card, and set lower under the chip row */
+@media (max-width: 760px) {
+  .dircard { top: calc(var(--inset) + var(--icon-btn) + var(--s1) + 40px + var(--s2) + var(--s3)); gap: var(--s3); }
+  .dc-title { font-size: 34px; }
+  .dc-step { padding: var(--s3); gap: var(--s3); }
+  .dc-arrow { width: 64px; height: 64px; }
+  .dc-arrow .glyph { width: 34px; height: 34px; }
+  .dc-step h3 { font-size: 26px; margin: 6px 0; }
+  .dc-step p { font-size: 17px; line-height: 1.5; color: var(--steel); }
+  .dc-n, .dc-est { font-size: 12px; }
+}
+
+/* Way Forward: the navbar keeps the full "Get directions" CTA (label shown, phones included) */
+#stick.dirs .dirlabel { max-width: 160px; margin-left: var(--s1); opacity: 1; transition-delay: 0s, 0s, .15s; }
+#stick.dirs .layers-top .btn.dirbtn { padding: 0 var(--s2); }
+
+/* phones: the hero CTA spans the full width of its container */
+@media (max-width: 760px) {
+  .hero-grid .sv-hero .hero-cta { display: flex; width: 100%; box-sizing: border-box; justify-content: center; align-self: stretch; }
+}

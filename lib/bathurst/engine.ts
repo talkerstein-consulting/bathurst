@@ -67,7 +67,9 @@ export function createBathurstEngine() {
   const lite = mobile || weak;
   const renderer = new THREE.WebGLRenderer({antialias:!lite, powerPreference:'high-performance'});
   // render resolution: at most 1.5x (1.25x in lite; on dense phone screens edges stay clean without MSAA); drops further if frames run slow
-  let dprCap = Math.min(devicePixelRatio, lite ? 1.25 : 1.5);
+  // dev only: ?dpr=2.5 pins the render resolution and turns off the adaptive drop (the promo capture in ../promo renders at full device pixels)
+  const pinDpr = process.env.NODE_ENV !== 'production' ? Number(new URLSearchParams(location.search).get('dpr')) || 0 : 0;
+  let dprCap = pinDpr || Math.min(devicePixelRatio, lite ? 1.25 : 1.5);
   renderer.setPixelRatio(dprCap);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setClearColor(0xF3F7F3, 1);   // outside the front-page window: paper   // with colour management off, hex values reach the screen unchanged (#B3530E is #B3530E)
@@ -137,12 +139,13 @@ export function createBathurstEngine() {
       roads: [mix(C.steel,C.sea,.20), mix(C.steel,C.sea,.30), mix(C.steel,C.sea,.36), mix(C.steel,C.sea,.44), mix(C.steel,C.sea,.58), mix(C.steel,C.sea,.30)],
       park: mix(C.steel, C.sea, .09), water: mix(C.steel, C.sea, .42), footprint: mix(C.steel, C.sea, .30),
     },
-    // Paper: Sea Breeze land with Steel Blue ink, like a printed street atlas
+    // Paper: Google Maps colours (grey land, green parks, blue water, white streets, yellow arterials, amber
+    // motorways) desaturated about 40% toward the Sea Breeze / Steel Blue brand so they sit with the page; Steel Blue ink
     paper: {
-      ground: mix(C.sea, C.steel, .10),
-      roof: new THREE.Color(C.sea), wallLit: mix(C.sea, C.steel, .16), wallShade: mix(C.sea, C.steel, .36), ink: new THREE.Color(C.steel),
-      roads: [new THREE.Color(C.sea), new THREE.Color(C.sea), new THREE.Color(C.sea), new THREE.Color(C.sea), mix(C.sea, C.steel, .30), new THREE.Color(C.sea)],
-      park: mix(C.sea, C.steel, .18), water: mix(C.sea, C.steel, .34), footprint: mix(C.sea, C.steel, .24),
+      ground: new THREE.Color(0xE9EBE6),
+      roof: new THREE.Color(0xE4E3DD), wallLit: new THREE.Color(0xD6D5CE), wallShade: new THREE.Color(0xC3C2BB), ink: new THREE.Color(C.steel),
+      roads: [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF].map(h => new THREE.Color(h)),   // local, tertiary, secondary, primary, motorway, link
+      park: new THREE.Color(0xCFE2C6), water: new THREE.Color(0xAFD0E4), footprint: new THREE.Color(0xDADAD3),
     },
   };
   const PALETTE = PALETTES.paper;
@@ -401,6 +404,7 @@ export function createBathurstEngine() {
   for(const ev of ['touchend','touchcancel']) chips.addEventListener(ev, ()=>{ chipTouchUntil=performance.now()+1200; }, {passive:true, signal});
   function centreChip(c){ if(performance.now()<chipTouchUntil) return; if(c) chips.scrollTo({left: c.offsetLeft - (chips.clientWidth - c.offsetWidth)/2, behavior: reduce?'auto':'smooth'}); }
   function markChip(k){ const i=Math.max(0, INDS.findIndex(x=>x[0]===k)); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all' && performance.now()>=chipTouchUntil) chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
+  let walkTo=null;     // a stop reached through the modal's Next / Previous: it arrives with the modal closed
   let wantOpen=null;   // a place explicitly asked for (showPlace): its stop opens the sheet half way instead of peeking
   function setNode(i){
     nodeIdx=Math.max(-1, Math.min(NODES.length-1, i));
@@ -408,10 +412,11 @@ export function createBathurstEngine() {
     stick.classList.toggle('nodes', nodeIdx>=0);
     if(nodeIdx<0){ selected=null; markChip('all'); if(view.type==='place') view={type:'list'}; setCollapsed(true); render(); refresh(); resetView(); return; }
     openPlace(NODES[nodeIdx].id);   // focus the marker and open its sidebar
+    if(walkTo===NODES[nodeIdx].id){ walkTo=null; setCollapsed(true); flyTo(NODES[nodeIdx].pos, 4200, true); return; }   // panel gone, so the pin lands on the true centre of the screen   // arrived via Next / Previous: close the modal, keep walking
     // phones: while scrolling the projects the sheet stays closed (handle + title), unless this stop was asked for (a pin, a link): then it opens half way, like Google Maps
     const asked = wantOpen===NODES[nodeIdx].id; if(asked) wantOpen=null;   // the stops passed on the way there stay closed
     // phones: while walking the tour the sheet stays closed and the map card (with View) is the preview; a stop asked for opens half way
-    if(W<760){ if(asked) setSheet('half'); else { setSheet('half'); setCollapsed(true); } }
+    if(W<760){ if(asked) setSheet('half'); else { setSheet('half'); setCollapsed(true); flyTo(NODES[nodeIdx].pos, 4200, true); } }
   }
   function setIndustry(i){
     indIdx=Math.max(0, Math.min(INDS.length-1, i)); const k=INDS[indIdx][0];
@@ -573,8 +578,7 @@ export function createBathurstEngine() {
         ${hero}
         ${media.slice(1, SHOWN).map((m,i)=>`<button type="button" class="ptile single hair${m.portrait ? ' port' : ''}" data-ph="${i+1}" aria-label="Photo ${i+2} of ${media.length}"><img src="${sm(m.src)}" alt="" loading="lazy" decoding="async">${plus(i)}</button>`).join('')}
       </div>` : `<div class="gallery"><div class="single hair">${thumbHTML(p)}</div></div>`;
-    const cta = c ? `<a class="sprout btn orange pcta" href="${c.site}" target="_blank" rel="noopener">${globe}<span>Visit website</span></a>` : '';
-    // the tour's own controls sit after the content (Visit website, then Previous / Next), so the case study is read on the way
+    // the tour's own controls (Previous / Next) sit after the content, so the case study is read on the way
     // to them; Next names where it leads. A × in the header closes the sheet; the handle only resizes it.
     const j = NODES.findIndex(n=>n.id===p.id), last = j===NODES.length-1;
     const nav = j<0 ? '' : `<nav class="pnav" aria-label="Case studies">
@@ -587,7 +591,7 @@ export function createBathurstEngine() {
       <div class="hd"><div><h2>${p.name}</h2><div class="meta">${rating}${c?`<span class="gcat">${esc(c.gcat)}</span>`:IND[p.ind].name}${p.maybe?' · <b>to confirm</b>':''}</div></div>${close}</div>
       <div class="ptabs" role="tablist" aria-label="${p.name}">${T.map(([k,n])=>`<button type="button" role="tab" class="ptab" data-tab="${k}" aria-selected="${k===tab}">${n}</button>`).join('')}</div>
       <div class="ppanel" role="tabpanel">${panel}</div>
-      ${cta || nav ? `<div class="pfoot">${cta}${nav}</div>` : ''}
+      ${nav ? `<div class="pfoot">${nav}</div>` : ''}
     </div>`;
   }
   // the photo viewer: every image of the place; arrows, swipe or keys to step, Esc or the backdrop closes
@@ -632,7 +636,7 @@ export function createBathurstEngine() {
     // case-study controls: the stop before or after (it opens half way on phones), the overview before the first, The Way Forward after the last
     sheetBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>placeClose.onclick());   // the sheet's own × (the search bar's × does the same)
     sheetBody.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const k=+b.dataset.go;
-      if(k<0) goTo(PH_A+PH_LEAD*.5); else if(k>=NODES.length) toHow(); else { wantOpen=NODES[k].id; scrollToNode(k); } });
+      if(k<0) goTo(PH_A+PH_LEAD*.5); else if(k>=NODES.length) toHow(); else { walkTo=NODES[k].id; scrollToNode(k); } });   // Next / Previous: the modal steps aside and the tour carries on at that stop (its map card stays, scrolling moves on)
     // the hero clip: the play button starts it in place; a click on the playing clip pauses it again
     const hv = sheetBody.querySelector('.phero');
     if(hv){ const v = hv.querySelector('video'), pb = hv.querySelector('.pplay'); v.muted = true;
@@ -676,7 +680,7 @@ export function createBathurstEngine() {
     const p=ALL.find(x=>x.id===id); if(!p) return;
     view={type:'place',id}; selected=id; { const j=NODES.findIndex(n=>n.id===id); if(j>=0) nodeIdx=j; markChip(p.ind); } render(); refresh(); setSheet('half'); setCollapsed(false);
     if(target<1) scrollToProg(1);
-    if(p.pos) flyTo(p.pos, nodeIdx>=0 && NODES[nodeIdx]?.id===id ? 4200 : Math.min(goal.dist, 1500));   // scroll stops: wide enough that the neighbouring icons stay on screen
+    if(p.pos){ const stop = nodeIdx>=0 && NODES[nodeIdx]?.id===id; flyTo(p.pos, stop ? 4200 : Math.min(goal.dist, 1500), stop && (W>=760 || mapUI.classList.contains('pc'))); }   // scroll stops: wide enough that the neighbouring icons stay on screen
   }
   function refresh(){
     LOCAL.forEach(p=>{ p.el.classList.toggle('dim', !matches(p)); if(p.el.classList.contains('sel')!==(selected===p.id)){ p.el.classList.toggle('sel', selected===p.id); p.cw=0; } if(p.sub.textContent!==subLine(p)){ p.sub.textContent=subLine(p); p.cw=0; } });
@@ -818,11 +822,11 @@ export function createBathurstEngine() {
     // centre on what the sidebar leaves visible (its real width, which changes per breakpoint)
     const r=mapUI.querySelector('.panel').getBoundingClientRect(), s=stick.getBoundingClientRect(); return {x:Math.max(0, r.right-s.left-(document.querySelector('.ctrls')?.offsetWidth||0)-24)/2, y:0};   // minus the control column on the right
   }
-  function centreFor(world, dist, bearing, pitch){
-    const o=visibleOffset(), m=mpp(dist), r=rgt(bearing), f=fwd(bearing), k=1/Math.max(.45,Math.cos(pitch));
+  function centreFor(world, dist, bearing, pitch, mid){
+    const o=mid ? {x:0,y:0} : visibleOffset(), m=mpp(dist), r=rgt(bearing), f=fwd(bearing), k=1/Math.max(.45,Math.cos(pitch));
     return {cx: world.x - r.x*o.x*m - f.x*o.y*m*k, cz: world.z - r.z*o.x*m - f.z*o.y*m*k};
   }
-  function flyTo(world, dist){ mapDirty=true; setGoal({...centreFor(world, dist, goal.bearing, goal.pitch), dist}); }
+  function flyTo(world, dist, mid){ mapDirty=true; setGoal({...centreFor(world, dist, goal.bearing, goal.pitch, mid), dist}); }   // mid: the pin lands on the true centre of the screen, not the middle of what the panel leaves
   function fitTo(list){
     if(!list.length) return; if(list.length===1) return flyTo(list[0].pos, 1500);
     const zs=list.map(p=>p.pos.z), xs=list.map(p=>p.pos.x), cz=(Math.min(...zs)+Math.max(...zs))/2, cx=(Math.min(...xs)+Math.max(...xs))/2;
@@ -1314,7 +1318,7 @@ export function createBathurstEngine() {
     renderer.render(scene,camera);
     // adaptive quality: if frames keep running long (a slow GPU), step the resolution down once or twice
     perf.t += dt; perf.n++; if(dt > 1/40) perf.slow++;
-    if(perf.t > 2){ if(perf.slow/perf.n > .35 && dprCap > 1){ dprCap = Math.max(1, dprCap - .25); renderer.setPixelRatio(dprCap); resize(); } perf.t=perf.n=perf.slow=0; }
+    if(perf.t > 2){ if(!pinDpr && perf.slow/perf.n > .35 && dprCap > 1){ dprCap = Math.max(1, dprCap - .25); renderer.setPixelRatio(dprCap); resize(); } perf.t=perf.n=perf.slow=0; }
     // settled: nothing eased this frame, no drag, and the hero fly-through is not playing
     const flying = !reduce && target<=.005 && prog<=.005;
     settled = !flying && !drag && Math.abs(snap()-before) < 1e-3 ? settled+1 : 0;
