@@ -1558,3 +1558,16 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
   .sv-hero .hero-proofrow .cert-shopify { width: 140px; }
   .sv-hero .hero-proofrow .cert-ghl { width: 54px; }
 }
+
+/* front page: the scroll cue, bottom-centre of the window over the moving map (where the eye lands after the proof row);
+   quiet steel so the orange CTA stays the one thing that stands out; gone once the first scroll opens the map */
+.scroll-cue { position: absolute; left: 50%; bottom: calc(var(--inset) + var(--s3) + var(--tb, 0px)); translate: -50% 0; z-index: 3;
+  display: grid; justify-items: center; gap: 4px; min-width: 44px; min-height: 44px; padding: 6px 12px;
+  border: 0; background: none; color: var(--steel); text-shadow: var(--halo); cursor: pointer; pointer-events: auto;
+  font: 600 11px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; transition: opacity .3s ease, color .2s ease; }
+.scroll-cue .glyph { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  animation: cue-bob 1.6s cubic-bezier(.45,0,.55,1) infinite; }
+.scroll-cue:hover, .scroll-cue:focus-visible { color: var(--orange); }
+#stick:not(.open) .scroll-cue { opacity: 0; pointer-events: none; }
+@keyframes cue-bob { 50% { transform: translateY(5px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue .glyph { animation: none; } }

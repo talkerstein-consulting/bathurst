@@ -988,6 +988,8 @@ export function createBathurstEngine() {
   // sections below the map ask it to open a place: window.dispatchEvent(new CustomEvent('tcg:open', {detail:{id}}))
   const showPlace = id => { const j=NODES.findIndex(n=>n.id===id); if(j>=0){ wantOpen=id; if(j===nodeIdx){ openPlace(id); wantOpen=null; } else scrollToNode(j); } else openPlace(id); };
   addEventListener('tcg:open', e=>showPlace(e.detail.id), {signal});
+  // the hero's Continue scrolling down: glide on to the map overview (Our Work Across Toronto)
+  addEventListener('tcg:scroll', ()=>goTo(PH_A+PH_LEAD*.5), {signal});
   const mapReady = () => target>=1 && prog>.97;
   // dev-only: jump the camera to a progress value without waiting for the eased scroll (stripped in production)
   if(process.env.NODE_ENV !== 'production') window.__tcgJump = v => { target=prog=Math.min(1,Math.max(0,v)); };

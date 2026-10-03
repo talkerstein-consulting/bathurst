@@ -88,7 +88,7 @@ export default function BathurstHero() {
               <p className="eyebrow hero-where">Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></p>
               <h1 className="h1">Find your way to the right customers.</h1>
               <p>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
-              <CtaButton label="Get directions" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:directions"))} />   {/* opens the Find Your Way Forward sheet (DirectionsPanel) */}
+              <CtaButton label="Continue scrolling down" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:scroll"))} />   {/* glides down to the map overview (engine) */}
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               <div className="hero-proofrow">
                 <div className="hero-ratings">
@@ -103,6 +103,10 @@ export default function BathurstHero() {
             </div>
             <div id="win" aria-hidden="true" />
           </div>
+          {/* scroll cue: bottom-centre of the window, over the moving map; a tap glides on to the map, and it fades on the first scroll */}
+          <button type="button" className="scroll-cue" onClick={() => window.dispatchEvent(new Event("tcg:scroll"))}>
+            <span>Scroll to explore</span><Glyph g="arrowD" />
+          </button>
         </div>
 
         <div id="mapui">
