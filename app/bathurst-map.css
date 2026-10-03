@@ -69,6 +69,8 @@
 .search { flex: 1; min-width: 0; margin: 0; }
 .search-box { display: flex; align-items: center; gap: var(--s1); height: var(--icon-btn); padding: 0 var(--s1) 0 var(--s2); }
 .search-box > .glyph { color: var(--steel-70); }
+.backmap { width: 100%; border: 0; cursor: pointer; font: 600 15px/1 var(--body); color: var(--steel); justify-content: center; text-align: center; padding: 0 var(--s2); }
+.backmap:hover, .backmap:focus-visible { color: var(--orange); }
 .search-box .input { flex: 1; min-width: 0; height: 100%; padding: 0; font-size: 15px; }
 .search-box .input::placeholder { color: rgb(25 37 74 / .55); }
 .search-box .input::-webkit-search-cancel-button { display: none; }
@@ -242,7 +244,7 @@
 /* ================= phones ================= */
 @media (max-width: 760px) {
   #hero { --inset: var(--s2); }
-  .neatline { --margin: 3px; }
+  .neatline { --margin: 0px; }   /* phones: no paper margin, the checker runs to the screen edge */
   .chip { height: 48px; padding: 0 16px; font-size: 15px; }
 
   .panel { left: 0; right: 0; width: auto; top: var(--inset); bottom: 0; gap: 0; }
@@ -1501,4 +1503,31 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
   .gta-short { display: inline; }
   .sv-hero p.hero-where, .hero-grid .sv-hero p.hero-where { white-space: nowrap; }
   .sv-hero .hero-proofrow .hero-certs { width: 100%; justify-content: center; }
+}
+
+/* phones: Our Work Across Toronto shows each client as just its icon circle on the address (no stem, no dot);
+   the node the route marker visits morphs from that circle into a map pin (tip on the address), its callout card riding
+   above the pin's head. The zoom buttons come back on the side, under the compass. */
+@media (max-width: 760px) {
+  .pin .ic { width: 40px; height: 40px; left: -20px; top: -20px; border-radius: 50%; rotate: 0deg;   /* rotate, not transform: the pop-in animation owns transform */
+    transition: background .2s ease, top .35s cubic-bezier(.22,1,.36,1), border-radius .35s cubic-bezier(.22,1,.36,1), rotate .35s cubic-bezier(.22,1,.36,1); }
+  .pin .ic .glyph { width: 21px; height: 21px; transition: rotate .35s cubic-bezier(.22,1,.36,1); }
+  .pin:not(.mini) .ic { top: -48px; border-radius: 50% 50% 50% 0; rotate: -45deg; }
+  .pin:not(.mini) .ic .glyph { rotate: 45deg; }
+  .pin:not(.mini) .ld { bottom: 48px; height: calc(var(--L) - 12px); }
+  .pin:not(.mini) .co { bottom: calc(var(--L) + 36px); }
+  .pin.mini::before, .pin.mini::after { display: none; }
+  .pin.mini .nm { top: 0; }
+  .ctrls .zoomgrp { display: flex; width: 44px; background: var(--sea); }
+  .ctrls .zoomgrp button { height: 40px; }
+}
+
+/* full screen on phones: the map fills the large viewport (browser toolbar hidden), so no strip of the page shows
+   below it when the toolbar slides away. --tb is the toolbar's live height (0 when hidden, and always 0 on desktop);
+   the sheet and the neatline's bottom edge sit above it, so nothing hides behind the toolbar while it shows. */
+#stick { height: 100vh; height: 100lvh; --tb: 0px; }
+@supports (height: 100dvh) { #stick { --tb: calc(100lvh - 100dvh); } }
+.neatline { bottom: calc(var(--wb, 0px) + var(--tb)); }
+@media (max-width: 760px) {
+  .panel { bottom: var(--tb); }
 }

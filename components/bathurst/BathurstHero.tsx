@@ -117,12 +117,13 @@ export default function BathurstHero() {
               </a>
               <span className="wordclip" aria-hidden="true"><img className="word" src="/brand/tcg-text.svg" alt="" /></span>
               <form className="search" id="searchform" role="search">
-                <label className="sprout field-box search-box">
-                  <Glyph g="search" />
-                  <input id="q" className="input" type="search" autoComplete="off" enterKeyHint="search" aria-label="Search Talkerstein Maps" placeholder="Search Talkerstein Maps" />
-                  <button className="qclear" type="button" id="qclear" aria-label="Clear search" hidden><Glyph g="close" /></button>
-                  <button className="qclear" type="button" id="placeclose" aria-label="Close place" hidden><Glyph g="close" /></button>
-                </label>
+                {/* the search field is retired for a Back to map button; its input and clears stay (hidden) for the engine */}
+                <button type="button" className="sprout field-box search-box backmap" id="backmap"><span>Back to map</span></button>
+                <span hidden>
+                  <input id="q" className="input" type="search" autoComplete="off" tabIndex={-1} aria-hidden="true" />
+                  <button className="qclear" type="button" id="qclear" tabIndex={-1} aria-hidden="true"><Glyph g="close" /></button>
+                  <button className="qclear" type="button" id="placeclose" tabIndex={-1} aria-hidden="true"><Glyph g="close" /></button>
+                </span>
               </form>
             </div>
             <div className="sheet frame" id="sheet" data-state="half">

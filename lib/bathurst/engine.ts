@@ -80,7 +80,7 @@ export function createBathurstEngine() {
   const HAZE = new THREE.Color(C.sea);
   scene.background = HAZE;
   scene.fog = new THREE.Fog(HAZE, 100, 2000);
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 80000);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 200000);
   scene.add(new THREE.HemisphereLight(mix(C.sea,0xffffff,.5), mix(C.steel, C.sea, .45), 0.9*Math.PI));  // ×π: three r155+ lights are physically based; matches the r149 prototype
   const sun = new THREE.DirectionalLight(mix(C.sea, C.orange, 0.12), 0.75*Math.PI); sun.position.set(-0.6, 1, 0.35); scene.add(sun);
 
@@ -318,7 +318,9 @@ export function createBathurstEngine() {
     el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
     // phones: the selected card is the preview; View opens the case study sheet, Next moves the tour on
     el.querySelector('[data-view]').onclick=e=>{ e.stopPropagation(); viewPlace(p.id); };
-    el.querySelector('[data-next]').onclick=e=>{ e.stopPropagation(); const j=NODES.findIndex(n=>n.id===p.id); if(j<0 || j>=NODES.length-1) toHow(); else scrollToNode(j+1); };
+    el.querySelector('[data-next]').onclick=e=>{ e.stopPropagation(); const j=NODES.findIndex(n=>n.id===p.id);
+      if(j<0){ const off=ALL.filter(x=>!NODES.some(n=>n.id===x.id)), k=off.findIndex(x=>x.id===p.id); pinClick(off[(k+1)%off.length].id); }   // off the route: the next of the other cases
+      else if(j>=NODES.length-1) toHow(); else scrollToNode(j+1); };
     labels.appendChild(el); p.el=el; p.sub=el.querySelector('small'); p.co=el.querySelector('.co');
   });
   roadLabels.forEach(r=>{ const el=document.createElement('div'); el.className='road '+r.cls; el.textContent = r.name; labels.appendChild(el); r.el=el; });
@@ -355,7 +357,8 @@ export function createBathurstEngine() {
   const chips=$('chips');
   // chips run in the order the industries first appear while scrolling the map (north first), then All clients
   const CHIP = {food:'Restaurants', retail:'Retail', beauty:'Beauty', health:'Health', services:'Personal services', community:'Nonprofits', finance:'Finance', professional:'Professional'};
-  const INDS=[...new Set(LOCAL.filter(p=>p.pos && p.stop).sort((a,b)=>a.stop-b.stop).map(p=>p.ind))].map(k=>[k,CHIP[k],k]).concat([['all','All clients',null]]);
+  // the route's industries first, then those only off the route (AR26's Personal services, Professional), so every case has a chip
+  const INDS=[...new Set([...LOCAL.filter(p=>p.pos && p.stop).sort((a,b)=>a.stop-b.stop), ...ALL].map(p=>p.ind))].filter(k=>CHIP[k]).map(k=>[k,CHIP[k],k]).concat([['all','All clients',null]]);
   let indIdx=0;
   INDS.forEach(([k,n,ic],idx)=>{
     const b=document.createElement('button'); b.type='button'; b.className='chip sprout btn sm'; b.setAttribute('aria-pressed',k==='all'); b.setAttribute('aria-label', n);
@@ -403,7 +406,7 @@ export function createBathurstEngine() {
   chips.addEventListener('touchstart', ()=>{ chipTouchUntil=Infinity; }, {passive:true, signal});
   for(const ev of ['touchend','touchcancel']) chips.addEventListener(ev, ()=>{ chipTouchUntil=performance.now()+1200; }, {passive:true, signal});
   function centreChip(c){ if(performance.now()<chipTouchUntil) return; if(c) chips.scrollTo({left: c.offsetLeft - (chips.clientWidth - c.offsetWidth)/2, behavior: reduce?'auto':'smooth'}); }
-  function markChip(k){ const i=Math.max(0, INDS.findIndex(x=>x[0]===k)); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all' && performance.now()>=chipTouchUntil) chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
+  function markChip(k){ if(!INDS.some(x=>x[0]===k)) k='all';   /* an industry with no chip (off the route, e.g. Personal services) lights All clients, not the first chip */ const i=INDS.findIndex(x=>x[0]===k); [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', j===i)); if(k==='all' && performance.now()>=chipTouchUntil) chips.scrollTo({left:0, behavior:'smooth'}); else centreChip(chips.children[i]); }
   let walkTo=null;     // a stop reached through the modal's Next / Previous: it arrives with the modal closed
   let wantOpen=null;   // a place explicitly asked for (showPlace): its stop opens the sheet half way instead of peeking
   function setNode(i){
@@ -438,6 +441,10 @@ export function createBathurstEngine() {
   const q=$('q'), qclear=$('qclear');
   q.addEventListener('input',()=>{ query=q.value.trim().toLowerCase(); qclear.hidden=!q.value; view={type:query?'results':'list'}; selected=null; render(); refresh(); });
   $('searchform').addEventListener('submit', e=>{ e.preventDefault(); const r=ALL.filter(matches); if(!query) return; if(r.length===1) openPlace(r[0].id); else if(r.length){ fitTo(r.filter(p=>p.pos)); setSheet('half'); } q.blur(); });
+  // Back to map (in place of the search field): closes whatever is open, clears the chip filter, returns to the overview
+  $('backmap').onclick=()=>{ if(fPlace) leaveFPlace(false); resumeY=null; walkTo=null; filter='all'; query=''; q.value=''; markChip('all');
+    selected=null; view={type:'list'}; render(); refresh(); if(W<760) setSheet('peek');
+    const y=hero.offsetTop + (PH_A+PH_LEAD*.5)*H; if(Math.abs(scrollY-y)>H*.25) goTo(PH_A+PH_LEAD*.5); else resetView(); };
   qclear.onclick=()=>{ q.value=''; query=''; qclear.hidden=true; view={type:'list'}; selected=null; render(); refresh(); q.focus(); };
   const PH=["Search “bagels”","Search “website”","Search “brand identity”","Search “menu”","Search “booking”"]; let phI=0;
   const phTimer = setInterval(()=>{ if(!q.value && document.activeElement!==q && view.type!=='place'){ q.placeholder=PH[phI++%PH.length]; } }, 2600);
@@ -581,7 +588,13 @@ export function createBathurstEngine() {
     // the tour's own controls (Previous / Next) sit after the content, so the case study is read on the way
     // to them; Next names where it leads. A × in the header closes the sheet; the handle only resizes it.
     const j = NODES.findIndex(n=>n.id===p.id), last = j===NODES.length-1;
-    const nav = j<0 ? '' : `<nav class="pnav" aria-label="Case studies">
+    // off the route: Previous / Next step through the other cases (the ones the tour doesn't stop at), wrapping round
+    const off = ALL.filter(x=>!NODES.some(n=>n.id===x.id)), k = off.findIndex(x=>x.id===p.id);
+    const offPrev = off[(k-1+off.length)%off.length], offNext = off[(k+1)%off.length];
+    const nav = j<0 ? (off.length<2 ? '' : `<nav class="pnav" aria-label="Case studies">
+        <button type="button" class="sprout btn pprev" data-open="${offPrev.id}" aria-label="Previous: ${esc(offPrev.name)}"><svg class="glyph" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span>Previous</span></button>
+        <button type="button" class="sprout btn orange pnext" data-open="${offNext.id}" aria-label="Next: ${esc(offNext.name)}"><span class="pn-t"><small>Next</small><b>${esc(offNext.name)}</b></span><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </nav>`) : `<nav class="pnav" aria-label="Case studies">
         <button type="button" class="sprout btn pprev" data-go="${j-1}" aria-label="${j>0 ? `Previous: ${esc(NODES[j-1].name)}` : 'Back to the overview'}"><svg class="glyph" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span>${j>0 ? 'Previous' : 'Overview'}</span></button>
         <button type="button" class="sprout btn orange pnext" data-go="${j+1}" aria-label="${last ? 'Next: The Way Forward' : `Next: ${esc(NODES[j+1].name)}`}"><span class="pn-t"><small>Next</small><b>${last ? 'The Way Forward' : esc(NODES[j+1].name)}</b></span><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
       </nav>`;
@@ -635,6 +648,7 @@ export function createBathurstEngine() {
     if(p) sheetBody.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>openPhotos(p, +b.dataset.ph));
     // case-study controls: the stop before or after (it opens half way on phones), the overview before the first, The Way Forward after the last
     sheetBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>placeClose.onclick());   // the sheet's own × (the search bar's × does the same)
+    sheetBody.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openPlace(b.dataset.open));   // off-route cases: open the neighbour in place
     sheetBody.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const k=+b.dataset.go;
       if(k<0) goTo(PH_A+PH_LEAD*.5); else if(k>=NODES.length) toHow(); else { walkTo=NODES[k].id; scrollToNode(k); } });   // Next / Previous: the modal steps aside and the tour carries on at that stop (its map card stays, scrolling moves on)
     // the hero clip: the play button starts it in place; a click on the playing clip pauses it again
@@ -809,8 +823,10 @@ export function createBathurstEngine() {
   // Richmond Hill) no longer pull it off-centre. The top margin leaves room for the Our Work heading.
   const routeView = () => viewOf([START, ...NODES.map(n=>n.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 300 : 230, W<760 ? 80 : 70, W<760 ? 44 : 110);   // margins clear the pins' heads, which stand above their addresses
   const allView = () => viewOf([START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
+  // the zoom-out limit: every client in view, with room for the chips, the heading, the pins' heads and the controls
+  const zoomAllView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P], goal.pitch, W<760 ? 240 : 200, W<760 ? 90 : 70, W<760 ? 64 : 110);
   function defaultView(){ return routeView(); }
-  function setGoal(v, instant){ Object.assign(goal, v); goal.dist=Math.min(40000,Math.max(300,goal.dist)); goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); if(instant) Object.assign(view3, goal); }
+  function setGoal(v, instant){ Object.assign(goal, v); goal.dist=Math.min(90000,Math.max(300,goal.dist));   /* 90 km: a phone's narrow view needs ~60 km to frame every client */ goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); if(instant) Object.assign(view3, goal); }
   function resetView(){ mapDirty=false; setGoal(defaultView()); }
   const fwd = b => ({x:Math.sin(b), z:-Math.cos(b)}), rgt = b => ({x:Math.cos(b), z:Math.sin(b)});
   function poseFrom(vw, pos, tgt){ const sp=Math.sin(vw.pitch), cp=Math.cos(vw.pitch), f=fwd(vw.bearing); tgt.set(vw.cx,0,vw.cz); pos.set(vw.cx - f.x*vw.dist*sp, vw.dist*cp, vw.cz - f.z*vw.dist*sp); }
@@ -984,7 +1000,9 @@ export function createBathurstEngine() {
   function groundAt(px,py){ const r=stick.getBoundingClientRect(); ndc.set(((px-r.left)/W)*2-1, -((py-r.top)/H)*2+1); ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(plane, hit) ? hit.clone() : new THREE.Vector3(goal.cx,0,goal.cz); }
   function zoomAt(px,py,f){
     if(!mapReady()){ scrollToProg(1); return; }
-    mapDirty=true; const P=groundAt(px,py); const nd=Math.min(16000,Math.max(300,goal.dist*f)), ff=nd/goal.dist;
+    mapDirty=true; const all=zoomAllView();
+    if(f>1 && goal.dist*f >= all.dist) return setGoal(all);   // zoomed out far enough: frame every location
+    const P=groundAt(px,py); const nd=Math.min(Math.max(16000, all.dist),Math.max(300,goal.dist*f)), ff=nd/goal.dist;
     setGoal({dist:nd, cx:P.x+(goal.cx-P.x)*ff, cz:P.z+(goal.cz-P.z)*ff});
   }
   function panPx(dx,dy){ mapDirty=true; const m=mpp(view3.dist), r=rgt(view3.bearing), f=fwd(view3.bearing), k=1/Math.max(.45,Math.cos(view3.pitch));
@@ -1026,7 +1044,7 @@ export function createBathurstEngine() {
   stage.addEventListener('touchmove', e=>{
     if(!mapReady()) return;
     if(e.touches.length===2 && t2){ e.preventDefault(); const n=tInfo(e.touches);
-      panPx(n.x-t2.x, n.y-t2.y); const f=t2.d/n.d; if(Math.abs(1-f)>.002){ const P=groundAt(n.x,n.y), nd=Math.min(16000,Math.max(300,view3.dist*f)), ff=nd/view3.dist; setGoal({dist:nd, cx:P.x+(goal.cx-P.x)*ff, cz:P.z+(goal.cz-P.z)*ff}, true); }
+      panPx(n.x-t2.x, n.y-t2.y); const f=t2.d/n.d; if(Math.abs(1-f)>.002){ const P=groundAt(n.x,n.y), nd=Math.min(Math.max(16000, zoomAllView().dist),Math.max(300,view3.dist*f)), ff=nd/view3.dist; setGoal({dist:nd, cx:P.x+(goal.cx-P.x)*ff, cz:P.z+(goal.cz-P.z)*ff}, true); }
       turn(n.a-t2.a, 0); t2=n; ghint.classList.remove('on'); }
   }, {passive:false});
   stage.addEventListener('touchend', e=>{ if(e.touches.length<2) t2=null; });
@@ -1072,7 +1090,9 @@ export function createBathurstEngine() {
   function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
   addEventListener('resize', resize, {signal}); resize();
   document.fonts?.ready.then(()=>{ if(!dead) measureWin(); });
-  const sheetTop = () => { const r=sheet.getBoundingClientRect(), s=stick.getBoundingClientRect(); return r.height ? Math.min(H, r.top - s.top) : H; };   // hidden sheet (route overview): the controls rest at the bottom
+  // the map fills the large viewport; while a phone's toolbar shows, the visible bottom is innerHeight, not H
+  const visH = () => Math.min(H, innerHeight);
+  const sheetTop = () => { const r=sheet.getBoundingClientRect(), s=stick.getBoundingClientRect(); return r.height ? Math.min(visH(), r.top - s.top) : visH(); };   // hidden sheet (route overview): the controls rest at the bottom
   { const h=location.hash.slice(1); if(ALL.some(p=>p.id===h)) setTimeout(()=>showPlace(h), 300); }
 
   // ---------- frame ----------
