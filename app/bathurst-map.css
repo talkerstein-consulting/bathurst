@@ -1543,3 +1543,15 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
   .tc-modal .tc-mcap { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
   .tc-modal .rv-modal-text { grid-template-rows: auto auto auto; gap: var(--s2); }
 }
+
+/* phones: the hero's proof reads bigger, each row centred (ratings, then the partner badges) */
+@media (max-width: 760px) {
+  .sv-hero .hero-proofrow { justify-content: center; gap: var(--s3); margin-top: var(--s3); }
+  .sv-hero .hero-proofrow .hero-ratings { width: 100%; justify-content: center; gap: var(--s4); }
+  .sv-hero .hero-proofrow .hero-ratings b { font-size: 32px; }
+  .sv-hero .hero-proofrow .hero-ratings .stars { font-size: 15px; }
+  .sv-hero .hero-proofrow .hero-ratings small { font-size: 13px; }
+  .sv-hero .hero-proofrow .hero-certs { width: 100%; justify-content: center; gap: var(--s4); }
+  .sv-hero .hero-proofrow .cert-shopify { width: 140px; }
+  .sv-hero .hero-proofrow .cert-ghl { width: 54px; }
+}
