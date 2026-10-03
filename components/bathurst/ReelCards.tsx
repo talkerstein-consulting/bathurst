@@ -15,7 +15,7 @@ const Ig = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><
 /**
  * "From our Instagram": TCG's sit-down reels as a row of trading cards that bleeds edge to edge and scrolls sideways
  * (same row logic as Services). A card: brand banner and number, the reel's poster in an art window, guest and
- * category, a two-line caption, a foil sheen that follows the pointer. A click plays the reel in a modal.
+ * category, a one-line summary (the full caption is in the modal), a foil sheen that follows the pointer. A click plays the reel in a modal.
  * Posters, captions and videos: scripts/fetch-reels.mjs.
  */
 export default function ReelCards() {
@@ -59,7 +59,7 @@ export default function ReelCards() {
                   <span className="tc-kind">{r.kind}</span>
                 </span>
                 <span className="tc-name">{r.guest}</span>
-                <span className="tc-cap">{r.caption}</span>
+                <span className="tc-cap">{r.short}</span>
                 <span className="tc-foot"><Ig /><span>Sit-down series</span><span className="tc-set">TCG</span></span>
               </span>
               <span className="tc-foil" aria-hidden="true" />

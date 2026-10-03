@@ -1532,12 +1532,15 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
   .panel { bottom: var(--tb); }
 }
 
-/* phones: Businesses in Bathurst. The cards stand taller so the caption gets four lines instead of being cut at two;
+/* phones: Businesses in Bathurst. The card is as tall as its contents (nothing cropped): the poster keeps a fixed shape and
+   the one-line summary wraps freely;
    the reel modal shows the whole 9:16 video (no crop), sized to leave room for the heading, a truncated
    transcript and the Instagram button, so the modal fits the screen without scrolling. */
 @media (max-width: 759px) {
-  .tc { aspect-ratio: 63 / 104; }
-  .tc-cap { -webkit-line-clamp: 4; min-height: calc(4 * 1.45em); }
+  .tc { aspect-ratio: auto; height: auto; }
+  .tc-in { height: auto; grid-template-rows: auto auto auto auto auto; }
+  .tc-art { aspect-ratio: 4 / 5; }
+  .tc-cap { display: block; -webkit-line-clamp: unset; overflow: visible; min-height: calc(2 * 1.45em); }
   .tc-modal .rv-modal-in { overflow: hidden; }
   .tc-modal .rv-modal-video { aspect-ratio: 9 / 16; height: calc(100svh - 24px - 360px); max-height: none; width: auto; max-width: 100%; margin-inline: auto; }
   .tc-modal .tc-mcap { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }

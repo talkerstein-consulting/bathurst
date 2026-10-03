@@ -6,7 +6,8 @@
     "video": "/reels/DYI5BWehMep.mp4",
     "brand": "Light House Credit Union",
     "guest": "With the Light House team",
-    "kind": "Finance"
+    "kind": "Finance",
+    "short": "A credit union run by and for the local Jewish community."
   },
   {
     "id": "DZ_AYCLSBL2",
@@ -15,7 +16,8 @@
     "video": "/reels/DZ_AYCLSBL2.mp4",
     "brand": "House of Hair Extensions",
     "guest": "Chavi, founder",
-    "kind": "Beauty"
+    "kind": "Beauty",
+    "short": "From working at home as a single mom to her own salon."
   },
   {
     "id": "DVCq69sj_QD",
@@ -24,7 +26,8 @@
     "video": "/reels/DVCq69sj_QD.mp4",
     "brand": "Fringe Boutique",
     "guest": "Tova, founder",
-    "kind": "Retail"
+    "kind": "Retail",
+    "short": "Modern modest fashion, built on values and confidence."
   },
   {
     "id": "DVQyZAADmhB",
@@ -33,7 +36,8 @@
     "video": "/reels/DVQyZAADmhB.mp4",
     "brand": "WEALTHinsurance.com",
     "guest": "Mark Halpern, founder",
-    "kind": "Finance"
+    "kind": "Finance",
+    "short": "Building one of Canada’s leading wealth insurance firms."
   },
   {
     "id": "DU3p8OCj3ix",
@@ -42,6 +46,7 @@
     "video": "/reels/DU3p8OCj3ix.mp4",
     "brand": "Kapara",
     "guest": "Emanuel Yakobov, owner",
-    "kind": "Restaurant"
+    "kind": "Restaurant",
+    "short": "The real story behind Kapara: hard work, faith and risk."
   }
 ]
