@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
 import ReelCards from "./ReelCards";
+import { useCoverNear } from "./useCoverNear";
 
 type Item = (typeof TESTIMONIALS)[number];
 type Tile = { key: string; weight: number; node: ReactNode; rating?: boolean };
@@ -32,6 +33,7 @@ export default function Testimonials() {
   const step = (d: number) => setAt((i) => (i === null ? i : (i + d + TESTIMONIALS.length) % TESTIMONIALS.length));
   const dialog = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
+  const near = useCoverNear();   // posters load once the visitor heads for the sheet, not with the first page load
 
   useEffect(() => {
     const m = matchMedia("(max-width: 759px)"), set = () => setCols(m.matches ? 1 : 3);   // 1 = the phone layout
@@ -70,14 +72,14 @@ export default function Testimonials() {
         <div className="rv-media single hair">
           {/* cards get a 600px poster (phones 400px); the full 848×1498 frame is only the video's poster in the modal */}
           <picture className="rv-pic">
-            <source media="(max-width: 759px)" srcSet={s.poster.replace(/\.jpg$/, "-sm.jpg")} />
-            <img className="rv-thumb" src={s.poster.replace(/\.jpg$/, "-md.jpg")} alt="" loading="lazy" decoding="async" />
+            {near && <source media="(max-width: 759px)" srcSet={s.poster.replace(/\.jpg$/, "-sm.jpg")} />}
+            <img className="rv-thumb" src={near ? s.poster.replace(/\.jpg$/, "-md.jpg") : undefined} alt="" loading="lazy" decoding="async" />
           </picture>
           {/* the play button sits on the video itself; the whole card opens it */}
           <button type="button" className="sprout btn icon orange rv-playbtn" tabIndex={-1} aria-hidden="true" onClick={(e) => { e.stopPropagation(); setOpen(s); }}><Play /></button>
         </div>
         <div className="rv-id">
-          <span className="rv-logo single hair"><img src={s.logo} alt="" /></span>
+          <span className="rv-logo single hair"><img src={near ? s.logo : undefined} alt="" /></span>
           <span className="rv-who"><b>{s.who}</b><small>{s.role}</small></span>
         </div>
       </article>

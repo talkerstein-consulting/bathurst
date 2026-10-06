@@ -13,14 +13,19 @@ import { useEffect } from "react";
  */
 export default function LineSystem() {
   useEffect(() => {
-    const root = document.documentElement;
     const SVGNS = "http://www.w3.org/2000/svg";
-    const cssNum = (n: string) => parseFloat(getComputedStyle(root).getPropertyValue(n)) || 0;
+    // HDR screens get the static speckle in place of the live #grunge filter (see .lines-static in app/bathurst-map.css);
+    // ?lines=static or ?lines=grunge forces either one, to compare them on any screen
+    const linesQ = new URLSearchParams(location.search).get("lines");
+    const staticLines = linesQ ? linesQ === "static" : matchMedia("(dynamic-range: high)").matches;
+    document.documentElement.classList.toggle("lines-static", staticLines);
+    // the line tokens are fixed (globals.css :root), so read them once instead of forcing a style pass per element
+    const rootStyle = getComputedStyle(document.documentElement);
+    const cssNum = (n: string) => parseFloat(rootStyle.getPropertyValue(n)) || 0;
+    const so = cssNum("--outer-stroke"), si = cssNum("--inner-stroke"), gap = cssNum("--gap"), draw = cssNum("--cta-draw");
     type El = HTMLElement & { _built?: boolean; _open?: boolean; _seeded?: boolean; _outerD?: string; _perimeter?: number; _t?: number };
-
-    // Layout size, not the on-screen box: map callouts are scaled with transforms, which must not shrink their lines.
-    // The line SVG always spans the border box (transparent border = outer stroke, or no border on .single / .link).
-    const size = (el: HTMLElement) => ({ W: el.offsetWidth, H: el.offsetHeight });
+    /** Layout size (not the on-screen box: map callouts are scaled with transforms, which must not shrink their lines) and corner radius. */
+    type Box = { W: number; H: number; R: number };
 
     // Twin label for CTAs the map engine builds (React CTAs render their own; see components/style/Cta.tsx).
     function ensureLabel(el: El) {
@@ -36,7 +41,8 @@ export default function LineSystem() {
       el.appendChild(label);
     }
 
-    function sprout(el: El) {
+    /** First sight: the SVG, the twin label and the hover wiring. Geometry waits for the ResizeObserver's measurement. */
+    function prepSprout(el: El) {
       if (!el._built) {
         el._built = true;
         el._open = el.classList.contains("link");
@@ -54,15 +60,15 @@ export default function LineSystem() {
             const on = el.matches(":hover, :focus-visible") || !!host?.matches(":hover, :focus-visible") || (el.classList.contains("field-box") && el.matches(":focus-within"));
             el.classList.toggle("on", on);
             clearTimeout(el._t);
-            if (!on) el._t = window.setTimeout(() => { if (!el.classList.contains("on")) seedOuter(el); }, cssNum("--cta-draw") + 150);
+            if (!on) el._t = window.setTimeout(() => { if (!el.classList.contains("on")) seedOuter(el); }, draw + 150);
           }, 0);
         ["pointerenter", "pointerleave", "focusin", "focusout"].forEach((e) => { el.addEventListener(e, sync); host?.addEventListener(e, sync); });
       }
+    }
+
+    function sprout(el: El, { W, H, R: radius }: Box) {
       const svg = el.querySelector(":scope > .stroke") as SVGSVGElement | null;
-      if (!svg) return;
-      const { W, H } = size(el);
-      if (!W) return;
-      const so = cssNum("--outer-stroke"), si = cssNum("--inner-stroke"), gap = cssNum("--gap");
+      if (!svg || !W) return;
       const inner = svg.querySelector(".inner")!;
       if (el._open) {
         const yo = H - so / 2, yi = H - so - gap - si / 2;
@@ -70,7 +76,7 @@ export default function LineSystem() {
         el._outerD = `M0 ${yo}H${W}`;
         el._perimeter = W;
       } else {
-        const R = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, H / 2, W / 2);
+        const R = Math.min(radius, H / 2, W / 2);
         const i = so / 2, r = Math.max(0, R - i), cx = W / 2;
         const j = so + gap + si / 2, rj = Math.max(0, R - j);
         const rrect = (k: number, rk: number) =>
@@ -115,20 +121,20 @@ export default function LineSystem() {
       el._seeded = true;
     }
 
-    function buildFrame(el: El) {
-      let svg = el.querySelector(":scope > .lines") as SVGSVGElement | null;
+    function prepFrame(el: El) {
+      if (el.querySelector(":scope > .lines")) return;
+      const svg = document.createElementNS(SVGNS, "svg") as SVGSVGElement;
+      svg.classList.add("lines");
+      svg.setAttribute("aria-hidden", "true");
+      svg.innerHTML = el.classList.contains("single") ? '<g filter="url(#grunge)"><rect class="i"/></g>' : '<g filter="url(#grunge)"><rect class="o"/><rect class="i"/></g>';
+      el.prepend(svg);
+    }
+
+    function buildFrame(el: El, { W, H, R: radius }: Box) {
+      const svg = el.querySelector(":scope > .lines") as SVGSVGElement | null;
+      if (!svg || !W) return;
       const single = el.classList.contains("single");
-      if (!svg) {
-        svg = document.createElementNS(SVGNS, "svg") as SVGSVGElement;
-        svg.classList.add("lines");
-        svg.setAttribute("aria-hidden", "true");
-        svg.innerHTML = single ? '<g filter="url(#grunge)"><rect class="i"/></g>' : '<g filter="url(#grunge)"><rect class="o"/><rect class="i"/></g>';
-        el.prepend(svg);
-      }
-      const { W, H } = size(el);
-      if (!W) return;
-      const R = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, H / 2, W / 2);
-      const so = cssNum("--outer-stroke"), si = cssNum("--inner-stroke"), gap = cssNum("--gap");
+      const R = Math.min(radius, H / 2, W / 2);
       const set = (r: Element, inset: number) => {
         r.setAttribute("x", String(inset));
         r.setAttribute("y", String(inset));
@@ -144,8 +150,23 @@ export default function LineSystem() {
     }
 
     const SEL = ".sprout, .frame, .single";
-    const rebuild = (el: El) => (el.classList.contains("sprout") ? sprout(el) : buildFrame(el));
-    const ro = new ResizeObserver((es) => es.forEach((e) => rebuild(e.target as El)));
+    const isSprout = (el: Element) => el.classList.contains("sprout");
+    // The ResizeObserver does every measurement: it reports each element once when first observed, then on every size change
+    // (fonts loading, labels wrapping). All reads happen before any write, so a page of lines costs one layout, not one per box.
+    const ro = new ResizeObserver((es) => {
+      const boxes = es.map((e) => {
+        const el = e.target as El, b = e.borderBoxSize?.[0];
+        return { el, W: b ? b.inlineSize : el.offsetWidth, H: b ? b.blockSize : el.offsetHeight, R: parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0 };
+      });
+      for (const { el, ...box } of boxes) {
+        if (isSprout(el)) sprout(el, box);
+        else buildFrame(el, box);
+      }
+    });
+    // The #grunge filter is the costly part of a line, and the browser still rasterises it for boxes it keeps ready off
+    // screen (the reviews sheet waiting under the fold, rows scrolled out of the panel). Lines more than 100px off screen
+    // drop the filter (.lines-off) and take it back as they scroll in.
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("lines-off", !e.isIntersecting)), { rootMargin: "100px" });
     const seen = new WeakSet<Element>();
     const attach = (scope: ParentNode) => {
       const list: Element[] = [];
@@ -154,8 +175,9 @@ export default function LineSystem() {
       for (const el of list) {
         if (seen.has(el)) continue;
         seen.add(el);
-        rebuild(el as El);
+        if (isSprout(el)) prepSprout(el as El); else prepFrame(el as El);
         ro.observe(el);
+        io.observe(el);
       }
     };
     attach(document);
@@ -163,9 +185,7 @@ export default function LineSystem() {
       for (const m of ms) m.addedNodes.forEach((n) => { if (n.nodeType === 1 && !(n as Element).closest(".lines, .stroke, .label")) attach(n as Element); });
     });
     mo.observe(document.body, { childList: true, subtree: true });
-    // fonts change label widths after first paint
-    document.fonts?.ready.then(() => document.querySelectorAll(SEL).forEach((e) => rebuild(e as El)));
-    return () => { mo.disconnect(); ro.disconnect(); };
+    return () => { mo.disconnect(); ro.disconnect(); io.disconnect(); };
   }, []);
 
   return (

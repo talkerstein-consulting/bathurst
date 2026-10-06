@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CtaButton, CtaLink } from "@/components/style/Cta";
+import { CtaLink } from "@/components/style/Cta";
 
 /**
  * "Built for what's next." in Slowly Signature, written like ink on paper: each letter's outline is traced
@@ -62,9 +62,9 @@ export default function SignatureLine() {
       <p className="sig-body">Tell us where the business is going. We’ll help you work out what needs to happen next.</p>
       <div className="sig-ctas">
         {/* orange, like the map's Find Your Way Forward CTA (.dc-go) */}
-        <CtaButton label="Start a conversation" className="dc-go sig-go" onClick={() => window.dispatchEvent(new Event("tcg:directions"))}>
-          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Start a conversation
-        </CtaButton>
+        <CtaLink href="/book" label="Get directions" className="dc-go sig-go">
+          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Get directions
+        </CtaLink>
         <CtaLink href="https://talkerstein.com/work" label="Explore our work" />
       </div>
     </section>

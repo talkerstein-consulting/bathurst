@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import { CONTACT } from "@/lib/bathurst/data";
 import RowArrows from "./RowArrows";
+import { useCoverNear } from "./useCoverNear";
 import REELS from "@/lib/bathurst/reels.json";
 
 type Reel = (typeof REELS)[number];
@@ -22,6 +23,7 @@ export default function ReelCards() {
   const [open, setOpen] = useState<Reel | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const row = useRef<HTMLUListElement>(null);
+  const near = useCoverNear();
 
   useEffect(() => {
     const d = dialog.current; if (!d) return;
@@ -54,7 +56,7 @@ export default function ReelCards() {
               <span className="tc-in">
                 <span className="tc-top"><b>{r.brand}</b><span className="tc-no">{String(i + 1).padStart(2, "0")}/{String(REELS.length).padStart(2, "0")}</span></span>
                 <span className="tc-art">
-                  <img src={r.poster} alt="" loading="lazy" decoding="async" />
+                  <img src={near ? r.poster : undefined} alt="" loading="lazy" decoding="async" />
                   <span className="sprout btn icon orange tc-play"><Play /></span>
                   <span className="tc-kind">{r.kind}</span>
                 </span>

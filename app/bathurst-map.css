@@ -22,7 +22,9 @@
 #hero { --halo: 0 0 2px var(--sea), 0 0 3px var(--sea), 0 0 4px var(--sea), 0 0 6px var(--sea); }
 
 /* ================= callouts: marker · leader line · card with thumbnail ================= */
-#labels { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+#labels { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
+  clip-path: inset(var(--wt, 0px) var(--wr, 0px) var(--wb, 0px) var(--wl, 0px) round var(--wrad, 0px)); }   /* front page: pins and labels stay inside the rounded window (the engine eases these to 0 as it opens) */
+#stick.open .pin .nm { display: none !important; }   /* front page: icons only, no names over the street */
 .pin { --L: 44px; --ink: var(--steel); position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; outline: none; }
 .pin .mk { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; overflow: visible; pointer-events: auto; cursor: pointer; }
 .pin .mk circle { fill: var(--sea); stroke: var(--ink); stroke-width: 1.5; transition: stroke .3s ease; }
@@ -32,7 +34,7 @@
 .pin .co { position: absolute; bottom: var(--L); display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; white-space: nowrap; pointer-events: auto; cursor: pointer; color: var(--steel); }
 .pin.r .co { left: -18px; }
 .pin.l .co { right: -18px; }
-.pin .th, .item .th { width: 48px; height: 48px; flex: none; border-radius: var(--btn-radius); overflow: hidden; display: grid; place-items: center; color: var(--steel);
+.pin .th, .item .th { width: 48px; height: 48px; flex: none; border-radius: var(--btn-radius); overflow: hidden; display: grid; place-items: center; color: var(--ind, var(--steel));
   background: repeating-linear-gradient(135deg, var(--steel-08) 0 6px, transparent 6px 12px); }
 .th img { width: 100%; height: 100%; object-fit: cover; }
 .pin .txt { display: grid; gap: 2px; line-height: 1.15; }
@@ -200,7 +202,7 @@
 .place .hd { display: flex; gap: var(--s2); align-items: center; }
 .place h2 { font-size: 32px; margin: 0; line-height: 1.02; }
 .gallery { height: 152px; display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--s1); }
-.gallery > div { border-radius: var(--btn-radius); overflow: hidden; display: grid; place-items: center; align-content: center; gap: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--steel-70);
+.gallery > div { border-radius: var(--btn-radius); overflow: hidden; display: grid; place-items: center; align-content: center; gap: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ind, var(--steel-70));
   background: repeating-linear-gradient(135deg, var(--steel-08) 0 6px, transparent 6px 12px); }
 .gallery > div:first-child { grid-row: span 2; }
 .gallery > div > :not(.lines) { position: relative; }
@@ -280,7 +282,7 @@
 
 /* maps-sized chips (hero and map alike); the arrows match them */
 .chip { height: 36px; min-height: 36px; padding: 0 14px; font-size: 14px; gap: 6px; }
-.chip .glyph { width: 18px; height: 18px; }
+.chip .glyph { width: 18px; height: 18px; color: var(--ind, currentColor); }   /* each industry chip carries its pin colour: the row is the legend */
 .chipbar > .btn { width: 36px; height: 36px; }
 @media (min-width: 761px) { .chipbar { top: calc(var(--inset) + 6px); } }
 @media (max-width: 760px) { .chip { height: 36px; padding: 0 12px; font-size: 14px; } }
@@ -327,7 +329,7 @@
 /* front page: chips on the masthead row between the wordmark and Get directions (formerly: under the standfirst;
    the frame's right edge; on scroll they morph up into the map row */
 #hero { --word-w: calc(40px * 1032 / 232); }
-#stick.open .chipbar { top: calc(var(--inset) + (var(--mark-open) - 36px) / 2); left: calc(var(--inset) + var(--mark-open) + 12px + var(--word-w) + var(--s4)); right: calc(var(--inset) + 190px + var(--s2)); }
+#stick.open .chipbar { top: calc(var(--inset) + (var(--mark-open) - 36px) / 2); left: calc(var(--inset) + var(--menu-w) + var(--mark-open) + 12px + var(--word-w) + var(--s4)); right: calc(var(--inset) + 190px + var(--s2)); }
 /* the hero row lists the industries only; All clients joins it on the map */
 #stick.open .chip[aria-label="All clients"] { display: none; }
 
@@ -593,15 +595,17 @@
   opacity: 0; transform: translateY(-12px); transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
 .dircard.on { opacity: 1; transform: none; }
 .dc-title { margin: 0; font: 700 44px/1 var(--head); text-shadow: var(--halo); }
-.dc-track { position: relative; display: grid; overflow: hidden; margin: -4px; padding: 4px; }   /* the cards slide inside this lane */
-.dc-step { grid-area: 1 / 1; display: flex; gap: var(--s3); align-items: flex-start; min-width: 0; padding: var(--s3) var(--s4); animation: dc-in .55s cubic-bezier(.22,1,.36,1) both; }
+.dc-track { position: relative; display: grid; margin: -4px; padding: 4px; }   /* not clipped: the cards travel in from and out to the screen edges */
+.dc-step { grid-area: 1 / 1; display: flex; gap: var(--s3); align-items: flex-start; min-width: 0; padding: var(--s3) var(--s4); animation: dc-in .7s cubic-bezier(.22,1,.36,1) both; }
 .dc-step.back { animation-name: dc-in-back; }
-.dc-step.out { animation: dc-out .45s cubic-bezier(.65,0,.35,1) both; }
+.dc-step.out { animation: dc-out .55s cubic-bezier(.65,0,.35,1) both; }
 .dc-step.out.back { animation-name: dc-out-back; }
-@keyframes dc-in { from { opacity: 0; transform: translateX(110%); } }
-@keyframes dc-out { to { opacity: 0; transform: translateX(-110%); } }
-@keyframes dc-in-back { from { opacity: 0; transform: translateX(-110%); } }
-@keyframes dc-out-back { to { opacity: 0; transform: translateX(110%); } }
+/* like a navigation app's turn banner: the finished step pushes up and out, the next rises in under it (reversed going back) */
+@keyframes dc-in { from { transform: translateY(calc(100% + 32px)); } }
+@keyframes dc-out { to { transform: translateY(calc(-100% - 32px)); } }
+@keyframes dc-in-back { from { transform: translateY(calc(-100% - 32px)); } }
+@keyframes dc-out-back { to { transform: translateY(calc(100% + 32px)); } }
+@keyframes dc-nudge-in { from { opacity: 0; transform: translateX(110%); } }
 .dc-ico { flex: none; display: grid; justify-items: center; gap: 6px; }
 .dc-arrow { width: 56px; height: 56px; border-radius: var(--btn-radius); display: grid; place-items: center; background: var(--steel); color: var(--sea); }
 .dc-est { font-size: 11px; line-height: 1.2; color: var(--steel-70); white-space: nowrap; }
@@ -896,11 +900,11 @@
 .pin .mk, .pin.mini .ld, .pin.mini .co { display: none; }
 /* the icon stays under the callout: the leader rises from its top */
 .pin:not(.mini) .ld { bottom: 18px; height: calc(var(--L) - 18px); }
-.pin.sel .ic { background: var(--orange); }
+.pin.sel .ic { background: var(--orange); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--orange), 0 4px 12px rgba(0,0,0,.28); }
 .pin .ic { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%;
-  background: var(--steel); color: var(--sea); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--steel), 0 4px 12px rgba(0,0,0,.28); pointer-events: auto;   /* big, double-ringed and lifted so each client reads at a glance */ cursor: pointer; transition: background .2s ease; }
+  background: var(--ind, var(--steel)); color: var(--sea); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--ind, var(--steel)), 0 4px 12px rgba(0,0,0,.28); pointer-events: auto;   /* big, double-ringed and lifted so each client reads at a glance */ cursor: pointer; transition: background .2s ease; }
 .pin .ic .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); }
+.pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--orange), 0 4px 12px rgba(0,0,0,.28); }
 .pin.pop .ic { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
 /* icon pins: the name as a tooltip on hover, and always once the map is zoomed in */
 .pin .nm { display: none; }
@@ -995,7 +999,7 @@
 /* Find Your Way Forward: outline "Scroll down" cue in the lower-right corner */
 .dc-more { position: absolute; right: calc(var(--inset) + 8px); bottom: calc(var(--inset) + 8px); z-index: 6; display: none; gap: 8px; background: var(--sea); color: var(--steel); pointer-events: auto; }
 .dc-more .glyph { width: 18px; height: 18px; }
-#stick.finale:not(.fplace) .dc-more { display: inline-flex; animation: dc-in .55s cubic-bezier(.22,1,.36,1) both; }
+#stick.finale:not(.fplace) .dc-more { display: inline-flex; animation: dc-nudge-in .55s cubic-bezier(.22,1,.36,1) both; }
 
 /* services share the testimonials' side margins */
 .cover-body #services .wrap { padding-inline: var(--s5); }
@@ -1348,17 +1352,11 @@
 /* the sheet's Next, and the card's View: filled orange CTAs */
 html body .pnext.btn, html body .co-view.btn { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
 @media (max-width: 760px) { .pin.sel .co { left: var(--dx, -18px) !important; right: auto !important; } }
-/* icon pins as map pins: a dot on the address, a stem, and the round head above it; --pl (the stem) is set by the engine
-   so crowded pins stand taller and their heads never stack */
-.pin.mini .ic { width: 40px; height: 40px; left: -20px; top: calc(-1 * (var(--pl, 16px) + 42px)); transition: background .2s ease, top .35s cubic-bezier(.22,1,.36,1); }
+/* icon pins: just the round icon, centred on the address (no stem, no dot), at every screen size */
+.pin.mini .ic { width: 40px; height: 40px; left: -20px; top: -20px; transition: background .2s ease; }
 .pin.mini .ic .glyph { width: 21px; height: 21px; }
-.pin.mini::before { content: ""; position: absolute; left: -1px; top: calc(-1 * var(--pl, 16px) - 2px); width: 2px; height: calc(var(--pl, 16px) + 2px); background: var(--steel);
-  transition: top .35s cubic-bezier(.22,1,.36,1), height .35s cubic-bezier(.22,1,.36,1); pointer-events: none; }
-.pin.mini::after { content: ""; position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--steel); box-shadow: 0 0 0 2px var(--sea), 0 1px 4px rgba(0,0,0,.25); pointer-events: none; }
-.pin.mini:hover::before, .pin.mini:focus-visible::before { background: var(--orange); }
-.pin.mini:hover::after, .pin.mini:focus-visible::after { background: var(--orange); }
-.pin.mini .nm { top: calc(-1 * (var(--pl, 16px) + 22px)); }
-@media (prefers-reduced-motion: reduce) { .pin.mini .ic, .pin.mini::before { transition: none; } }
+.pin.mini .nm { top: 0; }
+@media (prefers-reduced-motion: reduce) { .pin.mini .ic { transition: none; } }
 
 /* sideways rows (Services, Instagram): the ‹ › pair sits together at the right of the header and greys out at each end;
    phones swipe instead (the next card peeks in), so there the pair steps aside */
@@ -1472,8 +1470,8 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 /* the reviews sheet: no outer double line (it read as a stray box around Word on the Street); the sheet keeps its surface and handle */
 .cover.frame > .lines { display: none; }
 
-/* Way Forward sequence (route steps + Find Your Way Forward): the client nodes step aside so only the route and the card remain */
-#stick.dirs .pin, #stick.dirs .etab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility 0s .3s; }
+/* Way Forward sequence (route steps + Find Your Way Forward): the client nodes stay on the map (every view shows every client) */
+#stick.dirs .etab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility 0s .3s; }
 
 /* Way Forward route cards on phones: bigger type, a roomier card, and set lower under the chip row */
 @media (max-width: 760px) {
@@ -1571,3 +1569,286 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 #stick:not(.open) .scroll-cue { opacity: 0; pointer-events: none; }
 @keyframes cue-bob { 50% { transform: translateY(5px); } }
 @media (prefers-reduced-motion: reduce) { .scroll-cue .glyph { animation: none; } }
+/* Static lines (html.lines-static: HDR screens, or ?lines=static to preview it anywhere; set in components/style/LineSystem.tsx).
+   The live #grunge filter recomputes its noise on the CPU for every line each time one moves or animates, which HDR
+   displays (wide-gamut, float compositing) make far costlier. Here the speckle is a pre-rendered mask tile instead: rasterised
+   once, composited on the GPU. Same printed grain; the one loss is the displacement that roughens the line edges. */
+.lines-static {
+  --speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='s' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -0.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
+}
+.lines-static :is(.lines g, .stroke g, .mk g, .pin .ld, .rule::before, .sp-row::before, .sp-tab.on::before, .zoomgrp i, .item + .item::before,
+  .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before) { filter: none !important; }
+@media (min-width: 760px) {   /* phones keep their clean, unspeckled lines (see above) */
+  .lines-static :is(.lines, .stroke, .pin .ld, .rule::before, .sp-row::before, .sp-tab.on::before, .zoomgrp i, .item + .item::before,
+    .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before) { -webkit-mask: var(--speckle) 0 0 / 160px 160px; mask: var(--speckle) 0 0 / 160px 160px; }
+}
+/* Find Your Way Forward: the destination dropdown (lib/bathurst/brand-select.ts). The native select stays in the form,
+   hidden; the field is a button and the list a framed paper card with a Cheltenham-caps eyebrow, the pick in orange. */
+.bsel-native { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.bsel-btn { display: block; width: 100%; padding-right: var(--s5) !important; text-align: left; cursor: pointer; color: var(--steel); background: none; border: 0; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bsel-btn.ph { color: rgb(25 37 74 / .55); }
+.bsel-btn:focus-visible { outline: none; }   /* the field's own line turns orange (.field-box:focus-within) */
+.dir-box .caret { pointer-events: none; transition: rotate .25s cubic-bezier(.22,1,.36,1); }
+.dir-box:has(.bsel-btn[aria-expanded="true"]) .caret { rotate: 180deg; }
+.bsel-list { position: fixed; z-index: 90; padding: var(--s1) 0; display: flex; flex-direction: column; max-height: min(400px, 60vh);
+  box-shadow: 0 12px 32px rgb(25 37 74 / .18); animation: bsel-in .22s cubic-bezier(.22,1,.36,1); }   /* z 90: under the paper grain, so it prints like the rest */
+.bsel-list .eyebrow { margin: var(--s1) var(--s2) 6px; font-size: 11px; letter-spacing: .16em; color: rgb(25 37 74 / .6); }
+.bsel-list ul { list-style: none; margin: 0; padding: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }   /* only the options scroll, and only up and down; the frame stays put */
+.bsel-list li { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--s2); padding: 11px var(--s2); cursor: pointer;
+  font: 500 16px/1.3 var(--body); color: var(--steel); }
+.bsel-list li.on { background: rgb(25 37 74 / .06); }
+.bsel-list li.on::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--orange); }
+.bsel-list li .glyph { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.bsel-list li[aria-selected="true"] { color: var(--orange); font-weight: 600; }
+.bsel-list li[aria-selected="true"] .glyph { opacity: 1; }
+.bsel-list li + li::after { content: ""; position: absolute; left: var(--s2); right: var(--s2); top: 0; height: 1px; background: var(--steel); opacity: .12; }
+@keyframes bsel-in { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .bsel-list { animation: none; } .dir-box .caret { transition: none; } }
+/* Site menu (components/bathurst/SiteMenu.tsx): ☰ in the top-left corner, as on Google Maps; a drawer from the left.
+   The ☰ takes the first slot of the top row, so the front page's wordmark shifts right by the same amount. */
+#stick { --menu-w: calc(var(--icon-btn) + var(--s2)); }   /* the ☰ slot: the front page's wordmark and chip row shift right by it */
+/* the button lives on #stick above the map chrome and the reviews sheet (z 9); its slot in the top row keeps the layout.
+   The row always starts at (inset, inset); on the front page it is the open mark's height, so the ☰ centres on that */
+.menu-slot { flex: none; width: var(--icon-btn); }
+.menubtn { position: absolute; left: var(--inset); top: calc(var(--inset) + (var(--row-h, var(--icon-btn)) - var(--icon-btn)) / 2); z-index: 10;
+  width: var(--icon-btn); height: var(--icon-btn); background: var(--sea); transition: top .55s cubic-bezier(.65,0,.35,1); }
+#stick.open { --row-h: var(--mark-open); }
+.wordclip { translate: var(--menu-w) 0; }
+.menu { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.menu-scrim { position: absolute; inset: 0; background: rgb(25 37 74 / .35); opacity: 0; transition: opacity .3s ease; }
+/* the panel's content box starts exactly where the ☰ sits (inset, inset), so the × and the logo share the first row */
+.menu-panel { position: absolute; left: calc(var(--inset) - var(--s2)); top: calc(var(--inset) - var(--s2)); bottom: calc(var(--inset) - var(--s2));
+  width: min(340px, calc(100vw - 2 * (var(--inset) - var(--s2)))); display: flex; flex-direction: column; gap: var(--s3); padding: var(--s2); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  box-shadow: 0 16px 48px rgb(25 37 74 / .25); transform: translateX(calc(-100% - 24px)); transition: transform .45s cubic-bezier(.22,1,.36,1); }
+.menu.on { pointer-events: auto; }
+.menu.on .menu-scrim { opacity: 1; }
+.menu.on .menu-panel { transform: none; }
+.menu-head { display: flex; align-items: center; height: var(--icon-btn); padding-left: calc(var(--icon-btn) + var(--s2)); }
+.menu-brand { background: none; border: 0; padding: 0; cursor: pointer; }
+.menu-brand .tcg-logo { height: 40px; }
+/* ☰ ⇄ ×: the button rises above the open drawer (same stacking context, #stick) */
+.menubtn .mb-close { display: none; }
+.menubtn[aria-expanded="true"] { z-index: 61; }
+.menubtn[aria-expanded="true"] .mb-open { display: none; }
+.menubtn[aria-expanded="true"] .mb-close { display: block; }
+/* the route map: one thick steel line, a circle per station, well spaced. The line runs straight down through the middle of the
+   ☰/× button above it (the node column is the button's width). Only where you are is orange; visited and upcoming stations look alike. */
+.route { display: grid; }
+.route-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.station { --dot: 20px; position: relative; min-height: clamp(84px, calc((100svh - 250px) / 6), 124px);   /* as roomy as the screen allows, the whole drawer still fits */
+  display: flex; align-items: center; gap: var(--s1); }
+/* short phones (iPhone SE): tighter stations and gaps, so the contact row isn't pushed below the screen */
+@media (max-height: 700px) { .station { min-height: 76px; } .menu-panel { gap: var(--s2); } }
+.station:not(:last-child)::after { content: ""; position: absolute; left: calc(var(--icon-btn) / 2); top: 50%; height: 100%; width: 4px; translate: -50% 0; background: var(--steel); }
+.station-dot { position: relative; flex: none; box-sizing: border-box; width: var(--dot); height: var(--dot); margin: 0 calc((var(--icon-btn) - var(--dot)) / 2);
+  border-radius: 50%; border: 3px solid var(--steel); background: var(--sea); z-index: 1; transition: border-color .2s ease, background .2s ease; }
+.station.here .station-dot { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 0 3px var(--sea), 0 0 0 7px rgb(179 83 14 / .25); }
+.station:has(.station-btn:hover) .station-dot, .station:has(.station-btn:focus-visible) .station-dot { border-color: var(--orange); }
+/* each station is the services' CTA (.svc-scope): the same box, type, arrow and hover; a little smaller to fit the drawer */
+.btn.svc-scope.station-btn { flex: 1; min-height: 64px; padding: 12px 16px; }
+.station-btn .svc-scope-t b { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 20px; }
+.station-btn .svc-scope-t small { font-size: 13px; }
+.station.here .station-btn { --ink: var(--orange); color: var(--orange); }
+.station.here .station-btn .svc-scope-t small { color: var(--orange); opacity: .8; }
+/* You are here: an orange chip, white text */
+.menu-here { padding: 4px 9px; border-radius: 999px; background: var(--orange); font: 600 10px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+/* the final node: a map pin in a steel circle, filled orange once you've arrived (the end of the page); Get directions beside it */
+.station.terminus .station-dot { --dot: 36px; display: grid; place-items: center; border: 0; background: var(--steel); color: #fff; }
+.station.terminus .station-dot .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.station.terminus.arrived .station-dot { background: var(--orange); box-shadow: 0 0 0 3px var(--sea), 0 0 0 7px rgb(179 83 14 / .25); }
+.station.terminus .menu-cta { flex: 1; }
+.menu-cta { flex: 1; }
+.menu-cta { justify-content: center; gap: var(--s1); min-height: 48px; font-weight: 600; --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }   /* the one filled CTA, like Get directions */
+.menu-cta .glyph { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.menu-foot { margin-top: auto; display: flex; gap: var(--s2); font-style: normal; }
+.menu-ic { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--steel);
+  box-shadow: inset 0 0 0 1.5px rgb(25 37 74 / .35); transition: color .2s ease, box-shadow .2s ease, background .2s ease; }
+.menu-ic .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.menu-ic:hover, .menu-ic:focus-visible { color: var(--orange); box-shadow: inset 0 0 0 1.5px var(--orange); background: rgb(179 83 14 / .06); outline: none; }
+/* each icon names itself above it on hover */
+.menu-ic::after { content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 8px); translate: 0 4px; padding: 5px 10px; border-radius: 6px; white-space: nowrap;
+  background: var(--steel); color: var(--sea); font: 500 12px/1.2 var(--body); opacity: 0; pointer-events: none; transition: opacity .15s ease, translate .2s ease; }
+.menu-ic:hover::after, .menu-ic:focus-visible::after { opacity: 1; translate: 0 0; }
+@media (prefers-reduced-motion: reduce) { .menu-scrim, .menu-panel { transition: none; } }
+/* phones: the reviews heading rests below the ☰, which floats over the sheet */
+@media (max-width: 759px) { .rv-phone .rv-title { margin-top: var(--s3); } }
+/* front page: no industry chips yet (there is no map to filter until it opens); they fade in with the map (Hick's Law) */
+#hero #stick.open .chipbar { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s .2s; }
+#hero #stick:not(.open) .chipbar { transition: opacity .4s ease .35s, visibility 0s .35s; }
+/* the railway (components/bathurst/TrackRail.tsx), drawn like a vintage route map: a thick line with a thin one beside it on
+   the outside, solid station dots with their names, the travelled stretch in orange, and a tram riding the line. It runs along a
+   paper strip under the map's checkered border (desktop: #stick stops short of the bottom by --rail-g). Phones use the ☰ instead. */
+:root { --rail-g: 48px; }   /* the paper strip's height (the corner offer sits above it too) */
+#hero { --ry: 24px; }   /* --ry: the line's height in the strip (its middle) */
+@media (min-width: 760px) { #hero > #stick { height: calc(100vh - var(--rail-g)); height: calc(100svh - var(--rail-g)); } }
+/* the line spans the page's content column (the 1104px The Way Forward and the reviews sit in), centred on the page, not the window
+   (--sbw: the scrollbar's width, set by TrackRail) */
+.track { --len: min(1104px, calc(100vw - var(--sbw, 0px) - 2 * var(--inset))); position: fixed; left: calc((100vw - var(--sbw, 0px)) / 2); bottom: 0; z-index: 30; width: var(--len); height: var(--rail-g); translate: -50% 0;
+  opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.track.on { opacity: 1; pointer-events: auto; }
+.track ol { list-style: none; margin: 0; padding: 0; }
+/* the line sits a third of the way down the strip; the thin line runs below it (the outside, toward the screen edge) */
+.tr-line { position: absolute; left: 0; right: 0; top: calc(var(--ry) - 2px); height: 4px; border-radius: 2px; background: var(--steel); }
+.tr-done { position: absolute; inset: 0; border-radius: 2px; transform-origin: left; transform: scaleX(var(--t, 0)); background: var(--orange); }
+.track li { position: absolute; top: var(--ry); left: calc(var(--at) * var(--len)); translate: -50% -50%; }   /* centred on the thick line */
+.tr-stop { position: relative; display: block; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; background: var(--steel);
+  box-shadow: 0 0 0 2px var(--sea); cursor: pointer; transition: background .2s ease, scale .2s ease; }
+.tr-stop::before { content: ""; position: absolute; inset: -12px; }   /* a bigger target than the dot */
+.tr-stop.passed, .tr-stop[aria-current] { background: var(--orange); }
+.tr-stop[aria-current] { box-shadow: 0 0 0 2px var(--sea), 0 0 0 6px rgb(179 83 14 / .25); }   /* a halo, not a bigger dot, so every name stays on one line */
+.tr-stop:hover, .tr-stop:focus-visible { background: var(--orange); outline: none; }
+/* the end of the line: a treasure chest just past it; orange once the streetcar has arrived */
+.tr-end { position: absolute; left: calc(100% + 22px); top: var(--ry); width: 22px; height: 18px; translate: 0 -50%; overflow: visible;   /* just past the line's end, so the streetcar pulls up beside it */
+  filter: drop-shadow(0 0 1.5px var(--sea)); transition: color .3s ease; color: var(--steel); }
+.tr-chest { fill: currentColor; }
+.tr-band { fill: none; stroke: var(--sea); stroke-width: 1.6; }
+.tr-lock { fill: var(--sea); }
+.track.arrived .tr-end { color: var(--orange); }
+/* the streetcar: steel body, paper windows, centred on the thick line (it rides in the line, so the strip stays slim) */
+.tr-tram { position: absolute; top: var(--ry); left: calc(var(--t, 0) * var(--len)); width: 36px; height: 21px; translate: -50% -50%; overflow: visible;
+  filter: drop-shadow(0 0 1.5px var(--sea)) drop-shadow(0 2px 3px rgb(25 37 74 / .25)); pointer-events: none; transition: left .15s linear; }
+.tr-body, .tr-wheel { fill: var(--steel); }
+.tr-win { fill: var(--sea); }
+/* station names: a paper tag above the dot, on hover or keyboard focus */
+.tr-name { position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 4px; padding: 4px 10px; border-radius: 6px; white-space: nowrap;
+  background: var(--sea); color: var(--steel); font: 600 12px/1.2 var(--body); box-shadow: 0 0 0 1px rgb(25 37 74 / .15), 0 4px 12px rgb(25 37 74 / .12);
+  opacity: 0; pointer-events: none; transition: opacity .15s ease, translate .2s ease; }
+.tr-stop:hover .tr-name, .tr-stop:focus-visible .tr-name { opacity: 1; translate: -50% 0; }
+.tr-stop[aria-current] .tr-name { color: var(--orange); }
+@media (max-width: 759px) { .track { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tr-tram, .tr-stop { transition: none; } }
+/* the top row: ☰, the TCG mark and the logo text, in every state (Back to map is retired; the ☰ menu and recenter cover it) */
+#stick .search { clip-path: inset(-4px 100% -4px -4px); transform: translateX(-24px); opacity: 0; pointer-events: none; visibility: hidden; }
+#stick:not(.open) .wordclip { opacity: 1; transition: opacity .15s ease; }
+#stick:not(.open) .wordclip .word { transform: none; transition-delay: .15s; }
+/* front page: pins in the sky (above the skyline, behind the headline) fade to a trace; on the streets they are at full strength
+   (engine: --lt = where the skyline starts in the window) */
+#stick.hero-fade #labels { -webkit-mask: linear-gradient(to bottom, rgb(0 0 0 / .14) 0, rgb(0 0 0 / .14) calc(var(--lt) - 10px), #000 calc(var(--lt) + 60px));
+  mask: linear-gradient(to bottom, rgb(0 0 0 / .14) 0, rgb(0 0 0 / .14) calc(var(--lt) - 10px), #000 calc(var(--lt) + 60px)); }
+/* the TCG mark, pinned beside the ☰ once the reviews sheet has covered the map (engine: #stick.covered) */
+.brandpin { position: absolute; left: calc(var(--inset) + var(--icon-btn) + var(--s2)); top: var(--inset); z-index: 10; height: var(--icon-btn);
+  padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; visibility: hidden; translate: -8px 0;
+  transition: opacity .25s ease, translate .3s cubic-bezier(.22,1,.36,1), visibility 0s .3s; }
+/* mark + logo text at the map's own sizes and spacing (desktop: 48px mark, 40px text, 12px apart; phones: 28px text, 10px apart) */
+.brandpin { display: flex; align-items: center; gap: 12px; }
+.brandpin .bp-mark { width: var(--icon-btn); height: var(--icon-btn); display: block; }
+.brandpin .bp-word { height: 40px; width: auto; display: block; }
+@media (max-width: 760px) { .brandpin { gap: 10px; } .brandpin .bp-word { height: 28px; } }
+#stick.covered .brandpin { opacity: 1; visibility: visible; translate: 0 0; transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) { .brandpin { transition: none; } }
+/* phones: the reviews heading rests below the pinned row */
+@media (max-width: 759px) { .rv-phone .rv-title { margin-top: var(--s3); } }
+/* the menu still scrolls on short screens, without a visible scrollbar */
+.menu-panel { scrollbar-width: none; }
+.menu-panel::-webkit-scrollbar { display: none; }
+/* front page: the ☰ centres on the taller open row, so the drawer's first row (× + logo) drops to match it */
+#stick.open .menu-head { margin-top: calc((var(--mark-open) - var(--icon-btn)) / 2); }
+/* reviews: the heading rests below the pinned ☰ and logo row */
+.cover .rv-title { margin-top: calc(var(--icon-btn) + var(--s2)); }
+@media (max-width: 759px) { .cover .rv-phone .rv-title { margin-top: var(--s3); } }
+/* the lion mark and the logo text keep one size from the front page to the map: on the first scroll they only move */
+#hero#hero { --mark-open: var(--icon-btn); }
+@media (max-width: 760px) { #hero #stick.open .wordclip .word { height: 28px; } }
+/* hero ratings: the stars start on the same left edge as their caption */
+.sv-hero .hero-proofrow .hero-ratings a > span { justify-items: start; text-align: left; }
+/* once the reviews sheet covers the map, the map's chrome (the checkered border, controls) is gone too, so nothing shows round the footer */
+#stick.covered #mapui, #stick.covered #labels { visibility: hidden; }
+/* The Way Forward keeps to the page's content column (the same 1104px the reviews and services sit in), centred, not full width */
+@media (min-width: 760px) {
+  #stick .dircard { left: 50%; right: auto; width: min(1104px, calc(100% - 2 * var(--inset))); translate: -50% 0; }
+  #stick .dircard.cta { translate: -50% -50%; }
+}
+/* the drawer is open: the bottom railway steps aside (it sits above the map's layers) */
+.menu-open .track { opacity: 0; pointer-events: none; }
+/* the open drawer is .menu.on, and the line tumble hides labels inside any .on: keep the station CTAs' labels in place */
+.menu .svc-scope .label > span:first-child { transform: none; opacity: 1; }
+/* desktop: the 10%-off corner sits above the railway's paper strip, so it never covers the end of the line */
+@media (min-width: 760px) { .offer-corner { bottom: var(--rail-g); } }
+/* The Way Forward: each step is told through a client; the eyebrow names them (with their industry icon), their pin lights up */
+.dc-n { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.dc-client { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 2px; border-radius: 999px; background: rgb(25 37 74 / .07);
+  font: 600 12px/1 var(--body); letter-spacing: .02em; text-transform: none; color: var(--steel); }
+.dc-client-ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--ind, var(--steel)); color: var(--sea); }
+.dc-client-ic .glyph { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.pin.wf .ic { background: var(--orange); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--orange), 0 4px 12px rgba(0,0,0,.28); }
+.pin.wf { z-index: 250000 !important; }
+.pin.wf .nm { opacity: 1 !important; }
+/* Our Work Across Toronto: on the page's content column (the left margin The Way Forward and the reviews use), lower down */
+@media (min-width: 760px) {
+  #stick .workhead { left: calc(50% - min(1104px, 100% - 2 * var(--inset)) / 2); top: 132px; padding-left: 0; padding-right: 0; }
+}
+/* The Way Forward steps as a navigation app's turn banner (Jakob's Law: Google Maps' own): a solid steel bar, a big white turn
+   arrow with the time under it, the step large in white, the client and their story beneath, and a darker "Then" strip naming the next step */
+.dc-step.dc-nav { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s3); padding: 0; overflow: hidden; border-radius: 16px;
+  background: var(--steel); color: #fff; }
+.dc-nav > .dc-ico { padding: var(--s3) 0 var(--s3) var(--s3); align-content: start; }
+.dc-nav > div:not(.dc-then) { padding: var(--s3) var(--s4) var(--s3) 0; }
+.dc-nav .dc-arrow { width: 64px; height: 64px; background: none; color: #fff; }
+.dc-nav .dc-arrow .glyph { width: 52px; height: 52px; stroke-width: 2.2; }
+.dc-nav .dc-est { font: 600 15px/1.2 var(--body); color: #fff; opacity: .85; }
+.dc-nav h3 { margin: 6px 0 8px; font-size: 34px; line-height: 1.05; color: #fff; }
+.dc-nav p { font-size: 16px; line-height: 1.5; color: rgb(255 255 255 / .82); max-width: 72ch; }
+.dc-nav .dc-n { color: rgb(255 255 255 / .7); }
+.dc-nav .dc-client { background: rgb(255 255 255 / .14); color: #fff; }
+.dc-nav .dc-client-ic { box-shadow: 0 0 0 1.5px rgb(255 255 255 / .5); }
+.dc-then { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 12px var(--s3); background: rgb(0 0 0 / .22);
+  font: 500 15px/1.2 var(--body); color: rgb(255 255 255 / .85); }
+.dc-then > span:first-child { font-weight: 600; }
+.dc-then-ic { display: grid; place-items: center; width: 22px; height: 22px; color: #fff; }
+.dc-then-ic .glyph { width: 22px; height: 22px; stroke-width: 2.2; }
+.dc-then b { font: 700 17px/1.2 var(--head); color: #fff; }
+@media (max-width: 759px) {
+  .dc-nav > .dc-ico { padding: var(--s2) 0 var(--s2) var(--s2); }
+  .dc-nav > div:not(.dc-then) { padding: var(--s2) var(--s2) var(--s2) 0; }
+  .dc-nav .dc-arrow { width: 44px; height: 44px; } .dc-nav .dc-arrow .glyph { width: 38px; height: 38px; }
+  .dc-nav h3 { font-size: 22px; } .dc-nav p { font-size: 14px; color: rgb(255 255 255 / .82); }
+  .dc-then { padding: 10px var(--s2); font-size: 13px; } .dc-then b { font-size: 15px; }
+}
+/* phones: Get directions stays an icon in the route steps too (its label would run over the logo) */
+@media (max-width: 759px) {
+  #stick.dirs .dirlabel { max-width: 0; margin-left: 0; opacity: 0; }
+  #stick.dirs .layers-top .btn.dirbtn { padding: 0 13px; }
+}
+@media (max-width: 759px) { .cover .rv-phone .rv-title { margin-top: calc(var(--s3) + 16px); } }
+/* step banners: the client's photo on the right (or their industry icon on a tinted tile until there is one), more room to read */
+.dc-step.dc-nav { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: var(--s4); }
+.dc-nav > .dc-ico { padding: var(--s4) 0 var(--s4) var(--s4); }
+.dc-nav > div:not(.dc-then) { padding: var(--s4) 0; }
+.dc-nav .dc-n { margin-bottom: var(--s1); }
+.dc-nav h3 { margin: 0 0 var(--s2); }
+.dc-nav p { line-height: 1.65; max-width: 60ch; }
+.dc-thumb { align-self: stretch; width: 240px; margin: var(--s3) var(--s3) var(--s3) 0; border-radius: 10px; overflow: hidden; display: grid; place-content: center; justify-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--ind, var(--sea)) 30%, #fff 8%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .18); }
+.dc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dc-thumb .glyph { width: 44px; height: 44px; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.dc-thumb small { font: 700 15px/1.2 var(--head); color: #fff; text-align: center; padding: 0 var(--s2); }
+.dc-then { padding: 14px var(--s4); }
+@media (max-width: 759px) {
+  .dc-step.dc-nav { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s2); }
+  .dc-nav > .dc-ico { padding: var(--s3) 0 var(--s2) var(--s2); }
+  .dc-nav > div:not(.dc-then) { padding: var(--s3) var(--s2) var(--s2) 0; }
+  .dc-thumb { grid-column: 1 / -1; width: auto; height: 120px; margin: 0 var(--s2) var(--s2); }
+  .dc-then { padding: 12px var(--s2); }
+}
+/* the step lane clips the push, so a card never slides over the heading or the map below */
+.dc-track { overflow: hidden; margin: -24px -24px; padding: 24px; }
+/* the step count sits at the bottom right of the banner, in the Then strip */
+.dc-count { margin-left: auto; font: 600 14px/1 var(--body); letter-spacing: .08em; color: rgb(255 255 255 / .75); }
+.dc-nav .dc-n:empty { display: none; }
+/* the client photo fills its side of the banner, edge to edge (top to the Then strip, right to the card edge) */
+.dc-thumb { margin: 0; border-radius: 0; width: 300px; box-shadow: none; align-self: stretch; }
+@media (max-width: 759px) { .dc-thumb { margin: 0; height: 150px; width: auto; } }
+.dc-step.dc-nav { border: 0; }
+/* the client photo: a rounded rectangle of its own inside the banner, inset evenly, the image covering it */
+.dc-thumb { margin: var(--s3) var(--s3) var(--s3) 0; border-radius: 12px; overflow: hidden; width: 280px; }
+@media (max-width: 759px) { .dc-thumb { margin: 0 var(--s2) var(--s2); height: 150px; width: auto; border-radius: 12px; } }
+/* The step banner is one fixed rounded container (the track, blue); the steps slide up through it and are clipped at its edges.
+   The finale's Find Your Way Forward card keeps its own paper frame. */
+.dircard:not(.cta) .dc-track { margin: 0; padding: 0; overflow: hidden; border-radius: 16px; background: var(--steel); isolation: isolate; }
+.dircard:not(.cta) .dc-step.dc-nav { border-radius: 0; }
+@keyframes dc-in { from { transform: translateY(100%); } }
+@keyframes dc-out { to { transform: translateY(-100%); } }
+@keyframes dc-in-back { from { transform: translateY(-100%); } }
+@keyframes dc-out-back { to { transform: translateY(100%); } }
+/* Our Work Across Toronto: no wash behind it; the overview frames the clients below the heading, so it sits on clear map */
+.workhead::before { display: none; }

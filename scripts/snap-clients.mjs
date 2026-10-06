@@ -22,7 +22,7 @@ const HIDE = `
 
 const save = async (buf, dir, name, w, h) => {
   await sharp(buf).resize(w, h, { fit: "cover", position: "attention" }).webp({ quality: 82 }).toFile(`${dir}/${name}.webp`);
-  await sharp(buf).resize(w / 2, h / 2, { fit: "cover", position: "attention" }).webp({ quality: 80 }).toFile(`${dir}/${name}-sm.webp`);
+  await sharp(buf).resize(Math.round(w / 2), Math.round(h / 2), { fit: "cover", position: "attention" }).webp({ quality: 80 }).toFile(`${dir}/${name}-sm.webp`);
 };
 
 const browser = await chromium.launch();
@@ -38,12 +38,13 @@ for (const [id, url] of Object.entries(SITES)) {
     await page.keyboard.press("Escape").catch(() => {});
 
     // walk the page once so lazy images and scroll-ins load, then shoot a screen at a time from the top
-    const total = await page.evaluate(() => document.documentElement.scrollHeight);
-    for (let y = 0; y < Math.min(total, H * SHOTS); y += 400) { await page.mouse.wheel(0, 400); await page.waitForTimeout(250); }
+    // walk the full depth (lazy pages grow as they scroll), then measure
+    for (let y = 0; y < H * SHOTS; y += 400) { await page.mouse.wheel(0, 400); await page.waitForTimeout(250); }
     await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(1500);
-    const n = Math.max(1, Math.min(SHOTS, Math.floor(total / H)));
+    const total = await page.evaluate(() => document.documentElement.scrollHeight);
+    const n = Math.max(1, Math.min(SHOTS, Math.ceil(total / H - 0.25)));   // a last screen counts once it is a quarter full
     for (let i = 0; i < n; i++) {
-      await page.evaluate((y) => scrollTo(0, y), i * H); await page.waitForTimeout(i ? 900 : 1200);
+      await page.evaluate((y) => scrollTo(0, y), Math.min(i * H, total - H)); await page.waitForTimeout(i ? 900 : 1200);
       await save(await page.screenshot({ type: "png" }), dir, `site-${i + 1}`, 1280, 800);
     }
 

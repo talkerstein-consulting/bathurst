@@ -24,6 +24,19 @@ npm run build
 
 Sections ask the map to open a client with `openOnMap(id)` (a `tcg:open` window event).
 
+## Get directions (booking)
+
+Every "Get directions" lands on `/book` (`components/bathurst/BookingForm.tsx`), which posts JSON to `/api/book` (`app/api/book/route.ts`).
+The route validates the request and forwards it to a webhook set in the environment:
+
+```bash
+BOOKING_WEBHOOK_URL=https://…        # HubSpot / Zapier / Make / GoHighLevel inbound webhook
+BOOKING_WEBHOOK_SECRET=…             # optional, sent as Authorization: Bearer …
+```
+
+Until `BOOKING_WEBHOOK_URL` is set the route answers 503 and the form offers the same request as a pre-filled email, so nothing is lost.
+The payload fields are listed at the top of `app/api/book/route.ts`.
+
 ## React Bits Pro
 
 The license key lives in `.env.local` (git-ignored) as `REACTBITS_LICENSE_KEY`. Install more with:
@@ -39,5 +52,5 @@ npx shadcn@latest add @reactbits-pro/<slug>          # blocks
 - White logo lockup for dark grounds (footer currently uses the colored lockup on a Sea Breeze panel).
 - Real buildings: Toronto 3D Massing + OpenStreetMap to replace the placeholder massing.
 - Case-study photography, the other six Clutch reviews, and a real submit target for the contact form.
-- Confirm Paula's Wig Boutique location (Miami on /work vs 3405 Bathurst in email) and Eli's Barbershop engagement.
+- Services, photos and case studies for the clients added in Oct 2026 (Eli's Barbershop onward in `lib/bathurst/data.ts`).
 - Type `lib/bathurst/engine.ts` (ported untyped for this first pass).

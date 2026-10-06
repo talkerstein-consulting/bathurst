@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { brandSelect } from "@/lib/bathurst/brand-select";
 
 /**
  * Directions: the sheet every "Get directions" button opens (dispatch `tcg:directions`, optionally with
@@ -26,6 +27,9 @@ export default function DirectionsPanel() {
   const [from, setFrom] = useState("");
   const [goal, setGoal] = useState("");
   const fromRef = useRef<HTMLInputElement>(null);
+  const goalRef = useRef<HTMLSelectElement>(null);
+  // the destination list in the site's own dropdown; re-synced when the goal is prefilled from outside (tcg:directions)
+  useEffect(() => { if (goalRef.current) brandSelect(goalRef.current)(); }, [goal]);
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -64,7 +68,7 @@ export default function DirectionsPanel() {
             <input ref={fromRef} className="input" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Your business name" aria-label="Your business name" autoComplete="organization" />
           </label>
           <label className="sprout field-box dir-box">
-            <select className="input" value={goal} onChange={(e) => setGoal(e.target.value)} aria-label="Your destination">
+            <select ref={goalRef} className="input" value={goal} onChange={(e) => setGoal(e.target.value)} aria-label="Your destination">
               <option value="" disabled>Choose your destination</option>
               {GOALS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
             </select>

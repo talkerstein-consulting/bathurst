@@ -5,7 +5,7 @@ const book = (service: string) => `/book?${new URLSearchParams({ service })}`;
 
 /**
  * "What Gets You There": the services in three stages (Plan, Build, Run), all visible at once, in the page's own parts:
- * the heading; the section's one filled orange CTA after the list (the .dc-go style of "Start a conversation");
+ * the heading; the section's one filled orange CTA after the list (the .dc-go style of "Get directions");
  * each stage's eyebrow and Cheltenham heading sit on the page background (like the footer's "Built in Toronto"); each
  * service is its own CTA, the page's outline button (.sprout .btn) holding its name and one line, the whole box a link to book it.
  */
@@ -39,8 +39,8 @@ export default function Services() {
         {/* after the services: the one filled CTA, for anyone not sure where to start */}
         <div className="svc-after">
           <p className="svc-after-t">Not sure where to start?</p>
-          <CtaLink href={book("Diagnostics")} label="Book a Diagnostic" className="dc-go svc-cta">
-            <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Book a Diagnostic
+          <CtaLink href={book("Diagnostics")} label="Get directions" className="dc-go svc-cta">
+            <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Get directions
           </CtaLink>
         </div>
       </div>

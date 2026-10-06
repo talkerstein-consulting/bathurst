@@ -12,7 +12,7 @@ const EXPLORE = [
   { href: "#services", label: "Services" },
   { href: "https://talkerstein.com/work", label: "Work", external: true },
   { href: "https://talkerstein.com", label: "About", external: true },
-  { href: "/book", label: "Contact" },
+  { href: "/book", label: "Get directions" },
 ];
 // TODO(seo): point these at dedicated service pages once they exist; for now they land on each service card
 const SERVICE_LINKS = [

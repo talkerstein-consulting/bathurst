@@ -2,7 +2,7 @@
 // Bathurst clients come from TCG email (Paymo tasks, proposals, quotes). Results are only shown where
 // talkerstein.com/work publishes them. `hidden` keeps a record in the data but off the page for now.
 
-export type Industry = "food" | "health" | "retail" | "services" | "beauty" | "community" | "finance" | "professional";
+export type Industry = "food" | "health" | "retail" | "services" | "beauty" | "community" | "finance" | "professional" | "industrial";
 
 export type Client = {
   id: string;
@@ -25,19 +25,28 @@ export type Client = {
   thumb?: string;
   /** Logo artwork for the spotlight's logo row, e.g. "/clients/bubbys-logo.svg". TODO(content): collect client logos. */
   logo?: string;
+  /** The client's own website, for pins without a case study in client-content.ts (which carries its own `site`). */
+  site?: string;
   /** A published client quote. TODO(content): collect these; never write one on a client's behalf. */
   testimonial?: { quote: string; who: string };
 };
 
-export const INDUSTRIES: Record<Industry, { name: string; chip: string; icon: string }> = {
-  food: { name: "Food & restaurant", chip: "Restaurants", icon: '<path d="M7 3v7a2 2 0 002 2v9M11 3v7M7 7h4M16 21V3c2.5 1.5 3 4 3 7h-3"/>' },
-  retail: { name: "Retail", chip: "Retail", icon: '<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 016 0v2"/>' },
-  health: { name: "Health", chip: "Health", icon: '<path d="M12 5v14M5 12h14"/>' },
-  services: { name: "Personal services", chip: "Personal services", icon: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 16L18 4M16 16L6 4"/>' },
-  beauty: { name: "Beauty", chip: "Beauty", icon: '<path d="M12 3c-3 4-5 6.5-5 9.5a5 5 0 0010 0C17 9.5 15 7 12 3z"/>' },
-  community: { name: "Nonprofit", chip: "Nonprofits", icon: '<path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6"/>' },
-  finance: { name: "Finance", chip: "Finance", icon: '<path d="M4 20h16M6 17V10M10 17V10M14 17V10M18 17V10M3 9l9-5 9 5z"/>' },
-  professional: { name: "Professional services", chip: "Professional", icon: '<path d="M4 8h16v11H4zM9 8V5h6v3"/>' },
+/**
+ * Industry colours: Google Maps' category hues (food orange-yellow, shopping blue, health red, personal care purple,
+ * services teal, community green, finance slate, industry brown) shifted toward old printing inks so they sit with the
+ * Sea Breeze paper and Steel Blue ink. Each carries the Sea Breeze glyph at ≥4:1. Brand orange stays the "selected" state,
+ * which is why food is mustard rather than Google's orange.
+ */
+export const INDUSTRIES: Record<Industry, { name: string; chip: string; icon: string; color: string }> = {
+  food: { name: "Food & restaurant", chip: "Restaurants", color: "#94690F", icon: '<path d="M7 3v7a2 2 0 002 2v9M11 3v7M7 7h4M16 21V3c2.5 1.5 3 4 3 7h-3"/>' },
+  retail: { name: "Retail", chip: "Retail", color: "#2F5788", icon: '<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 016 0v2"/>' },
+  health: { name: "Health", chip: "Health", color: "#A23A33", icon: '<path d="M12 5v14M5 12h14"/>' },
+  services: { name: "Personal services", chip: "Personal services", color: "#2C6E6B", icon: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 16L18 4M16 16L6 4"/>' },
+  beauty: { name: "Beauty", chip: "Beauty", color: "#8E4A6B", icon: '<path d="M12 3c-3 4-5 6.5-5 9.5a5 5 0 0010 0C17 9.5 15 7 12 3z"/>' },
+  community: { name: "Nonprofit", chip: "Nonprofits", color: "#56703F", icon: '<path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6"/>' },
+  finance: { name: "Finance", chip: "Finance", color: "#4B5E70", icon: '<path d="M4 20h16M6 17V10M10 17V10M14 17V10M18 17V10M3 9l9-5 9 5z"/>' },
+  professional: { name: "Professional services", chip: "Professional", color: "#19254A", icon: '<path d="M4 8h16v11H4zM9 8V5h6v3"/>' },
+  industrial: { name: "Industrial & trades", chip: "Industrial", color: "#6E4E33", icon: '<path d="M3 20V10l5 3V10l5 3V6h6v14z"/>' },
 };
 
 // Projects list (Sept 2026). Coordinates are approximate geocodes of the published address.
@@ -52,15 +61,46 @@ export const CLIENTS: Client[] = [
   { id: "hoh", name: "House of Hair Extensionz", addr: "7181 Yonge St #218, Thornhill", lat: 43.8032, lon: -79.4194, ind: "beauty", services: ["Branding", "Shopify", "AI photoshoot"], result: "2.3× sales growth", stop: 7 },
   // always pinned, off the scroll route
   { id: "uzbek", name: "Uzbek Delight", addr: "382 Enford Rd, Richmond Hill", lat: 43.89, lon: -79.4384, ind: "food", services: ["Website", "Branding", "Food truck", "POS"] },
-  { id: "ar26", name: "AR26 / A&R Motors", addr: "1100 Finch Ave W Unit 6A, North York", lat: 43.7685, lon: -79.4733, ind: "services", icon: "wheel", services: [] },
+  { id: "ar26", name: "AR26 / A&R Motors", addr: "1100 Finch Ave W Unit 6A, North York", lat: 43.7685, lon: -79.4733, ind: "professional", icon: "wheel", services: [] },
   { id: "familytree", name: "Family Tree Dispute Resolution", addr: "Toronto, ON", lat: 43.7280, lon: -79.4200, ind: "professional", services: [], note: "Address not publicly verified; placeholder. Confirm." },
   { id: "umc", name: "Unionville Music Competition", addr: "74 Starwood Rd, Thornhill", lat: 43.8451, lon: -79.4669, ind: "community", services: [] },
   { id: "morgan", name: "Morgan Property Law", addr: "1454 Dundas St E, Unit 112, Mississauga", lat: 43.6100, lon: -79.5814, ind: "professional", services: [] },
   { id: "amritsari", name: "Amritsari Chatore", addr: "5484 Tomken Rd Unit 1, Mississauga", lat: 43.6359, lon: -79.6451, ind: "food", services: ["Branding", "Print", "WordPress"], result: "3.4× local discovery" },
+  // Added Oct 2026 (geocoded from the street address with OpenStreetMap Nominatim). TODO(content): services, photos and case studies.
+  { id: "elis", name: "Eli's Barbershop", addr: "4128 Bathurst St, North York", lat: 43.74678, lon: -79.43666, ind: "professional", icon: "services", services: [], site: "https://elisbarbershop.com/" },
+  { id: "bubbys", name: "Bubby's Bagels", addr: "3030 Bathurst St, Toronto", lat: 43.71817, lon: -79.42982, ind: "food", services: ["Website", "Branding"], site: "https://www.bubbysbagels.com/" },
+  { id: "crema", name: "Crema Cafe", addr: "3032 Bathurst St, Toronto", lat: 43.71825, lon: -79.42972, ind: "food", services: [] },
+  { id: "chocolatecharm", name: "Chocolate Charm", addr: "3541 Bathurst St, North York", lat: 43.73012, lon: -79.43191, ind: "food", services: [], site: "https://chocolatecharm.ca/" },
+  { id: "amazingdonuts", name: "Amazing Donuts", addr: "3499 Bathurst St, North York", lat: 43.72880, lon: -79.43177, ind: "food", services: ["Website"], site: "https://amazing-donuts.vercel.app/" },
+  { id: "spectank", name: "SpecTank", addr: "127 Dolomite Dr, North York", lat: 43.78017, lon: -79.47227, ind: "industrial", services: [], site: "https://www.spectank.com/" },
+  { id: "bazwell", name: "Wheel Walkers", addr: "3995 Chesswood Dr, North York", lat: 43.75840, lon: -79.47557, ind: "health", services: [], site: "https://www.wheelwalkers.ca/" },
+  { id: "paloma", name: "Paloma Blanca", addr: "77 Sheffield St, North York", lat: 43.70721, lon: -79.47088, ind: "retail", services: [] },
+  { id: "beker", name: "Beker Fashions", addr: "87 Colville Rd, North York", lat: 43.70760, lon: -79.47073, ind: "retail", services: [] },
+  { id: "iceacademy", name: "Canadian Ice Academy", addr: "3111 Universal Dr, Mississauga", lat: 43.62472, lon: -79.57229, ind: "professional", services: [] },
+  { id: "carmel", name: "Carmel Transport", addr: "25 North Rivermede Rd Unit 18, Concord", lat: 43.82140, lon: -79.48440, ind: "industrial", services: [] },
+  { id: "brickstone", name: "Brickstone Construction", addr: "358 Flint Rd, North York", lat: 43.77013, lon: -79.48004, ind: "industrial", services: [] },
+  { id: "luminari", name: "Luminari Cleaning", addr: "4100 Chesswood Dr Unit 200, North York", lat: 43.75841, lon: -79.47818, ind: "professional", services: [], site: "https://luminari-nine.vercel.app/" },
+  { id: "paulas", name: "Paula's Wig Boutique", addr: "800 Petrolia Rd Unit 17, North York", lat: 43.77945, lon: -79.48982, ind: "beauty", services: ["Branding"] },
+  { id: "sams", name: "Sam's Menswear", addr: "318 Charlton Ave, Vaughan", lat: 43.79403, lon: -79.46067, ind: "professional", services: ["Branding"] },
+  { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, ind: "community", services: [] },
+  { id: "womb", name: "The WOMB Vaughan", addr: "545 North Rivermede Rd Unit 105, Vaughan", lat: 43.80688, lon: -79.48317, ind: "health", services: [], site: "https://www.thewomb.ca/vaughan/" },
 ];
 
 /** Published projects with no mapped address. */
-export const ELSEWHERE: Client[] = [];
+export const ELSEWHERE: Client[] = [
+  { id: "shomrim", name: "Shomrim Toronto", addr: "Greater Toronto Area", ind: "community", services: [], site: "https://shomrimtoronto.org/" },
+  { id: "hetz", name: "Hetz Electrical", addr: "Greater Toronto Area", ind: "industrial", services: [], site: "https://www.hetzelectrical.com/" },
+  { id: "zmedicair", name: "ZMedicAir", addr: "Canada", ind: "health", services: [], site: "https://zmedicair.ca/" },
+  { id: "cleverpays", name: "CleverPays", addr: "Laval, QC", ind: "finance", services: [], site: "https://cleverpays.ca/" },
+  { id: "kidicare", name: "KidiCare / Inspera", addr: "Montreal, QC", ind: "retail", services: [], site: "https://kidicare.ca/" },
+  { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"] },
+  // TODO(content): no public address found (or more than one business by that name); confirm, then remove `hidden`
+  { id: "mondialpay", name: "MondialPay", addr: "Canada", ind: "finance", services: [], hidden: "Location and website to confirm" },
+  { id: "ohr", name: "Ohr", addr: "Toronto", ind: "community", services: [], hidden: "Which Ohr organization (Ohr Somayach, Ohr HaEmet…)? Address to confirm" },
+  { id: "beautique", name: "Beautique", addr: "Toronto", ind: "beauty", services: [], hidden: "Possibly Beautique Bar, 3430 Yonge St; confirm" },
+  { id: "lumique", name: "Lumique", addr: "Toronto", ind: "beauty", services: [], hidden: "Business and address to confirm" },
+  { id: "ralphwigs", name: "Ralph Wigs", addr: "Toronto", ind: "beauty", services: [], hidden: "Address to confirm" },
+];
 
 /** Where the route begins and where it ends (the TCG office). */
 export const ROUTE_START = { name: "Start", lat: 43.6725, lon: -79.3960 };   // Yorkville: the first stop (YJC)
@@ -116,12 +156,19 @@ export const STEPS = [
   { kind: "end", label: "Arrive", title: "Prospects become clients" },
 ] as const;
 
-/** Bespoke Directions: the steps the map's nav dot drives through after the last client (turn = the maneuver arrow). */
-export const DIRECTIONS: { turn: "straight" | "right" | "left" | "arrive"; title: string; body: string; est: string }[] = [
-  { turn: "straight", title: "A Business Diagnostic", body: "We map where your business is losing time, money, and momentum across web, marketing, CRM, brand, and AI.", est: "1 week" },
-  { turn: "straight", title: "A Clear Order of Operations", body: "Know what to fix first, what can wait, and what will move the business forward.", est: "1 week" },
-  { turn: "left", title: "One Connected System", body: "Website, brand, marketing, CRM, automation, and AI built to work as one.", est: "4–8 weeks" },
-  { turn: "arrive", title: "One Team From Start to Finish", body: "One accountable team keeps the work moving, the priorities clear, and the pieces connected.", est: "Ongoing" },
+/** Bespoke Directions: the steps the map's nav dot drives through after the last client (turn = the maneuver arrow).
+ * Each step is told as it happened for one client (`client`, a CLIENTS id): the dot drives the main roads to that client and the
+ * card tells that step for them (`story`). TODO(content): confirm each story with the client team before launch; Sam's (branding)
+ * and AR26 (website and online presence) match the records, Beit Halochem and Brickstone are written from the step itself. */
+export const DIRECTIONS: { turn: "straight" | "right" | "left" | "arrive"; title: string; body: string; est: string; client: string; story: string }[] = [
+  { turn: "straight", title: "A Business Diagnostic", body: "We map where your business is losing time, money, and momentum across web, marketing, CRM, brand, and AI.", est: "1 week", client: "sams",
+    story: "We started by mapping where Sam’s Menswear was losing ground: how the store looked, how customers found it, and where its brand was holding it back." },
+  { turn: "straight", title: "A Clear Order of Operations", body: "Know what to fix first, what can wait, and what will move the business forward.", est: "1 week", client: "beithalochem",
+    story: "With Beit Halochem Canada we set what to fix first and what could wait, so a small nonprofit team put its time where it would count most." },
+  { turn: "left", title: "One Connected System", body: "Website, brand, marketing, CRM, automation, and AI built to work as one.", est: "4–8 weeks", client: "brickstone",
+    story: "For Brickstone Construction, the website, brand and follow-up were built to work as one, so every enquiry reaches the team instead of getting lost." },
+  { turn: "arrive", title: "One Team From Start to Finish", body: "One accountable team keeps the work moving, the priorities clear, and the pieces connected.", est: "Ongoing", client: "ar26",
+    story: "A&R Motors works with one team on its website and online presence, keeping the work moving and the priorities clear." },
 ];
 
 export const REVIEW = {

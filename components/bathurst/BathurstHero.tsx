@@ -2,13 +2,15 @@
 
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
-import { CtaButton } from "@/components/style/Cta";
-import DirectionsPanel from "@/components/bathurst/DirectionsPanel";
+import { CtaButton, CtaLink } from "@/components/style/Cta";
+import RiseHeading from "@/components/style/RiseHeading";
 import Testimonials from "@/components/bathurst/Testimonials";
 import { CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
 import Services from "@/components/bathurst/Services";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
+import SiteMenu, { MenuButton } from "@/components/bathurst/SiteMenu";
+import TrackRail from "@/components/bathurst/TrackRail";
 import { COMPASS_ROSE } from "@/lib/bathurst/icons";
 import "@/app/bathurst-map.css";
 
@@ -85,12 +87,13 @@ export default function BathurstHero() {
           <div className="mast-space" aria-hidden="true" />
           <div className="hero-grid">
             <div className="sv-hero" id="svhero">
-              <p className="eyebrow hero-where">Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></p>
-              <h1 className="h1">Find your way to the right customers.</h1>
-              <p>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
-              <CtaButton label="Continue scrolling down" accent className="hero-cta" data-no-tumble onClick={() => window.dispatchEvent(new Event("tcg:scroll"))} />   {/* glides down to the map overview (engine) */}
+              <p className="eyebrow hero-where rise-after">Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></p>
+              <RiseHeading className="h1" text="Find your way to the right customers." delay={120} />
+              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
+              {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
+              <CtaLink href="/book" label="Get directions" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
-              <div className="hero-proofrow">
+              <div className="hero-proofrow rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties}>
                 <div className="hero-ratings">
                   <a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a>
                   <a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>Rating on Google</small></span></a>
@@ -114,6 +117,8 @@ export default function BathurstHero() {
           <div className="neatline" id="neatline" aria-hidden="true" />
           <div className="panel">
             <div className="searchrow">
+              {/* the ☰ menu's slot (the button itself sits above every layer, so the reviews sheet never covers it) */}
+              <span className="menu-slot" aria-hidden="true" />
               {/* TCG mark. On the front page the wordmark sits beside it; on scroll the wordmark slides left into the
                   mark and the search slides out from behind it */}
               <a className="brandbtn" href="#top" id="brandbtn" aria-label="Talkerstein Consulting Group, back to top">
@@ -141,8 +146,7 @@ export default function BathurstHero() {
 
           {/* directions: orange fill, steel line, white glyph; "Get directions" on the front page, shrinking to the icon on scroll */}
           <div className="layers-top">
-            <button type="button" id="dirbtn" className="sprout btn icon dirbtn" data-no-tumble aria-label="Directions" aria-expanded="false"
-              onClick={() => window.dispatchEvent(new Event("tcg:directions"))}><Glyph g="turn" /><span className="dirlabel">Get directions</span></button>
+            <a id="dirbtn" className="sprout btn icon dirbtn" data-no-tumble aria-label="Get directions" href="/book"><Glyph g="turn" /><span className="dirlabel">Get directions</span></a>
           </div>
           <div className="layers" id="layers" role="dialog" aria-label="Map view settings" hidden>
             <div className="mv frame">
@@ -193,7 +197,6 @@ export default function BathurstHero() {
             <div className="chips" id="chips" role="group" aria-label="Filter by industry" />
             <CtaButton variant="icon" id="chipnext" label="Next category"><Glyph g="chevR" /></CtaButton>
           </div>
-        <DirectionsPanel />
         {/* after the last direction step: reviews, services and the footer, one sheet that rises over the map */}
         <div className="cover frame" id="cover" aria-label="Reviews">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
@@ -210,7 +213,17 @@ export default function BathurstHero() {
         <h2 className="workhead" id="workhead">Our Work Across Toronto</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
+        {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}
+        <MenuButton />
+        {/* over the reviews sheet (which covers the map's own top row) the TCG logo (mark and logo text) stays pinned beside the ☰ */}
+        <button type="button" className="brandpin" aria-label="Talkerstein Consulting Group, back to the top" onClick={() => window.dispatchEvent(new CustomEvent("tcg:nav", { detail: { to: "top" } }))}>
+          {/* the same two pieces as the map's top row (the mark, then the logo text), so it lands in exactly the same place */}
+          <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" />
+        </button>
+        <SiteMenu />
       </div>
+      {/* the railway: outside the map's checkered border, along the paper strip at the bottom (desktop) */}
+      <TrackRail />
     </section>
   );
 }
