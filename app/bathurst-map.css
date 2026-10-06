@@ -1866,3 +1866,5 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 @keyframes dc-out-back { to { transform: translateY(100%); } }
 /* Our Work Across Toronto: no wash behind it; the overview frames the clients below the heading, so it sits on clear map */
 .workhead::before { display: none; }
+/* a service chip is on: the faded pins outside it show no name, even zoomed in or on hover */
+.pin.dim .nm { display: none !important; }
