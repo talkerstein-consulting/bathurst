@@ -197,6 +197,12 @@ export default function BathurstHero() {
             <div className="chips" id="chips" role="group" aria-label="Filter by industry" />
             <CtaButton variant="icon" id="chipnext" label="Next category"><Glyph g="chevR" /></CtaButton>
           </div>
+        {/* over the reviews sheet the map's nav carries on unchanged: the ☰ and the TCG logo (.brandpin) stay on top, and
+            the square directions button is repeated here (same .layers-top styles, same spot) since the sheet covers the
+            map's own; a short Sea Breeze fade sits behind the row so it reads over the reviews, services and footer */}
+        <div className="navbar">
+          <div className="layers-top"><a className="sprout btn icon dirbtn" data-no-tumble aria-label="Get directions" href="/book"><Glyph g="turn" /><span className="dirlabel">Get directions</span></a></div>
+        </div>
         {/* after the last direction step: reviews, services and the footer, one sheet that rises over the map */}
         <div className="cover frame" id="cover" aria-label="Reviews">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>

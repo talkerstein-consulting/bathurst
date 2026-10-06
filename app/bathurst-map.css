@@ -65,6 +65,17 @@
 #mapui { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 @media (max-width: 760px) { #mapui.pc .sheet { display: none; } }
 #mapui > :not(.neatline) { z-index: 1; }
+/* the navbar over the reviews sheet (and services, footer): the TCG logo and the booking CTA on a short Sea Breeze fade.
+   It sits above the sheet (z 9); the ☰ stays above it. Shown once the sheet rises over the map's own logo row. */
+.navbar { position: absolute; left: 0; right: 0; top: 0; z-index: 10; height: calc(var(--inset) * 2 + var(--icon-btn) + 32px);
+  background: linear-gradient(180deg, var(--sea) 0%, var(--sea) 55%, rgb(from var(--sea) r g b / 0) 100%);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s ease, visibility 0s linear .25s; }
+#stick.navbar-on .navbar { opacity: 1; visibility: visible; transition: opacity .25s ease; }
+#stick.navbar-on .navbar > * { pointer-events: auto; }
+#stick.navbar-on .menubtn { z-index: 11; }
+/* a short Sea Breeze fade across the top of the map, so the TCG logo reads over pins, roads and parks */
+#mapui::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, var(--sea) 0%, rgb(from var(--sea) r g b / .85) 40%, rgb(from var(--sea) r g b / 0) 100%); }
 .panel { position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset); width: var(--panel-w); display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; }
 .searchrow { display: flex; gap: var(--s2); pointer-events: auto; }
 .searchrow .btn.icon, .search-box { background: var(--sea); }
@@ -1197,6 +1208,10 @@
 .pgal > button:hover img { transform: scale(1.03); }
 .pban { grid-column: 1 / -1; aspect-ratio: 16 / 10; }
 .ptile { aspect-ratio: 4 / 3; }
+/* a TCG Studios ad on YouTube, in place of the website clip; Shorts are portrait */
+.pyt { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--steel); border-radius: var(--btn-radius); }
+.pyt.port { aspect-ratio: 9 / 16; max-height: 70svh; margin-inline: auto; width: auto; }
+.pyt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: inherit; }
 .pmore { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; border-radius: inherit;
   background: rgba(25,37,74,.58); color: #fff; font: 600 22px/1 var(--body); letter-spacing: .02em; }
 .pgal > button:hover .pmore { background: rgba(25,37,74,.68); }
@@ -1353,9 +1368,8 @@
 html body .pnext.btn, html body .co-view.btn { --ink: var(--steel); background: var(--orange) padding-box; color: #fff; }
 @media (max-width: 760px) { .pin.sel .co { left: var(--dx, -18px) !important; right: auto !important; } }
 /* icon pins: just the round icon, centred on the address (no stem, no dot), at every screen size */
-.pin.mini .ic { width: 40px; height: 40px; left: -20px; top: -20px; transition: background .2s ease; }
-.pin.mini .ic .glyph { width: 21px; height: 21px; }
-.pin.mini .nm { top: 0; }
+.pin.mini .ic { width: 26px; height: 26px; left: -13px; top: -13px; box-shadow: 0 0 0 1.5px var(--sea), 0 0 0 2.5px var(--ind, var(--steel)), 0 2px 6px rgba(0,0,0,.25); transition: background .2s ease, width .2s ease, height .2s ease, left .2s ease, top .2s ease; }
+.pin.mini .ic .glyph { width: 15px; height: 15px; }.pin.mini .nm { top: 0; }
 @media (prefers-reduced-motion: reduce) { .pin.mini .ic { transition: none; } }
 
 /* sideways rows (Services, Instagram): the ‹ › pair sits together at the right of the header and greys out at each end;

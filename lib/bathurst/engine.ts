@@ -316,10 +316,10 @@ export function createBathurstEngine() {
   destEl.innerHTML=`<svg viewBox="0 0 24 32"><path d="M12 31s-10-10.2-10-18A10 10 0 0112 3a10 10 0 0110 10c0 7.8-10 18-10 18z"/><circle cx="12" cy="13" r="3.6"/></svg><span>Talkerstein Consulting Group</span>`;
   labels.appendChild(destEl);
   [...LOCAL].sort((a,b)=>b.pos.z-a.pos.z).forEach((p,i)=>{ p.side = i%2 ? 'l' : 'r'; });
-  const thumbHTML = p => (p.thumb = p.thumb || (CONTENT[p.id] && CONTENT[p.id].banner.replace(/\.webp$/, '-sm.webp'))) ? `<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.icon||p.ind,'glyph');
+  const thumbHTML = p => (p.thumb = p.thumb || (CONTENT[p.id] && CONTENT[p.id].banner.replace(/\.webp$/, '-sm.webp')) || (p.youtube && `https://i.ytimg.com/vi/${p.youtube}/hqdefault.jpg`)) ?`<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.icon||p.ind,'glyph');
   LOCAL.forEach(p=>{
     const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':''); el.style.setProperty('--ind', INDUSTRIES[p.ind]?.color); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
-    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small>${CONTENT[p.id]?.rating ? `<span class="co-rate"><b>${CONTENT[p.id].rating.toFixed(1)}</b> ★ <span>(${CONTENT[p.id].count.toLocaleString('en-CA')})</span></span>` : ''}<span class="co-act"><button type="button" class="sprout btn orange co-view" data-view>View case study</button><button type="button" class="sprout btn icon co-next" data-next aria-label="Next case study"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></span></span></div>`;
+    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small>${CONTENT[p.id]?.rating ? `<span class="co-rate"><b>${CONTENT[p.id].rating.toFixed(1)}</b> ★ <span>(${CONTENT[p.id].count.toLocaleString('en-CA')})</span></span>` : ''}<span class="co-act"><button type="button" class="sprout btn orange co-view" data-view>${p.youtube ? 'Watch video' : 'View case study'}</button><button type="button" class="sprout btn icon co-next" data-next aria-label="Next case study"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></span></span></div>`;
     el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
     // phones: the selected card is the preview; View opens the case study sheet, Next moves the tour on
     el.querySelector('[data-view]').onclick=e=>{ e.stopPropagation(); viewPlace(p.id); };
@@ -569,10 +569,10 @@ export function createBathurstEngine() {
         </dl>`,
       reviews: c && c.reviews.length
         ? `${c.rating ? `<div class="rsum"><b>${c.rating.toFixed(1)}</b><span>${stars(c.rating)}<small>${c.count.toLocaleString('en-CA')} reviews on Google</small></span></div>` : ''}
-           <ul class="revs">${c.reviews.map(r=>`<li><div class="rh"><span class="av" aria-hidden="true">${esc(r.who.trim()[0])}</span><span><b>${esc(r.who)}</b><small>${r.source==='Google'?'Google review':'Review on '+esc(host(c.site))}</small></span></div><p>${esc(r.quote)}</p></li>`).join('')}</ul>`
+           <ul class="revs">${c.reviews.map(r=>`<li><div class="rh"><span class="av" aria-hidden="true">${esc(r.who.trim()[0])}</span><span><b>${esc(r.who)}</b><small>${r.source==='Google'?'Google review':'Review on '+esc(c.site ? host(c.site) : r.source)}</small></span></div><p>${esc(r.quote)}</p></li>`).join('')}</ul>`
         : p.testimonial ? `<blockquote class="quote">“${p.testimonial.quote}”<cite>${p.testimonial.who}</cite></blockquote>`
         : `<p class="note">No published reviews for ${p.name} yet.</p>`,
-      about: c ? `${c.about.map(t=>`<p class="about">${esc(t)}</p>`).join('')}<p class="note">From <a class="plink" href="${c.site}" target="_blank" rel="noopener">${host(c.site)}</a></p>`
+      about: c?.about.length ? `${c.about.map(t=>`<p class="about">${esc(t)}</p>`).join('')}${c.site ? `<p class="note">From <a class="plink" href="${c.site}" target="_blank" rel="noopener">${host(c.site)}</a></p>` : ''}`
         : `<p class="about">${IND[p.ind].name}, ${p.addr}.</p>`,
     }[tab];
     const T = [['overview','Overview'],['reviews','Reviews'],['about','About']];
@@ -587,10 +587,13 @@ export function createBathurstEngine() {
           <button type="button" class="sprout btn icon orange pplay" aria-label="Play the ${esc(p.name)} website"><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
           <button type="button" class="pexp" data-ph="0" aria-label="Open the website video full size"><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>`
       : `<button type="button" class="pban single hair" data-ph="0" aria-label="Photos of ${esc(p.name)}"><img src="${c.banner}" alt="" decoding="async"></button>`;
-    const gallery = c ? `<div class="pgal">
+    // TCG Studios ads: the YouTube video is the case study's media, in place of website captures and photos
+    const ytGal = p.youtube ? `<div class="pgal"><div class="pban pyt single hair${p.short ? ' port' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${p.youtube}?rel=0&amp;modestbranding=1&amp;playsinline=1" title="${esc(p.name)}: ad by TCG Studios" loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>` : '';
+    const gallery = p.youtube ? ytGal : c ? `<div class="pgal">
         ${hero}
         ${media.slice(1, SHOWN).map((m,i)=>`<button type="button" class="ptile single hair${m.portrait ? ' port' : ''}" data-ph="${i+1}" aria-label="Photo ${i+2} of ${media.length}"><img src="${sm(m.src)}" alt="" loading="lazy" decoding="async">${plus(i)}</button>`).join('')}
-      </div>` : `<div class="gallery"><div class="single hair" style="--ind:${INDUSTRIES[p.ind]?.color}">${thumbHTML(p)}</div></div>`;
+      </div>`
+      : `<div class="gallery"><div class="single hair" style="--ind:${INDUSTRIES[p.ind]?.color}">${thumbHTML(p)}</div></div>`;
     // the tour's own controls (Previous / Next) sit after the content, so the case study is read on the way
     // to them; Next names where it leads. A × in the header closes the sheet; the handle only resizes it.
     const j = NODES.findIndex(n=>n.id===p.id), last = j===NODES.length-1;
@@ -899,6 +902,8 @@ export function createBathurstEngine() {
     // after the last direction step, the reviews (and services) sheet slides in
     const k1=Math.min(1, Math.max(0, (s-dirEnd)/PH_C)); covered = k1>=1; sliding = k1>0;
     if(stage._cov!==covered){ stage._cov=covered; stick.classList.toggle('covered', covered); stage.style.visibility = labels.style.visibility = covered ? 'hidden' : ''; }   // sheet fully up: drop the map canvas and labels from compositing
+    // the sheet is about to slide over the logo row: the navbar (logo + booking CTA on a fade) takes over above it
+    { const nav = k1>.7; if(stick._nav!==nav){ stick._nav=nav; stick.classList.toggle('navbar-on', nav); } }
     if(k1>0 && fPlace) leaveFPlace(false);   // the reviews sheet takes over: close the project opened on Find Your Way Forward
     const up=Math.min(Math.max(0, coverH-H+16), Math.max(0, (s-dirEnd-PH_C)*H));   // once it is up, it keeps rising with the scroll
     coverEl.style.transform=`translate3d(0,${((1-k1)*H - up).toFixed(1)}px,0)`; coverEl.style.visibility = k1>0 ? 'visible' : 'hidden';
@@ -1257,9 +1262,11 @@ export function createBathurstEngine() {
       if(!drag && dirIdx<=DIRECTIONS.length){ const dist=7500, pitch = mapView.view==='2d' ? 0 : .78, bearing=0;
         const cardB = dirCard.classList.contains('on') ? dirCard.getBoundingClientRect().bottom - stick.getBoundingClientRect().top : 0;
         // feedback: measure where the dot actually lands and nudge the look-ahead until it sits mid-way below the card
-        const want=(cardB + H)/2, sy=project(dirPos).y, f=fwd(bearing);
+        // phones: the card fills most of the screen, so the dot sits in the upper part of the strip below it (clear of the
+        // card's edge and the bottom bar), with room for a far larger look-back than on desktop
+        const phone = W<760, want = phone ? cardB + Math.max(56, (H - cardB)*.4) : (cardB + H)/2, sy=project(dirPos).y, f=fwd(bearing);
         // a gentle, dead-banded nudge (a hard per-frame correction fought the camera ease and shook the view)
-        if(sy>0 && sy<H*1.5 && Math.abs(want - sy) > 24) dirLook = Math.min(2500, Math.max(-800, dirLook + (want - sy)*mpp(dist)*.02));
+        if(sy>0 && sy<H*1.5 && Math.abs(want - sy) > 24) dirLook = Math.min(phone ? 7000 : 2500, Math.max(-800, dirLook + (want - sy)*mpp(dist)*.02));
         // the camera rides a straightened line: the route averaged over ±1.2 km around the dot, so the street grid's
         // zig-zags move the dot, not the whole map
         const q = new THREE.Vector3(); let n = 0;
@@ -1282,19 +1289,22 @@ export function createBathurstEngine() {
     const placedCards=[], streetMode = alt<60;   // placedCards: every card, pin head and address dot on screen, for the declutter
     const order = LOCAL.filter(p=>p.pos).map(p=>{ vA.copy(p.pos); vA.y += streetMode ? 14 : 0; return {p, sp:project(vA), dist:camera.position.distanceTo(p.pos)}; })
       .sort((a,b)=> (selected===b.p.id) - (selected===a.p.id) || b.sp.y - a.sp.y);
-    // zoomed out, neighbouring icons would sit on top of each other: push overlapping ones apart on screen (a few rounds of
-    // pairwise separation, from their true spots every frame) so each can be hovered and picked. The push only exists while
-    // icons overlap, so zoomed in every icon is back on its own address.
-    if(!streetMode){ const GAP=50, live=order.filter(o=>o.sp.ok);
-      live.forEach(o=>{ o.ox=0; o.oy=0; });
-      for(let it=0; it<8; it++){ let moved=false;
+    // zoomed out, neighbouring icons would sit on top of each other: spread them so every icon is the same size and none
+    // overlap. Each pin keeps its offset from the last frame (warm start) and is eased back toward its address, so a
+    // cluster settles once and stays still instead of being re-solved from scratch every frame (which jittered).
+    // Zoomed in, the overlaps go away and every icon eases back onto its own address.
+    if(!streetMode){ const GAP=38, live=order.filter(o=>o.sp.ok);
+      live.forEach(o=>{ o.ox=(o.p._ox||0)*.9; o.oy=(o.p._oy||0)*.9; });   // the .9 is the gentle pull home
+      for(let it=0; it<40; it++){ let moved=false;
         for(let i=0;i<live.length;i++) for(let j=i+1;j<live.length;j++){ const a=live[i], b=live[j];
           let dx=(b.sp.x+b.ox)-(a.sp.x+a.ox), dy=(b.sp.y+b.oy)-(a.sp.y+a.oy), d=Math.hypot(dx,dy);
           if(d>=GAP) continue; moved=true;
-          if(d<.5){ const t=(i*2.399+j*1.17)%(2*Math.PI); dx=Math.cos(t); dy=Math.sin(t); d=1; }   // same spot: a fixed direction per pair
-          const fa = selected===a.p.id ? 0 : selected===b.p.id ? 1 : .5, push=(GAP-d)/d;   // the pin in focus stays put
+          if(d<.5){ const t=((a.p._k??=LOCAL.indexOf(a.p))*2.399+(b.p._k??=LOCAL.indexOf(b.p))*1.17)%(2*Math.PI); dx=Math.cos(t); dy=Math.sin(t); d=1; }   // same spot: a fixed direction per pair
+          const fa = selected===a.p.id ? 0 : selected===b.p.id ? 1 : .5, push=(GAP-d)/d;   // the pin in focus stays on its address
           a.ox-=dx*push*fa; a.oy-=dy*push*fa; b.ox+=dx*push*(1-fa); b.oy+=dy*push*(1-fa); }
-        if(!moved) break; } }
+        if(!moved) break; }
+      live.forEach(o=>{ if(Math.abs(o.ox)<.3) o.ox=0; if(Math.abs(o.oy)<.3) o.oy=0; o.p._ox=o.ox; o.p._oy=o.oy; }); }
+    else LOCAL.forEach(p=>{ p._ox=p._oy=0; });
     order.forEach(({p, sp, dist, ox=0, oy=0})=>{
       // walking the clients: only the one in focus is on screen; on the route, none (the dot is the focus)
       // the project in focus gets the full callout; every other pin is a small service icon (none while driving the directions)

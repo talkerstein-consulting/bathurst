@@ -27,6 +27,10 @@ export type Client = {
   logo?: string;
   /** The client's own website, for pins without a case study in client-content.ts (which carries its own `site`). */
   site?: string;
+  /** A TCG Studios ad on YouTube (video id). Shown as the case study's media, in place of a website. */
+  youtube?: string;
+  /** The ad is vertical (a Short), so the embed is portrait. */
+  short?: boolean;
   /** A published client quote. TODO(content): collect these; never write one on a client's behalf. */
   testimonial?: { quote: string; who: string };
 };
@@ -84,6 +88,15 @@ export const CLIENTS: Client[] = [
   { id: "sams", name: "Sam's Menswear", addr: "318 Charlton Ave, Vaughan", lat: 43.79403, lon: -79.46067, ind: "professional", services: ["Branding"] },
   { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, ind: "community", services: [] },
   { id: "womb", name: "The WOMB Vaughan", addr: "545 North Rivermede Rd Unit 105, Vaughan", lat: 43.80688, lon: -79.48317, ind: "health", services: [], site: "https://www.thewomb.ca/vaughan/" },
+  // J2J short film ads by TCG Studios (Oct 2026): the YouTube ad stands in for a website. Addresses and pins from each
+  // Google Maps listing (Oct 6, 2026); Pest Control Plus lists no address on Google, so its office is geocoded with Nominatim.
+  { id: "jacs", name: "JACS Toronto", addr: "3625 Dufferin St Ste 400, North York", lat: 43.73102, lon: -79.45815, ind: "health", services: ["Short film ad"], youtube: "jopHwP1tYjc" },
+  { id: "chailifeline", name: "Chai Lifeline Canada", addr: "300 Wilson Ave, North York", lat: 43.73725, lon: -79.43559, ind: "community", services: ["Short film ad"], youtube: "tH_e1TS7n4g" },
+  { id: "shaarezedek", name: "Canadian Shaare Zedek Hospital Foundation", addr: "620 Wilson Ave Unit 101, North York", lat: 43.73238, lon: -79.46017, ind: "community", services: ["Short film ad"], youtube: "xWTlPwweVpU" },
+  { id: "wokandbowl", name: "Wok & Bowl", addr: "3022 Bathurst St, North York", lat: 43.71804, lon: -79.42967, ind: "food", services: ["Short film ad"], youtube: "8_04lNcGLfY" },
+  { id: "pestcontrolplus", name: "Pest Control Plus", addr: "380 Four Valley Dr, Concord", lat: 43.81917, lon: -79.53543, ind: "professional", services: ["Short film ad"], youtube: "r-ia5CyqSMU" },
+  // Chillie's picks up and drops off; Google shows a service-area pin with no street address
+  { id: "chillies", name: "Chillie's Dry Cleaning", addr: "North York (pickup & drop-off)", lat: 43.76987, lon: -79.44200, ind: "professional", services: ["Short film ad"], youtube: "UdmW8WqYLns" },
 ];
 
 /** Published projects with no mapped address. */
@@ -94,12 +107,13 @@ export const ELSEWHERE: Client[] = [
   { id: "cleverpays", name: "CleverPays", addr: "Laval, QC", ind: "finance", services: [], site: "https://cleverpays.ca/" },
   { id: "kidicare", name: "KidiCare / Inspera", addr: "Montreal, QC", ind: "retail", services: [], site: "https://kidicare.ca/" },
   { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"] },
+  { id: "premierkosher", name: "Premier Kosher", addr: "1607 Abingdon Rd, West Lincoln, ON", ind: "food", services: ["Short film ad"], youtube: "hDyAwOqVCPw" },
+  { id: "ralphwigs", name: "Ralph Wigs", addr: "Aventura, FL", ind: "beauty", services: ["Short film ad"], youtube: "whkye_cU5j8", short: true },
   // TODO(content): no public address found (or more than one business by that name); confirm, then remove `hidden`
   { id: "mondialpay", name: "MondialPay", addr: "Canada", ind: "finance", services: [], hidden: "Location and website to confirm" },
   { id: "ohr", name: "Ohr", addr: "Toronto", ind: "community", services: [], hidden: "Which Ohr organization (Ohr Somayach, Ohr HaEmet…)? Address to confirm" },
   { id: "beautique", name: "Beautique", addr: "Toronto", ind: "beauty", services: [], hidden: "Possibly Beautique Bar, 3430 Yonge St; confirm" },
   { id: "lumique", name: "Lumique", addr: "Toronto", ind: "beauty", services: [], hidden: "Business and address to confirm" },
-  { id: "ralphwigs", name: "Ralph Wigs", addr: "Toronto", ind: "beauty", services: [], hidden: "Address to confirm" },
 ];
 
 /** Where the route begins and where it ends (the TCG office). */

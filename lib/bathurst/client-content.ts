@@ -7,7 +7,8 @@
 
 export type Review = { quote: string; who: string; source: string };
 export type ClientContent = {
-  gcat: string; rating: number | null; count: number | null; site: string;
+  /** The business's website; omitted for the TCG Studios ad clients, whose case study is the video. */
+  gcat: string; rating: number | null; count: number | null; site?: string;
   overview: string; about: string[]; reviews: Review[];
   /** Wide lifestyle photo for the top of the sidebar (the site's own imagery; its hero screenshot when it has none). */
   banner: string;
@@ -1200,5 +1201,153 @@ export const CONTENT: Record<string, ClientContent> = {
       "/clients/womb/site-m-3.webp",
       "/clients/womb/site-m-4.webp"
     ]
+  },
+  // J2J ad clients (TCG Studios short films): Google category, rating and reviews read from Google Maps on Oct 6, 2026.
+  // No site or captures: the case study's media is the YouTube ad (Client.youtube in data.ts).
+  "jacs": {
+    "gcat": "Addiction treatment center",
+    "rating": 4.4,
+    "count": 23,
+    "overview": "JACS Toronto is a community addiction service at 3625 Dufferin St in North York, offering counselling, recovery groups and family support for substance and behavioural addictions. TCG Studios produced a short film ad for JACS.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "A vital and much needed community based resource dealing with substance and behavioural addiction and concurrent mental health issues.",
+        "who": "Jay Pasternack",
+        "source": "Google"
+      },
+      {
+        "quote": "I really don't know where I'd be if it weren't for Jonathan and JACS. I've tried so many different types of therapy/therapists in the past and nothing seemed to work. Give this place a chance, they genuinely care…",
+        "who": "Daniel W",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/jopHwP1tYjc/hqdefault.jpg",
+    "photos": []
+  },
+  "chailifeline": {
+    "gcat": "Non-profit organization",
+    "rating": 4.8,
+    "count": 32,
+    "overview": "Chai Lifeline Canada is a children's charity at 300 Wilson Ave in North York, supporting families of children with serious illness through respite, sibling programs and a drop-in centre. TCG Studios produced a short film ad for Chai Lifeline Canada.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "Chai Lifeline is an amazing organization. No one should have a child in the hospital, but if you do, Chai Lifeline is super helpful. The drop in center is a great escape for the other children.",
+        "who": "DZTaxes",
+        "source": "Google"
+      },
+      {
+        "quote": "A beautiful organization with a terrific cause. I especially love their \"toy store\" that they have in the basement for their younger \"clients\"…",
+        "who": "Ari Rothman",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/tH_e1TS7n4g/hqdefault.jpg",
+    "photos": []
+  },
+  "shaarezedek": {
+    "gcat": "Foundation",
+    "rating": null,
+    "count": null,
+    "overview": "The Canadian Shaare Zedek Hospital Foundation, at 620 Wilson Ave in North York, raises funds in Canada for Shaare Zedek Medical Center in Jerusalem. TCG Studios produced a short film ad for the Foundation.",
+    "about": [],
+    "reviews": [],
+    "banner": "https://i.ytimg.com/vi/xWTlPwweVpU/hqdefault.jpg",
+    "photos": []
+  },
+  "wokandbowl": {
+    "gcat": "Asian fusion restaurant",
+    "rating": 4.1,
+    "count": 101,
+    "overview": "Wok & Bowl is a COR-certified kosher Asian fusion restaurant at 3022 Bathurst St in North York, near Lawrence Avenue, serving pho, General Tso chicken, dumplings and wok-fired noodles for dine-in, takeout and events. TCG Studios produced a short film ad for Wok & Bowl.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "The best kosher Asian food I have ever had. Reall, beyong delicious!",
+        "who": "Shirel Barkan-Slater",
+        "source": "Google"
+      },
+      {
+        "quote": "Excellent experience at Wok & Bowl! The food was absolutely delicious and surprisingly very reasonably priced. We came with a large group, and the service was outstanding…",
+        "who": "wwmn!",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/8_04lNcGLfY/hqdefault.jpg",
+    "photos": []
+  },
+  "pestcontrolplus": {
+    "gcat": "Pest control service",
+    "rating": 4.0,
+    "count": 187,
+    "overview": "Pest Control Plus is a family-owned pest control company based in Concord, serving apartments, condos, commercial properties and homes across the GTA since 1997. TCG Studios produced a short film ad for Pest Control Plus.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "Pest Control Plus has serviced my building for many years and they continue to do excellent work. The technician is always friendly, professional and knows how to get the job done!",
+        "who": "Marx Marx",
+        "source": "Google"
+      },
+      {
+        "quote": "Pest Control Plus has been amazing for me and my family. Ovita has booked technicians for us every time we've moved, and the service has been consistently excellent…",
+        "who": "Evelin & Nathaniel",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/r-ia5CyqSMU/hqdefault.jpg",
+    "photos": []
+  },
+  "chillies": {
+    "gcat": "Dry cleaner",
+    "rating": 5.0,
+    "count": 345,
+    "overview": "Chillie's Dry Cleaning is a pickup and drop-off dry cleaner in North York, collecting suits, shirts and rugs from the door and returning them cleaned and pressed. TCG Studios produced a short film ad for Chillie's.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "Chillie's dry cleaning service personnel were prompt, professional and did a superb job! Super convenient service that they pick up and drop off! Highly recommended!",
+        "who": "Chana Hersh",
+        "source": "Google"
+      },
+      {
+        "quote": "Excellent service that is above and beyond. Chillie's came through when I called the last minute before the holiday and did a fantastic job on my rugs…",
+        "who": "Libbi Kakon",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/UdmW8WqYLns/hqdefault.jpg",
+    "photos": []
+  },
+  "premierkosher": {
+    "gcat": "Slaughterhouse",
+    "rating": 3.5,
+    "count": 4,
+    "overview": "Premier Kosher is a kosher poultry producer at 1607 Abingdon Rd in West Lincoln, Ontario, supplying kosher chicken to grocers across the province. TCG Studios produced a short film ad for Premier Kosher.",
+    "about": [],
+    "reviews": [],
+    "banner": "https://i.ytimg.com/vi/hDyAwOqVCPw/hqdefault.jpg",
+    "photos": []
+  },
+  "ralphwigs": {
+    "gcat": "Hair replacement service",
+    "rating": 5.0,
+    "count": 165,
+    "overview": "Ralph Wigs sells luxury wigs factory-direct from its showroom in Aventura, Florida, and through travelling sales events, with custom cutting and colouring included. TCG Studios produced a short film ad for Ralph Wigs.",
+    "about": [],
+    "reviews": [
+      {
+        "quote": "Beautiful wigs, sales people were helpful and Ralph does magic. One year warranty to make any changes. Im a satisfied customer",
+        "who": "Sheila L.",
+        "source": "Google"
+      },
+      {
+        "quote": "I had an amazing experience at Ralph Wigs! Michal was a tremendous help—so supportive, attentive, and completely in tune with what I wanted…",
+        "who": "Ayelet Miller",
+        "source": "Google"
+      }
+    ],
+    "banner": "https://i.ytimg.com/vi/whkye_cU5j8/hqdefault.jpg",
+    "photos": []
   }
 };
