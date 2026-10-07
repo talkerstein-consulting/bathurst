@@ -5,13 +5,13 @@
 // React renders the markup (components/bathurst/BathurstHero.tsx); this module wires behaviour onto it.
 // TODO(typing): the port is intentionally untyped for the rough build; type it once the behaviour is final.
 import * as THREE from "three";
-import { CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS, ROUTE_START, OFFICE, INDUSTRIES } from "./data";
+import { inArea, CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS, ROUTE_START, OFFICE, INDUSTRIES } from "./data";
 import { BATHURST_LINE } from "./bathurst-line";
 import { CONTENT } from "./client-content";
 import { brandSelect } from "./brand-select";
 import { loadCity, buildBuildings, buildFlatLayers } from "./osm-layer";
 
-export function createBathurstEngine() {
+export function createBathurstEngine(area?: string) {
   const ac = new AbortController(); const signal = ac.signal;
   // match the approved prototype (three r149): hex colours are used as-is (no sRGB→linear conversion)
   THREE.ColorManagement.enabled = false;
@@ -45,7 +45,10 @@ export function createBathurstEngine() {
   // ---------- data ----------
   // Bathurst clients: from TCG email (Paymo / proposals / quotes). Elsewhere: talkerstein.com/work (metrics as published there).
   // fresh copies each mount: the engine attaches scene objects (pos, el, ring) to these records
-  const LOCAL = CLIENTS.filter(p=>!p.hidden).map(p=>({...p}));
+  const LOCAL = CLIENTS.filter(p=>!p.hidden && (!area || inArea(p, area))).map(p=>({...p}));
+  // an area page: the scroll route is rebuilt from that area's clients, south to north, at most seven stops
+  if(area){ LOCAL.forEach(p=>{ delete p.stop; }); const r=LOCAL.filter(p=>p.lat!=null).sort((a,b)=>a.lat-b.lat), n=Math.min(7, r.length);
+    for(let i=0;i<n;i++) r[Math.round(i*(r.length-1)/Math.max(1,n-1))].stop=i+1; }
   const AWAY = ELSEWHERE.filter(p=>!p.hidden).map(p=>({...p}));
   const ALL = [...LOCAL, ...AWAY];
 

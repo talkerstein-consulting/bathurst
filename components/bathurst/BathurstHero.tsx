@@ -59,20 +59,20 @@ function Toggle({ show, label }: { show: string; label: string }) {
  * React owns this markup; lib/bathurst/engine.ts attaches the three.js scene and all map behaviour
  * to it by element id. The markup must not re-render after mount, so keep this component stateless.
  */
-export default function BathurstHero() {
+export default function BathurstHero({ area }: { area?: string } = {}) {
   useEffect(() => {
     let engine: { destroy: () => void } | null = null;
     let cancelled = false;
     const stick = document.getElementById("stick");
     stick?.classList.add("loading");
     import("@/lib/bathurst/engine").then(({ createBathurstEngine }) => {
-      if (!cancelled) engine = createBathurstEngine();
+      if (!cancelled) engine = createBathurstEngine(area);
     }).finally(() => stick?.classList.remove("loading"));
     return () => {
       cancelled = true;
       engine?.destroy();
     };
-  }, []);
+  }, [area]);
 
   return (
     <section id="hero" aria-label="Talkerstein Consulting Group">

@@ -224,3 +224,20 @@ export const TESTIMONIALS: { id: string; who: string; role: string; quote: strin
 
 /** Reels on @talkersteinconsulting, shown under the reviews as Instagram's own embeds (loaded lazily). */
 export const REELS = ["DYI5BWehMep", "DZ_AYCLSBL2", "DVCq69sj_QD", "DVQyZAADmhB", "DU3p8OCj3ix"];
+
+/** Area pages (/toronto, /vaughan, …): the same page, with the map's clients narrowed to one geography.
+ * `cities` match the city at the end of a client's address; `ids` add clients whose address carries no city.
+ * Maple has no client of its own yet, so it shows the rest of Vaughan (Maple is part of the city). */
+export const AREAS: Record<string, { name: string; cities: string[]; ids?: string[] }> = {
+  toronto: { name: "Toronto", cities: ["Toronto", "North York"], ids: ["fringe"] },
+  "north-york": { name: "North York", cities: ["North York"], ids: ["fringe"] },
+  vaughan: { name: "Vaughan", cities: ["Vaughan", "Concord", "Maple"] },
+  concord: { name: "Concord", cities: ["Concord"] },
+  thornhill: { name: "Thornhill", cities: ["Thornhill"] },
+  maple: { name: "Maple", cities: ["Maple", "Vaughan", "Concord"] },
+};
+export const inArea = (c: Client, area: string) => {
+  const a = AREAS[area]; if (!a) return true;
+  const city = c.addr.split(",").pop()!.trim().replace(/\s*\(.*\)$/, "");   // the last part of the address, minus any note
+  return !!a.ids?.includes(c.id) || a.cities.includes(city);
+};
