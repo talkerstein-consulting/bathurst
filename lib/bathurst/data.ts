@@ -228,13 +228,13 @@ export const REELS = ["DYI5BWehMep", "DZ_AYCLSBL2", "DVCq69sj_QD", "DVQyZAADmhB"
 /** Area pages (/toronto, /vaughan, …): the same page, with the map's clients narrowed to one geography.
  * `cities` match the city at the end of a client's address; `ids` add clients whose address carries no city.
  * Maple has no client of its own yet, so it shows the rest of Vaughan (Maple is part of the city). */
-export const AREAS: Record<string, { name: string; cities: string[]; ids?: string[] }> = {
-  toronto: { name: "Toronto", cities: ["Toronto", "North York"], ids: ["fringe"] },
-  "north-york": { name: "North York", cities: ["North York"], ids: ["fringe"] },
-  vaughan: { name: "Vaughan", cities: ["Vaughan", "Concord", "Maple"] },
-  concord: { name: "Concord", cities: ["Concord"] },
-  thornhill: { name: "Thornhill", cities: ["Thornhill"] },
-  maple: { name: "Maple", cities: ["Maple", "Vaughan", "Concord"] },
+export const AREAS: Record<string, { name: string; eyebrow: string; blurb: string; cities: string[]; ids?: string[] }> = {
+  toronto: { name: "Toronto", eyebrow: "Toronto · North York · Midtown", blurb: "We help Toronto businesses, from Yorkville to Wilson Avenue, build better websites, strengthen their brands, and put AI and automation to work.", cities: ["Toronto", "North York"], ids: ["fringe"] },
+  "north-york": { name: "North York", eyebrow: "North York · Bathurst · Wilson · Finch", blurb: "We help North York businesses, from the bakeries on Bathurst to the shops and trades off Dufferin and Finch, build better websites, strengthen their brands, and put AI and automation to work.", cities: ["North York"], ids: ["fringe"] },
+  vaughan: { name: "Vaughan", eyebrow: "Vaughan · Concord · Maple", blurb: "We help Vaughan businesses, from Concord’s industrial parks to the storefronts along Steeles, build better websites, strengthen their brands, and put AI and automation to work.", cities: ["Vaughan", "Concord", "Maple"] },
+  concord: { name: "Concord", eyebrow: "Concord · Vaughan", blurb: "We help Concord businesses, from the trades and suppliers on Jane and Edgeley to the offices on Steeles, build better websites, strengthen their brands, and put AI and automation to work.", cities: ["Concord"] },
+  thornhill: { name: "Thornhill", eyebrow: "Thornhill · Bathurst · Yonge", blurb: "We help Thornhill businesses, from the cafés on Bathurst to the salons on Yonge, build better websites, strengthen their brands, and put AI and automation to work.", cities: ["Thornhill"] },
+  maple: { name: "Maple", eyebrow: "Maple · Vaughan · Concord", blurb: "We help businesses in Maple and across Vaughan build better websites, strengthen their brands, and put AI and automation to work.", cities: ["Maple", "Vaughan", "Concord"] },
 };
 export const inArea = (c: Client, area: string) => {
   const a = AREAS[area]; if (!a) return true;

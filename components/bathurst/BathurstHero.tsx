@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
 import Testimonials from "@/components/bathurst/Testimonials";
-import { CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
+import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
 import Services from "@/components/bathurst/Services";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
@@ -60,6 +60,7 @@ function Toggle({ show, label }: { show: string; label: string }) {
  * to it by element id. The markup must not re-render after mount, so keep this component stateless.
  */
 export default function BathurstHero({ area }: { area?: string } = {}) {
+  const A = area ? AREAS[area] : undefined;   // an area page: the copy names that area
   useEffect(() => {
     let engine: { destroy: () => void } | null = null;
     let cancelled = false;
@@ -77,7 +78,7 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
   return (
     <section id="hero" aria-label="Talkerstein Consulting Group">
       <div id="stick" className="open">
-        <div id="stage" tabIndex={0} aria-label="Map of Talkerstein clients on Bathurst Street. Drag to pan, arrow keys to move, plus and minus to zoom." />
+        <div id="stage" tabIndex={0} aria-label={`Map of Talkerstein clients ${A ? `in ${A.name}` : "on Bathurst Street"}. Drag to pan, arrow keys to move, plus and minus to zoom.`} />
         <div id="labels" />
 
         {/* opening "front page": masthead row; then the headline column on paper (left), the moving view in its
@@ -87,9 +88,9 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
           <div className="mast-space" aria-hidden="true" />
           <div className="hero-grid">
             <div className="sv-hero" id="svhero">
-              <p className="eyebrow hero-where rise-after">Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></p>
+              <p className="eyebrow hero-where rise-after">{A ? A.eyebrow : <>Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></>}</p>
               <RiseHeading className="h1" text="Find your way to the right customers." delay={120} />
-              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
+              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work."}</p>
               {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
               <CtaLink href="/book" label="Get directions" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
@@ -216,7 +217,7 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className="workhead" id="workhead">Our Work Across Toronto</h2>
+        <h2 className="workhead" id="workhead">Our Work in {A ? A.name : "Toronto"}</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
         {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}

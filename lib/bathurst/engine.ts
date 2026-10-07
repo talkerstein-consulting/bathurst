@@ -834,8 +834,10 @@ export function createBathurstEngine(area?: string) {
   // Richmond Hill) no longer pull it off-centre. The top margin leaves room for the Our Work heading.
   // Our Work: every client on the map in view (not only the route's stops), clear of the heading and chips above, the controls at
   // the side and the railway below, so each pin can be seen and picked
-  const routeView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 170 : 215, W<760 ? 90 : 80, W<760 ? 84 : 140);   /* phones: 84px clears the control column on the left */
-  const allView = () => viewOf([START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
+  // an area page frames only that area's clients, so the overview opens on the area instead of the whole region
+  const FOCUS = area ? LOCAL.filter(p=>p.pos && inArea(p, area)) : null;
+  const routeView = () => viewOf(FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 170 : 215, W<760 ? 90 : 80, W<760 ? 84 : 140);   /* phones: 84px clears the control column on the left */
+  const allView = () => viewOf(FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
   // the zoom-out limit: every client in view, with room for the chips, the heading, the pins' heads and the controls
   const zoomAllView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P], goal.pitch, W<760 ? 240 : 200, W<760 ? 90 : 70, W<760 ? 64 : 110);
   function defaultView(){ return routeView(); }
