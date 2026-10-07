@@ -1868,3 +1868,6 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .workhead::before { display: none; }
 /* a service chip is on: the faded pins outside it show no name, even zoomed in or on hover */
 .pin.dim .nm { display: none !important; }
+/* the pinned logo replaces the map's own the moment the sheet starts to rise: same spot, same size, no fade or slide, so it never shifts */
+.brandpin { translate: none; transition: none; }
+#stick.sheeted .brandpin { opacity: 1; visibility: visible; }

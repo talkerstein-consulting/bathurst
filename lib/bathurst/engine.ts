@@ -901,6 +901,7 @@ export function createBathurstEngine() {
     }
     // after the last direction step, the reviews (and services) sheet slides in
     const k1=Math.min(1, Math.max(0, (s-dirEnd)/PH_C)); covered = k1>=1; sliding = k1>0;
+    if(stick._sheet!==sliding){ stick._sheet=sliding; stick.classList.toggle('sheeted', sliding); }   // the sheet is rising: the pinned logo takes over from the map's, in place
     if(stage._cov!==covered){ stage._cov=covered; stick.classList.toggle('covered', covered); stage.style.visibility = labels.style.visibility = covered ? 'hidden' : ''; }   // sheet fully up: drop the map canvas and labels from compositing
     // the sheet is about to slide over the logo row: the navbar (logo + booking CTA on a fade) takes over above it
     { const nav = k1>.7; if(stick._nav!==nav){ stick._nav=nav; stick.classList.toggle('navbar-on', nav); } }

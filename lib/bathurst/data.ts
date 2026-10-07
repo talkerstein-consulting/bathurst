@@ -82,11 +82,11 @@ export const CLIENTS: Client[] = [
   { id: "beker", name: "Beker Fashions", addr: "87 Colville Rd, North York", lat: 43.70760, lon: -79.47073, ind: "retail", services: [] },
   { id: "iceacademy", name: "Canadian Ice Academy", addr: "3111 Universal Dr, Mississauga", lat: 43.62472, lon: -79.57229, ind: "professional", services: [] },
   { id: "carmel", name: "Carmel Transport", addr: "25 North Rivermede Rd Unit 18, Concord", lat: 43.82140, lon: -79.48440, ind: "industrial", services: [] },
-  { id: "brickstone", name: "Brickstone Construction", addr: "358 Flint Rd, North York", lat: 43.77013, lon: -79.48004, ind: "industrial", services: [] },
+  { id: "brickstone", name: "Brickstone Construction", addr: "358 Flint Rd, North York", lat: 43.77013, lon: -79.48004, ind: "industrial", services: ["Website"] },
   { id: "luminari", name: "Luminari Cleaning", addr: "4100 Chesswood Dr Unit 200, North York", lat: 43.75841, lon: -79.47818, ind: "professional", services: [], site: "https://luminari-nine.vercel.app/" },
   { id: "paulas", name: "Paula's Wig Boutique", addr: "800 Petrolia Rd Unit 17, North York", lat: 43.77945, lon: -79.48982, ind: "beauty", services: ["Branding"] },
   { id: "sams", name: "Sam's Menswear", addr: "318 Charlton Ave, Vaughan", lat: 43.79403, lon: -79.46067, ind: "professional", services: ["Branding"] },
-  { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, ind: "community", services: [] },
+  { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, ind: "community", services: ["Instagram"] },
   { id: "womb", name: "The WOMB Vaughan", addr: "545 North Rivermede Rd Unit 105, Vaughan", lat: 43.80688, lon: -79.48317, ind: "health", services: [], site: "https://www.thewomb.ca/vaughan/" },
   // J2J short film ads by TCG Studios (Oct 2026): the YouTube ad stands in for a website. Addresses and pins from each
   // Google Maps listing (Oct 6, 2026); Pest Control Plus lists no address on Google, so its office is geocoded with Nominatim.
@@ -173,14 +173,14 @@ export const STEPS = [
 /** Bespoke Directions: the steps the map's nav dot drives through after the last client (turn = the maneuver arrow).
  * Each step is told as it happened for one client (`client`, a CLIENTS id): the dot drives the main roads to that client and the
  * card tells that step for them (`story`). TODO(content): confirm each story with the client team before launch; Sam's (branding)
- * and AR26 (website and online presence) match the records, Beit Halochem and Brickstone are written from the step itself. */
+ * AR26 (website and online presence), Beit Halochem (Instagram) and Brickstone (new website, in progress) match the records. */
 export const DIRECTIONS: { turn: "straight" | "right" | "left" | "arrive"; title: string; body: string; est: string; client: string; story: string }[] = [
   { turn: "straight", title: "A Business Diagnostic", body: "We map where your business is losing time, money, and momentum across web, marketing, CRM, brand, and AI.", est: "1 week", client: "sams",
     story: "We started by mapping where Sam’s Menswear was losing ground: how the store looked, how customers found it, and where its brand was holding it back." },
   { turn: "straight", title: "A Clear Order of Operations", body: "Know what to fix first, what can wait, and what will move the business forward.", est: "1 week", client: "beithalochem",
-    story: "With Beit Halochem Canada we set what to fix first and what could wait, so a small nonprofit team put its time where it would count most." },
+    story: "For Beit Halochem Canada, Instagram came first: one clear channel that keeps the veterans’ stories in front of the community and the people who support them." },
   { turn: "left", title: "One Connected System", body: "Website, brand, marketing, CRM, automation, and AI built to work as one.", est: "4–8 weeks", client: "brickstone",
-    story: "For Brickstone Construction, the website, brand and follow-up were built to work as one, so every enquiry reaches the team instead of getting lost." },
+    story: "For Brickstone Construction we’re building a new website that brings their restoration services, past projects and free site-assessment bookings together in one place." },
   { turn: "arrive", title: "One Team From Start to Finish", body: "One accountable team keeps the work moving, the priorities clear, and the pieces connected.", est: "Ongoing", client: "ar26",
     story: "A&R Motors works with one team on its website and online presence, keeping the work moving and the priorities clear." },
 ];
