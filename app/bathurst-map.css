@@ -1947,3 +1947,19 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .navbar { height: calc(var(--inset) * 2 + var(--icon-btn)); background: var(--sea); border-bottom: 1.5px solid var(--steel); }
 .brandpin { translate: -40px 0; transition: opacity .3s ease, translate .45s cubic-bezier(.22,1,.36,1), visibility 0s .45s; }
 #stick.navbar-on .brandpin { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .3s ease .05s, translate .45s cubic-bezier(.22,1,.36,1) .05s, visibility 0s; }
+
+/* slim navbar after the map: 8px above and below the 48px buttons (64px in all, was 96px). The ☰, the logo and the CTA
+   glide up into it together; the logo keeps exactly the map's size (48px mark, 32px wordmark), so it never changes size */
+#hero { --nav-pad: 8px; }
+.navbar { height: calc(var(--nav-pad) * 2 + var(--icon-btn)); }
+.navbar .layers-top { top: var(--nav-pad); }
+.menubtn { transition: top .35s cubic-bezier(.22,1,.36,1); }
+#stick.navbar-on .menubtn { top: var(--nav-pad); }
+.brandpin { top: var(--nav-pad); }
+.brandpin .bp-word { height: 32px; }
+@media (max-width: 760px) { .brandpin .bp-word { height: 28px; } }
+/* scrolling the sheet: keep it on its own layer and skip the hand-drawn (SVG filter) outlines while it moves, so the slide stays smooth */
+.cover { contain: layout paint; backface-visibility: hidden; }
+#stick:not(.covered) .cover [style*="grunge"], #stick:not(.covered) .cover .lines g, #stick:not(.covered) .cover .stroke g, #stick:not(.covered) .cover .rule::before, #stick:not(.covered) .cover .sp-row::before { filter: none !important; }
+#hero #stick .navbar .layers-top { top: var(--nav-pad); }
+#hero #stick .navbar .layers-top { transition: top .35s cubic-bezier(.22,1,.36,1); }   /* glides with the ☰ and the logo */
