@@ -963,7 +963,7 @@ export const CONTENT: Record<string, ClientContent> = {
     "gcat": "Construction company",
     "rating": null,
     "count": null,
-    "site": "https://brickstone-construction.com",
+    "site": "https://brickstone-construction.vercel.app",
     "overview": "Brickstone Construction is a renovation and restoration contractor at 358 Flint Road in North York, Toronto, handling concrete and asphalt, carpentry and plaster, balcony repair and waterproofing for residential, commercial and industrial buildings. Talkerstein Consulting Group works with Brickstone Construction on its website and online presence.",
     "about": [
       "Versatile construction services for residential and commercial spaces. Our areas of expertise include works with concrete and asphalt, carpentry and plaster, and waterproofing.",
