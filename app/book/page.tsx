@@ -25,7 +25,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         <Link href="/" className="book-back">← Back to the map</Link>
       </header>
       <div className="book-head">
-        <p className="eyebrow rise-after">Get directions</p>
+        <p className="eyebrow rise-after">Book Free Consult</p>
         <RiseHeading text="Let’s map your route." className="h2 book-title" delay={100} />
         <p className="book-note rise-after" style={{ "--rise-delay": "420ms" } as React.CSSProperties}>
           Three quick stops: where your business is today, where you want it to go, and how to reach you. We’ll reply within one business day with your first step.

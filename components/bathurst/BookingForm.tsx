@@ -148,7 +148,7 @@ export default function BookingForm({ initial }: { initial: { from: string; goal
       <div className="bk-submit">
         <button type="submit" className="sprout btn orange dc-go bk-go" data-no-tumble disabled={status === "sending"}>
           <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>
-          {status === "sending" ? "Mapping your route…" : "Get directions"}
+          {status === "sending" ? "Mapping your route…" : "Book Free Consult"}
         </button>
         <p className="book-fine">We reply within one business day. No hard sell, and we never share your details.</p>
       </div>

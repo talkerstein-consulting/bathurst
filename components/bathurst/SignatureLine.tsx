@@ -62,8 +62,8 @@ export default function SignatureLine() {
       <p className="sig-body">Tell us where the business is going. We’ll help you work out what needs to happen next.</p>
       <div className="sig-ctas">
         {/* orange, like the map's Find Your Way Forward CTA (.dc-go) */}
-        <CtaLink href="/book" label="Get directions" className="dc-go sig-go">
-          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Get directions
+        <CtaLink href="/book" label="Book Free Consult" className="dc-go sig-go">
+          <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></svg>Book Free Consult
         </CtaLink>
         <CtaLink href="https://talkerstein.com/work" label="Explore our work" />
       </div>

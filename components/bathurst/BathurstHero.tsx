@@ -10,7 +10,6 @@ import Services from "@/components/bathurst/Services";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
 import SiteMenu, { MenuButton } from "@/components/bathurst/SiteMenu";
-import TrackRail from "@/components/bathurst/TrackRail";
 import { COMPASS_ROSE } from "@/lib/bathurst/icons";
 import "@/app/bathurst-map.css";
 
@@ -91,18 +90,15 @@ export default function BathurstHero() {
               <RiseHeading className="h1" text="Find your way to the right customers." delay={120} />
               <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work.</p>
               {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
-              <CtaLink href="/book" label="Get directions" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
+              <CtaLink href="/book" label="Book Free Consult" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
-              <div className="hero-proofrow rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties}>
-                <div className="hero-ratings">
-                  <a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a>
-                  <a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>Rating on Google</small></span></a>
-                </div>
-                <div className="hero-certs" aria-label="Certifications">
-                  <img src="/badges/shopify.avif" alt="Shopify Partners" width={512} height={85} className="cert-shopify" />
-                  <img src="/badges/ghl.avif" alt="HighLevel Certified Admin" width={256} height={256} className="cert-ghl" />
-                </div>
-              </div>
+              {/* proof: each rating and each certification in its own cell, split by hairline dividers, every one labelled */}
+              <ul className="hero-awards rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties} aria-label="Ratings and certifications">
+                <li><a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a></li>
+                <li><a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>{GOOGLE.count ? `${GOOGLE.count} reviews on Google` : "Rating on Google"}</small></span></a></li>
+                <li className="aw-badge"><img src="/badges/shopify.avif" alt="" width={512} height={85} className="cert-shopify" /><small>Shopify Partner</small></li>
+                <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>HighLevel Certified Admin</small></li>
+              </ul>
             </div>
             <div id="win" aria-hidden="true" />
           </div>
@@ -146,7 +142,7 @@ export default function BathurstHero() {
 
           {/* directions: orange fill, steel line, white glyph; "Get directions" on the front page, shrinking to the icon on scroll */}
           <div className="layers-top">
-            <a id="dirbtn" className="sprout btn icon dirbtn" data-no-tumble aria-label="Get directions" href="/book"><Glyph g="turn" /><span className="dirlabel">Get directions</span></a>
+            <a id="dirbtn" className="sprout btn icon dirbtn" data-no-tumble aria-label="Book Free Consult" href="/book"><Glyph g="turn" /><span className="dirlabel">Book Free Consult</span></a>
           </div>
           <div className="layers" id="layers" role="dialog" aria-label="Map view settings" hidden>
             <div className="mv frame">
@@ -164,7 +160,6 @@ export default function BathurstHero() {
                 </div>
               </fieldset>
               <fieldset><legend className="eyebrow">Show</legend>
-                <Toggle show="buildings" label="3D buildings" />
                 <Toggle show="blocks" label="City blocks" />
                 <Toggle show="nature" label="Parks & water" />
               </fieldset>
@@ -201,7 +196,7 @@ export default function BathurstHero() {
             the square directions button is repeated here (same .layers-top styles, same spot) since the sheet covers the
             map's own; a short Sea Breeze fade sits behind the row so it reads over the reviews, services and footer */}
         <div className="navbar">
-          <div className="layers-top"><a className="sprout btn icon dirbtn" data-no-tumble aria-label="Get directions" href="/book"><Glyph g="turn" /><span className="dirlabel">Get directions</span></a></div>
+          <div className="layers-top"><a className="sprout btn icon dirbtn navcta" data-no-tumble aria-label="Book a free consult" href="/book"><Glyph g="turn" /><span className="dirlabel">Book Free Consult</span></a></div>
         </div>
         {/* after the last direction step: reviews, services and the footer, one sheet that rises over the map */}
         <div className="cover frame" id="cover" aria-label="Reviews">
@@ -228,8 +223,6 @@ export default function BathurstHero() {
         </button>
         <SiteMenu />
       </div>
-      {/* the railway: outside the map's checkered border, along the paper strip at the bottom (desktop) */}
-      <TrackRail />
     </section>
   );
 }

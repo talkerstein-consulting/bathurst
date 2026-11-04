@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { CLIENTS, ELSEWHERE, GROUPS, CROSS_STREETS, DIRECTIONS, ROUTE_START, OFFICE, INDUSTRIES } from "./data";
 import { BATHURST_LINE } from "./bathurst-line";
 import { CONTENT } from "./client-content";
+import LOGOS from "./logos.json";
 import { brandSelect } from "./brand-select";
 import { loadCity, buildBuildings, buildFlatLayers } from "./osm-layer";
 
@@ -319,7 +320,8 @@ export function createBathurstEngine() {
   const thumbHTML = p => (p.thumb = p.thumb || (CONTENT[p.id] && CONTENT[p.id].banner.replace(/\.webp$/, '-sm.webp')) || (p.youtube && `https://i.ytimg.com/vi/${p.youtube}/hqdefault.jpg`)) ?`<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.icon||p.ind,'glyph');
   LOCAL.forEach(p=>{
     const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':''); el.style.setProperty('--ind', INDUSTRIES[p.ind]?.color); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
-    el.innerHTML=`<span class="ic" aria-hidden="true">${svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small>${CONTENT[p.id]?.rating ? `<span class="co-rate"><b>${CONTENT[p.id].rating.toFixed(1)}</b> ★ <span>(${CONTENT[p.id].count.toLocaleString('en-CA')})</span></span>` : ''}<span class="co-act"><button type="button" class="sprout btn orange co-view" data-view>${p.youtube ? 'Watch video' : 'View case study'}</button><button type="button" class="sprout btn icon co-next" data-next aria-label="Next case study"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></span></span></div>`;
+    const logo=(LOGOS as Record<string,string>)[p.id]; if(logo){ el.classList.add('has-logo'); el.dataset.logo=p.id; }   // the client's own logo in the pin; the industry icon only when we have none
+    el.innerHTML=`<span class="ic" aria-hidden="true">${logo ? `<img class="lg" src="${logo}" alt="" decoding="async">` : svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small>${CONTENT[p.id]?.rating ? `<span class="co-rate"><b>${CONTENT[p.id].rating.toFixed(1)}</b> ★ <span>(${CONTENT[p.id].count.toLocaleString('en-CA')})</span></span>` : ''}<span class="co-act"><button type="button" class="sprout btn orange co-view" data-view>${p.youtube ? 'Watch video' : 'View case study'}</button><button type="button" class="sprout btn icon co-next" data-next aria-label="Next case study"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></span></span></div>`;
     el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
     // phones: the selected card is the preview; View opens the case study sheet, Next moves the tour on
     el.querySelector('[data-view]').onclick=e=>{ e.stopPropagation(); viewPlace(p.id); };
@@ -379,7 +381,7 @@ export function createBathurstEngine() {
       selected=null; view={type:'list'}; setCollapsed(true); if(W<760) setSheet('peek');
       render(); refresh(); mapDirty=true;
       const r=LOCAL.filter(p=>p.pos && matches(p)).map(p=>p.pos), pad=new THREE.Vector3(500,0,500);
-      const fit=()=>{ if(!r.length) return; const bot = W<760 ? Math.max(60, H - sheetTop() + 16) : 56;
+      const fit=()=>{ if(filter==='all'){ setGoal(defaultView()); return; }   /* All clients: back to the overview's own framing */ if(!r.length) return; const bot = W<760 ? Math.max(60, H - sheetTop() + 16) : 56;
         const top = W<760 ? 124 : 84, padY = (H - top - bot)*.18;   // Google-style: the results sit in the middle with room around them, not stretched to the edges
         setGoal(viewOf(r.length>1 ? r : [r[0].clone().add(pad), r[0].clone().sub(pad)], mapView.view==='2d' ? 0 : .3, top+padY, bot+padY, W*(W<760 ? .12 : .2))); };
       fit(); setTimeout(fit, 420); };   // again once the panel has finished moving
@@ -460,7 +462,7 @@ export function createBathurstEngine() {
   layersEl.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{ layer=b.dataset.layer; layersEl.querySelectorAll('[data-layer]').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); });
   $('mvclose').onclick=()=>{ setLayers(false); layerBtn.focus(); };
   // Map view settings: view (3D / 2D), style (poster / paper), what to show
-  const mapView = {view:'3d', style:'paper', show:{buildings:true, blocks:true, nature:true}};
+  const mapView = {view:'3d', style:'paper', show:{buildings:false, blocks:true, nature:true}};
   const pressGroup = (attr, val) => layersEl.querySelectorAll(`[data-${attr}]`).forEach(x=>x.setAttribute('aria-pressed', x.dataset[attr]===val));
   layersEl.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mapView.view=b.dataset.view; pressGroup('view', mapView.view); applyView(); });
   layersEl.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{ mapView.style=b.dataset.style; pressGroup('style', mapView.style); applyStyle(); });
@@ -524,7 +526,7 @@ export function createBathurstEngine() {
       <h2 class="tcg-logo biz-logo" role="img" aria-label="Talkerstein Consulting Group"></h2>
       <div class="meta"><b>5.0</b><span class="stars" aria-label="5 out of 5">★★★★★</span><span>7 reviews on Clutch · Toronto consulting agency</span></div>
       <div class="acts">
-        ${act('pri','Get directions',I.diag)}
+        ${act('pri','Book Free Consult',I.diag)}
         <a class="act sprout btn sm" href="https://talkerstein.com" target="_blank" rel="noopener" aria-label="Website"><svg class="glyph" viewBox="0 0 24 24">${I.web}</svg>Website</a>
         ${act('','Save',I.bookmark,`aria-pressed="${saved.has('tcg')}"`)}
         ${act('','Share',I.share)}
@@ -673,7 +675,7 @@ export function createBathurstEngine() {
     sheetBody.querySelectorAll('[data-a]').forEach(b=>{
       const a=b.dataset.a;
       b.onclick = () => {
-        if(a==='Get directions') location.href='/book';
+        if(a==='Book Free Consult') location.href='/book';
         else if(a==='Save') toggleSave(p ? p.id : 'tcg');
         else if(a==='Share') copyText(p ? `${p.name}, ${p.addr}${/Thornhill|ON$/.test(p.addr)?'':', Toronto'}` : 'Talkerstein Consulting Group · talkerstein.com', p ? 'Address copied' : 'Details copied');
         else if(a==='Street View') goStreet(p);
@@ -691,7 +693,9 @@ export function createBathurstEngine() {
   addEventListener('wheel', e=>{ if(resumeY===null || e.ctrlKey || e.metaKey || ownScroll(e.target)) return; e.preventDefault(); e.stopImmediatePropagation(); resumeRoute(); }, {passive:false, capture:true, signal});
   addEventListener('touchstart', e=>{ if(resumeY!==null && !ownScroll(e.target) && !e.target.closest?.('.pin')) resumeRoute(); }, {passive:true, capture:true, signal});
   addEventListener('keydown', e=>{ if(resumeY!==null && ['ArrowDown','ArrowUp','PageDown','PageUp',' '].includes(e.key) && !e.target.closest?.('input,select,textarea')){ e.preventDefault(); e.stopImmediatePropagation(); resumeRoute(); } }, {capture:true, signal});
+  let beforePin=null;   // the map as it was before a pin opened its sidebar: a click on the map goes back to it
   function pinClick(id){
+    if(!selected) beforePin={goal:{...goal}, filter};
     if(dirIdx===DIRECTIONS.length+1) return;   // Find Your Way Forward: pins show their name on hover, but open nothing
     if(dirIdx>=0){ const j=NODES.findIndex(n=>n.id===id); resumeY ??= scrollY;   // remember the Route Preview step, to come back to it
       scrollTo({top: hero.offsetTop + (j>=0 ? PH_A+PH_LEAD+(j+.5)*SLOT : PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
@@ -810,11 +814,11 @@ export function createBathurstEngine() {
   // exact fit: project the points through a scratch camera and re-aim / pull in until they fill the safe area
   // (below the top bar, above the footer), centred on screen
   const fitCam = new THREE.PerspectiveCamera();
-  function viewOf(list, pitch=.3, topPx, botPx, sidePx){
+  function viewOf(list, pitch=.3, topPx, botPx, sidePx, bearing=0){
     const xs=list.map(p=>p.x), zs=list.map(p=>p.z);
-    const v={cx:(Math.min(...xs)+Math.max(...xs))/2, cz:(Math.min(...zs)+Math.max(...zs))/2, dist:20000, bearing:0, pitch};
+    const v={cx:(Math.min(...xs)+Math.max(...xs))/2, cz:(Math.min(...zs)+Math.max(...zs))/2, dist:20000, bearing, pitch};
     const top=topPx ?? (W<760?150:84), bot=botPx ?? (W<760?60:56), side=sidePx ?? (W<760?16:48);   // px kept clear for the chrome
-    const P=new THREE.Vector3(), T=new THREE.Vector3(), q=new THREE.Vector3();
+    const P=new THREE.Vector3(), T=new THREE.Vector3(), q=new THREE.Vector3(), R=new THREE.Vector3(), U=new THREE.Vector3();
     fitCam.fov=camera.fov; fitCam.aspect=W/H; fitCam.near=10; fitCam.far=1e6; fitCam.updateProjectionMatrix();
     for(let it=0; it<12; it++){
       poseFrom(v,P,T); fitCam.position.copy(P); fitCam.up.set(0,1,0); fitCam.lookAt(T); fitCam.updateMatrixWorld();
@@ -822,19 +826,26 @@ export function createBathurstEngine() {
       for(const p of list){ q.set(p.x,0,p.z).project(fitCam); const sx=(q.x+1)/2*W, sy=(1-q.y)/2*H; x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
       // move the centre so the box sits in the middle of the safe area, then scale the distance to fill it
       const wantX=W/2, wantY=(top+H-bot)/2, dx=(x0+x1)/2-wantX, dy=(y0+y1)/2-wantY, m=mpp(v.dist), k=1/Math.max(.45,Math.cos(pitch));
-      v.cx += dx*m; v.cz += dy*m*k;
+      // screen right / screen up on the ground, so the correction works at any bearing
+      R.setFromMatrixColumn(fitCam.matrixWorld,0).setY(0).normalize(); U.setFromMatrixColumn(fitCam.matrixWorld,1).setY(0).normalize();
+      v.cx += R.x*dx*m - U.x*dy*m*k; v.cz += R.z*dx*m - U.z*dy*m*k;
       v.dist *= Math.max((x1-x0)/(W-2*side), (y1-y0)/(H-top-bot));
     }
     v.dist=Math.max(1400, v.dist); return v;
   }
+  // the bearing that fills the screen best: north need not be up. Tries headings within ±80° (never upside down)
+  // and keeps the one that frames the points closest, so a tall spread of pins lies along a wide screen.
+  function bestViewOf(list, ...a){ let best=null;
+    for(let d=-80; d<=80; d+=10){ const v=viewOf(list, a[0], a[1], a[2], a[3], d*Math.PI/180); if(!best || v.dist < best.dist*.97 || (v.dist < best.dist*1.03 && Math.abs(d) < Math.abs(best._d))){ best=v; best._d=d; } }
+    delete best._d; return best; }
   // Our Work: framed on the route itself (start, the stops, the office), centred; the far-off clients off the route (Mississauga,
   // Richmond Hill) no longer pull it off-centre. The top margin leaves room for the Our Work heading.
   // Our Work: every client on the map in view (not only the route's stops), clear of the heading and chips above, the controls at
   // the side and the railway below, so each pin can be seen and picked
-  const routeView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 170 : 215, W<760 ? 90 : 80, W<760 ? 84 : 140);   /* phones: 84px clears the control column on the left */
+  const routeView = () => bestViewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 170 : 215, W<760 ? 90 : 80, W<760 ? 84 : 140);   /* phones: 84px clears the control column on the left */
   const allView = () => viewOf([START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
   // the zoom-out limit: every client in view, with room for the chips, the heading, the pins' heads and the controls
-  const zoomAllView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P], goal.pitch, W<760 ? 240 : 200, W<760 ? 90 : 70, W<760 ? 64 : 110);
+  const zoomAllView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P], goal.pitch, W<760 ? 240 : 200, W<760 ? 90 : 70, W<760 ? 64 : 110, goal.bearing);
   function defaultView(){ return routeView(); }
   function setGoal(v, instant){ Object.assign(goal, v); goal.dist=Math.min(90000,Math.max(300,goal.dist));   /* 90 km: a phone's narrow view needs ~60 km to frame every client */ goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); if(instant) Object.assign(view3, goal); }
   function resetView(){ mapDirty=false; setGoal(defaultView()); }
@@ -869,8 +880,8 @@ export function createBathurstEngine() {
   let target=0, prog=0, lastTs=0, covered=false, sliding=false, winPx=null;   // covered: the reviews sheet is fully over the map, nothing to draw
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero=$('hero'), stick=$('stick'), coverEl=$('cover');
-  const PH_A=1.6, PH_LEAD=1, SLOT=.8, DIR_SLOTS=DIRECTIONS.length+2, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
-  const phB = () => NODES.length*SLOT;
+  const PH_A=1.6, PH_LEAD=1, SLOT=.8, DIR_SLOTS=0, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
+  const phB = () => 0;   // the project-by-project scroll is retired: the map holds, then the reviews sheet
   const DSLOT = () => W<760 ? 1.25 : SLOT;   // route steps: a longer slot on phones, where one swipe covers more of the page
   let coverH=0;
   function sizeHero(){ coverH = coverEl.offsetHeight || H; hero.style.height = ((PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+HOLD+1)*H + Math.max(0, coverH - H))+'px'; }
@@ -888,6 +899,7 @@ export function createBathurstEngine() {
       { const f=Math.min(NODES.length-1, Math.max(0, (s-PH_A-PH_LEAD)/SLOT)), a=NODES[Math.floor(f)].pos.z, b=(NODES[Math.ceil(f)]||NODES[Math.floor(f)]).pos.z;
         jTarget = s < PH_A+PH_LEAD ? 0 : DIR?.pinD ? DIR.pinD[Math.floor(f)] /* the journey: solid only up to the pin in focus (none at the first), drawn as the dot drives to the next */ : Math.max(0, a+(b-a)*(f%1) - NODES[0].pos.z); }
       if(n!==scrollNode){ scrollNode=n; if(n!==nodeIdx || n<0) setNode(n); }
+    } else if(DIR_SLOTS===0){ if(dirIdx>=0) setDir(-1);
     } else {
       // half a slot parked on the last pin, then the rest of the phase drives the whole route in one motion
       const driveEnd = nodesEnd + DIRECTIONS.length*DSLOT();   // the dot arrives here; the last slot is the CTA step
@@ -934,7 +946,7 @@ export function createBathurstEngine() {
     const was=dirIdx; dirIdx=i;
     stick.classList.toggle('dirs', i>=0);
     if(i<0){ stick.classList.remove('finale'); nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
-    DIR ??= buildDir(); nav.visible=true;
+    DIR ??= buildDir(); nav.visible=false;
     if(was<0){ selected=null; nodeIdx=-1; filter='all'; view={type:'list'}; render(); refresh(); setCollapsed(true); markChip('all'); dirD=DIR?DIR.off:0; mapDirty=true; }
     if(fPlace) leaveFPlace(false);
     if(i===DIRECTIONS.length+1) fitFinale();   // arrived: zoom out to every project, in the map left below the Find Your Way Forward card
@@ -961,7 +973,7 @@ export function createBathurstEngine() {
         <label class="sprout field-box dir-box"><input class="input" name="from" required placeholder="Your business name" aria-label="Your business name" autocomplete="organization"></label>
         <label class="sprout field-box dir-box"><select class="input" name="goal" required aria-label="Your destination"><option value="" disabled selected>Choose your destination</option>${GOALS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>
           <span class="caret"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></label></div>
-      <button type="submit" class="sprout btn orange dc-go dc-start" data-no-tumble aria-label="Get directions" hidden><svg class="glyph" viewBox="0 0 24 24"><path d="M12 3l7 18-7-4-7 4z"/></svg>Get directions</button>`;
+      <button type="submit" class="sprout btn orange dc-go dc-start" data-no-tumble aria-label="Book Free Consult" hidden><svg class="glyph" viewBox="0 0 24 24"><path d="M12 3l7 18-7-4-7 4z"/></svg>Book Free Consult</button>`;
     // Start slides in once a destination is chosen; with no name yet, the name field pulses and Start jumps to it
     { const go=el.querySelector('.dc-go'), name=el.querySelector('input[name=from]'), box=name.closest('.dir-box'), sel=el.querySelector('select');
       const sync=()=>{ const has=!!sel.value, need=has && !name.value.trim(); go.hidden=!has; box.classList.toggle('need', need); };
@@ -981,11 +993,11 @@ export function createBathurstEngine() {
   };
   const goTo = s => scrollTo({top: hero.offsetTop + s*H, behavior: reduce?'auto':'smooth'});
   function scrollToProg(p){ goTo(p>=1 ? PH_A+.05 : p*PH_A); }
-  function scrollToNode(j){ goTo(PH_A+PH_LEAD+(j+.5)*SLOT); }
+  function scrollToNode(j){ walkTo=null; if(NODES[j]) openPlace(NODES[j].id); }   // no scroll slots per project: open it in place
   { const ro=new ResizeObserver(()=>{ if(!dead){ sizeHero(); onScroll(); } }); ro.observe(coverEl); signal.addEventListener('abort', ()=>ro.disconnect()); }   // the sheet's height sets the page length
   $('dcmore').onclick=()=>goTo(PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+.02);   // Find Your Way Forward → the reviews
   $('covergrab').onclick=()=>goTo(PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C);
-  const toHow=()=>goTo(PH_A+PH_LEAD+phB()+DSLOT()*.5);   // footer "How we work": the start of the directions
+  const toHow=()=>goTo(PH_A+PH_LEAD+phB()+PH_C+.02);   // footer "How we work": the start of the directions
   document.addEventListener('click', e=>{ const a=e.target.closest?.('a[href="#how"]'); if(a){ e.preventDefault(); toHow(); } }, {signal});
   // links to sections on the cover sheet (footer: #services, #web-design…): the sheet moves by transform, not by scrolling,
   // so the browser's own jump lands short. Scroll by the target's real offset and re-measure: at the very end of the page
@@ -1027,7 +1039,7 @@ export function createBathurstEngine() {
   addEventListener('tcg:nav', e=>{ const to=e.detail?.to;
     if(fPlace) leaveFPlace(false); resumeY=null; walkTo=null;
     const L=DIRECTIONS.length, step1=PH_A+PH_LEAD+phB()+DSLOT()*.5+.5*DSLOT()*(L-.5)/L;   // the middle of step 1 (as the route's own stepping lands)
-    const at = {top:0, work:PH_A+PH_LEAD*.5, how:step1, reviews:coverUp(), services:coverUp()}[to]; if(at===undefined) return;
+    const at = {top:0, work:PH_A+PH_LEAD*.5, how:coverUp(), reviews:coverUp(), services:coverUp()}[to]; if(at===undefined) return;
     filter='all'; query=''; markChip('all'); selected=null; view={type:'list'}; render(); refresh(); setCollapsed(true);   // a jump starts clean: no filter, nothing open
     if(to==='work') resetView();
     scrollTo({top: hero.offsetTop + at*H, behavior:'instant'}); onScroll();
@@ -1081,8 +1093,13 @@ export function createBathurstEngine() {
     if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag.x=e.clientX; drag.y=e.clientY; drag.moved+=Math.abs(dx)+Math.abs(dy);
     drag.rot ? turn(dx*.006, dy*.004) : panPx(dx,dy);
   });
-  const endDrag=()=>{ drag=null; stick.classList.remove('grabbing'); };
+  let dragMoved=0;
+  const endDrag=()=>{ dragMoved=drag?.moved||0; drag=null; stick.classList.remove('grabbing'); };
   stage.addEventListener('pointerup', endDrag); stage.addEventListener('pointercancel', endDrag);
+  // a plain click on the map (not a drag) closes the open project's sidebar and returns to the view from before it opened
+  stage.addEventListener('click', ()=>{ const moved=dragMoved; dragMoved=0; if(moved>6 || !selected || !mapReady()) return;
+    selected=null; view={type:'list'}; nodeIdx=-1; render(); refresh(); setCollapsed(true); if(W<760) setSheet('peek');
+    markChip(beforePin?.filter ?? filter); if(beforePin){ mapDirty=true; setGoal(beforePin.goal); } beforePin=null; }, {signal});
   stage.addEventListener('dblclick', e=>zoomAt(e.clientX,e.clientY,.5));
   // touch: one finger scrolls the page, two fingers move / pinch / twist the map
   let t2=null;
@@ -1194,8 +1211,8 @@ export function createBathurstEngine() {
     { const nn=Math.max(.5, Math.min(250, alt*.04)); if(Math.abs(camera.near-nn) > nn*.02){ camera.near=nn; camera.updateProjectionMatrix(); } }
     scene.fog.near = Math.max(80, alt*1.1); scene.fog.far = Math.max(1600, alt*3.6);
 
-    { const s=Math.max(0, scrollY - hero.offsetTop)/H, on = prog>.9 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && filter==='all' && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
-      if(stick._work!==on){ $('workhead').classList.toggle('on', on); stick._work=on; applyShow(); } }   /* the overview hides the 3D buildings (applyShow) */
+    { const s=Math.max(0, scrollY - hero.offsetTop)/H, on = prog>.9 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
+      if(stick._work!==on){ $('workhead').classList.toggle('on', on); stick.classList.toggle('work', on); stick._work=on; if(on && !reduce){ chipBar.getAnimations().forEach(x=>x.cancel()); chipBar.animate([{transform:'translateX(120px)', opacity:0},{transform:'none', opacity:1}], {duration:600, easing:'cubic-bezier(.22,1,.36,1)'}); }   /* the categories slide in from the side */ applyShow(); } }   /* the overview hides the 3D buildings (applyShow) */
     { const named = alt < 2600 || filter!=='all'; /* zoomed in, or a chip filter is on */ if(stick._named!==named){ stick.classList.toggle('named', named); stick._named=named; } }
     const darkMap = alt > 90; if(darkMap!==stick._dark){ stick.classList.toggle('dark-map', darkMap); stick._dark=darkMap; }
     // building ink thins with altitude so the 3D corridor never reads as a dark stripe from far away
@@ -1230,7 +1247,7 @@ export function createBathurstEngine() {
       if(mapK<.5) runZ=z;
       // the orange trails the runner in the hero, then completes up the whole route as the camera cranes
       const done=smooth(.3,.82,prog), zh=streetAnchor.z-lead; clipZ.value = done>=1 ? -1e9 : zh + (zEnd-200-zh)*done;
-      runner.visible = dirIdx<0;   // one indicator throughout: the hero dot, then the map's, then the route's (nav takes over on the same spot)
+      runner.visible = false;   /* no position dot on the map */   // one indicator throughout: the hero dot, then the map's, then the route's (nav takes over on the same spot)
       clipS.value = done>=1 && NODES.length ? lastPin().z : 1e9;   // the runner belongs to the hero; the map view is still
       if(mapK>=.5 && DIR && trail?.visible){ const q=dirAt(Math.max(0, trailD.value)).p; runner.position.set(q.x, .5, q.z); }   /* projects: the dot is the tip of the solid journey */
       else runner.position.set(roadX(z), .5, z); /* on the painted road itself, not the smoothed line */ const sc=Math.max(10, alt*.018) * (mapK<.5 ? lead/330 : 1); runner.scale.setScalar(sc);   /* further ahead on phones, scaled up to keep its size */
@@ -1238,7 +1255,7 @@ export function createBathurstEngine() {
     routeGlow.material.opacity = .10*mapK + .06;
     if(!DIR && city.data && mapK>.1){ DIR=buildDir(); buildCurves(); if(!mapDirty) setGoal(defaultView()); onScroll(); }   /* re-aim the journey now its pin distances exist */
     const finale = dirIdx===DIRECTIONS.length+1;   // "Find Your Way Forward": no path, just the project icons by industry
-    if(ghost){ ghost.material.opacity=.45*smooth(.05,.4,prog); trail.visible = mapK>.15 && !finale; ghost.visible = !finale;
+    if(ghost){ ghost.material.opacity=.45*smooth(.05,.4,prog); trail.visible = false; ghost.visible = false;
       // scroll-triggered, not scroll-driven: once the crane starts, the route draws start → office in one timed motion
       // (never parked halfway); scrolling back to the hero resets it for next time
       { const s=Math.max(0, scrollY - hero.offsetTop)/H;
@@ -1247,7 +1264,7 @@ export function createBathurstEngine() {
         if(ghostRun>=0 && ghostRun<1){ ghostRun = reduce ? 1 : Math.min(1, ghostRun + dt/2.4); const e=1-Math.pow(1-ghostRun,3); ghostD.value = ghostRun>=1 ? 1e9 : DIR.total*e; wakeUntil = performance.now()+100; } }
       routeW.value = Math.max(5, mpp(pos.distanceTo(tgt))*3.5);   // about 7px wide on screen
       if(dirIdx<0){ trailD.value += (jTarget-trailD.value)*(reduce?1:Math.min(1, dt*3)); }
-      const end=DIR.pts[DIR.pts.length-1], sp=project(end), on=mapK>.15 && sp.ok && !finale;   /* Find Your Way Forward: no map indicator */
+      const end=DIR.pts[DIR.pts.length-1], sp=project(end), on=false && sp.ok && !finale;   /* Find Your Way Forward: no map indicator */
       destEl.style.opacity = on ? '1' : '0'; destEl.classList.toggle('named', dirIdx<0 ? nodeIdx<0 && filter==='all' : dirIdx>=DIRECTIONS.length);   /* the office name: on the overview, then only once the route reaches step 4 */ if(on) destEl.style.transform=`translate3d(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px,0)`; }
     if(dirIdx>=0){
       DIR ??= buildDir();

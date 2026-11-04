@@ -75,7 +75,9 @@
 #stick.navbar-on .menubtn { z-index: 11; }
 /* a short Sea Breeze fade across the top of the map, so the TCG logo reads over pins, roads and parks */
 #mapui::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; z-index: 0; pointer-events: none;
-  background: linear-gradient(180deg, var(--sea) 0%, rgb(from var(--sea) r g b / .85) 40%, rgb(from var(--sea) r g b / 0) 100%); }
+  background: linear-gradient(180deg, var(--sea) 0%, rgb(from var(--sea) r g b / .85) 40%, rgb(from var(--sea) r g b / 0) 100%); transition: opacity .4s ease; }
+/* front page: no fade over the paper (it read as a pale band across the top of the hero) */
+#stick.open #mapui::before { opacity: 0; }
 .panel { position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset); width: var(--panel-w); display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; }
 .searchrow { display: flex; gap: var(--s2); pointer-events: auto; }
 .searchrow .btn.icon, .search-box { background: var(--sea); }
@@ -347,7 +349,7 @@
 /* map chrome waits off its edge until the camera lands, then slides in */
 .ctrls, .layers-top { transition: translate .6s cubic-bezier(.22,1,.36,1), opacity .4s ease; }
 .foot { transition: translate .6s cubic-bezier(.22,1,.36,1) .1s, opacity .4s ease .1s; }
-#stick:not(.mapped) .ctrls { translate: calc(100% + var(--inset) + 16px) 0; opacity: 0; pointer-events: none; }
+#stick.open .ctrls { translate: calc(100% + var(--inset) + 16px) 0; opacity: 0; pointer-events: none; }
 #stick:not(.mapped) .foot { translate: 0 calc(100% + var(--inset) + 16px); opacity: 0; }
 /* the sidebar and its tab only belong to the client walk-through */
 #stick:not(.nodes) #mapui.pc .edgetab { display: none; }   /* every open sidebar has its collapse tab */
@@ -1035,7 +1037,7 @@
 /* phones: map controls on the left edge (sliding in from the left), and a bigger grab area on the project sheet handle */
 @media (max-width: 759px) {
   .ctrls { right: auto; left: var(--inset); }
-  #stick:not(.mapped) .ctrls { translate: calc(-100% - var(--inset) - 16px) 0; }
+  #stick.open .ctrls { translate: calc(-100% - var(--inset) - 16px) 0; }
   .sheet .grab { height: 44px; }                 /* ≥44px touch target across the full width */
   .sheet .grab i { width: 56px; height: 5px; border-radius: 3px; opacity: .4; }
 }
@@ -1692,7 +1694,7 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 /* the railway (components/bathurst/TrackRail.tsx), drawn like a vintage route map: a thick line with a thin one beside it on
    the outside, solid station dots with their names, the travelled stretch in orange, and a tram riding the line. It runs along a
    paper strip under the map's checkered border (desktop: #stick stops short of the bottom by --rail-g). Phones use the ☰ instead. */
-:root { --rail-g: 48px; }   /* the paper strip's height (the corner offer sits above it too) */
+:root { --rail-g: 0px; }   /* the railway is retired: the map runs to the bottom of the screen */   /* the paper strip's height (the corner offer sits above it too) */
 #hero { --ry: 24px; }   /* --ry: the line's height in the strip (its middle) */
 @media (min-width: 760px) { #hero > #stick { height: calc(100vh - var(--rail-g)); height: calc(100svh - var(--rail-g)); } }
 /* the line spans the page's content column (the 1104px The Way Forward and the reviews sit in), centred on the page, not the window
@@ -1868,3 +1870,80 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .workhead::before { display: none; }
 /* a service chip is on: the faded pins outside it show no name, even zoomed in or on hover */
 .pin.dim .nm { display: none !important; }
+
+/* the Way Forward sequence and the page railway are retired */
+.dircard, .dc-more, .track { display: none !important; }
+
+/* Our Work Across Toronto (the map overview): no logo row; the heading centred at the top, the category chips centred under it.
+   The logo comes back on the reviews sheet as it wipes in over the map. */
+#stick.work .brandbtn, #stick.work .wordclip { opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+#hero #stick .workhead { left: 50%; top: calc(var(--inset) + 28px); translate: -50% 0; text-align: center; padding: 0 24px; z-index: 4; }
+.workhead::before { background: radial-gradient(closest-side, rgb(243 247 243 / .94) 60%, rgb(243 247 243 / 0) 100%); inset: -20px -80px -24px -80px; }
+#hero #stick.work .chipbar { left: 50% !important; right: auto !important; top: calc(var(--inset) + 28px + 72px) !important; translate: -50% 0; max-width: calc(100% - 2 * var(--inset) - 2 * var(--icon-btn) - 2 * var(--s2)); }
+#hero #stick.work .chipbar > .btn { display: none; }
+@media (max-width: 759px) {
+  #hero #stick .workhead { top: calc(var(--inset) + var(--icon-btn) + var(--s1)); max-width: none; white-space: nowrap; }
+  #hero #stick.work .chipbar { top: calc(var(--inset) + var(--icon-btn) + var(--s1) + 40px) !important; max-width: 100%; }
+}
+
+/* a category chip shows only its own projects: the others leave the map */
+.pin.dim { opacity: 0 !important; visibility: hidden; pointer-events: none; transition: opacity .25s ease, visibility 0s .25s; }
+
+/* the category chips belong to the Our Work view: outside it (between the front page and the map) they stay out of sight, so scrolling back up never flashes them in the top bar */
+#hero #stick:not(.work):not(.open) .chipbar { opacity: 0; visibility: hidden; pointer-events: none; transition: none; }
+
+/* hero proof: Clutch, Google, Shopify, HighLevel as four labelled cells with hairline dividers between them */
+.hero-awards { list-style: none; margin: var(--s4) 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; row-gap: var(--s2); pointer-events: auto; }
+.hero-awards li { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 4px var(--s4); text-align: center; }
+.hero-awards li + li { border-left: 1.5px solid var(--steel-15); }
+.hero-awards a { display: flex; align-items: center; gap: 8px; color: var(--steel); text-decoration: none; }
+.hero-awards a > span { display: grid; gap: 2px; justify-items: start; text-align: left; }
+.hero-awards b { font: 700 30px/1 var(--head); }
+.hero-awards .stars { font-size: 14px; letter-spacing: 1px; }
+.hero-awards .stars.rated { position: relative; display: inline-block; color: var(--steel-15); white-space: nowrap; }
+.hero-awards .stars.rated .fill { position: absolute; inset: 0 auto 0 0; width: var(--pct, 100%); overflow: hidden; color: var(--orange); }
+.hero-awards small { font-size: 12px; line-height: 1.2; color: var(--steel-70); }
+.hero-awards a:hover small { color: var(--orange); }
+.hero-awards .aw-badge img { display: block; height: 30px; width: auto; }
+.hero-awards .aw-badge small { max-width: 13ch; }
+@media (max-width: 759px) {
+  .hero-awards { display: grid; grid-template-columns: 1fr 1fr; margin-top: var(--s3); row-gap: 0; }
+  .hero-awards li { padding: var(--s2) var(--s1); }
+  .hero-awards li + li { border-left: 0; }
+  .hero-awards li:nth-child(even) { border-left: 1.5px solid var(--steel-15); }
+  .hero-awards li:nth-child(n+3) { border-top: 1.5px solid var(--steel-15); }
+  .hero-awards b { font-size: 24px; }
+  .hero-awards .stars { font-size: 12px; letter-spacing: 0; }
+  .hero-awards small { font-size: 11px; }
+  .hero-awards .aw-badge img { height: 24px; }
+}
+
+/* over the reviews sheet: no logo; only the ☰ on the left and the booking CTA, with its label, on the right */
+.navbar .navcta .dirlabel { max-width: 240px; margin-left: var(--s1); opacity: 1; }
+.navbar .navcta { width: auto; padding: 0 var(--s3); }
+@media (max-width: 759px) { .navbar .navcta .dirlabel { font-size: 14px; } }
+
+/* the consult CTA (formerly Get directions) is always expanded: icon and label, in every state and on phones */
+#hero .dirbtn { width: auto; padding: 0 var(--s3); }
+#hero .dirbtn .dirlabel, #hero #stick .dirbtn .dirlabel { max-width: 240px !important; margin-left: var(--s1) !important; opacity: 1 !important; }
+@media (max-width: 759px) { #hero .dirbtn { padding: 0 var(--s2); } #hero .dirbtn .dirlabel { font-size: 14px; } }
+
+/* phones, front page: the logo takes most of the row, so the consult CTA drops its icon and wraps to two short lines */
+@media (max-width: 759px) {
+  #hero #stick.open .dirbtn { padding: 0 10px; }
+  #hero #stick.open .dirbtn .glyph { display: none; }
+  #hero #stick.open .dirbtn .dirlabel { white-space: normal; max-width: 64px !important; margin-left: 0 !important; font-size: 12px; line-height: 1.1; text-align: center; }
+}
+
+/* pins carry the client's own logo on white, inside the industry-coloured ring (the industry icon only where there is no logo) */
+.pin.has-logo .ic { background: #fff; overflow: hidden; }
+.pin .ic .lg { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; border-radius: 50%; }
+.pin.has-logo.mini:hover .ic, .pin.has-logo.mini:focus-visible .ic { background: #fff; }
+@media (max-width: 760px) { .pin .ic .lg { transition: rotate .35s cubic-bezier(.22,1,.36,1); } .pin:not(.mini) .ic .lg { rotate: 45deg; } }
+/* logos drawn in white sit on the client's dark ink instead of white */
+.pin.has-logo[data-logo="elis"] .ic { background: var(--steel); }
+
+/* after the map: a solid navbar with a fixed hairline outline along its foot (no fade); the TCG logo slides back in from the left */
+.navbar { height: calc(var(--inset) * 2 + var(--icon-btn)); background: var(--sea); border-bottom: 1.5px solid var(--steel); }
+.brandpin { translate: -40px 0; transition: opacity .3s ease, translate .45s cubic-bezier(.22,1,.36,1), visibility 0s .45s; }
+#stick.navbar-on .brandpin { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .3s ease .05s, translate .45s cubic-bezier(.22,1,.36,1) .05s, visibility 0s; }

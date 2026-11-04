@@ -192,11 +192,11 @@ export const REVIEW = {
   org: "Israeli Street Food Restaurant",
   tags: ["SEO", "Social", "Web"],
   rating: 5.0,
-  count: 7,
+  count: 12,
 };
 
-/** Google Business Profile rating, as talkerstein.com shows it (no review count published there). */
-export const GOOGLE: { rating: number | null; count: number | null; url: string } = { rating: 4.9, count: null, url: "https://share.google/ys09a4729NPyQuGzg" };
+/** Google Business Profile rating and review count (checked on Google, 2026-11-04). */
+export const GOOGLE: { rating: number | null; count: number | null; url: string } = { rating: 4.9, count: 46, url: "https://share.google/ys09a4729NPyQuGzg" };
 
 /** Contact and profiles, from talkerstein.com's own footer. */
 export const CONTACT = {

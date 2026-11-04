@@ -102,7 +102,7 @@ export default function SiteMenu() {
             <li className={`station terminus${arrived ? " arrived" : ""}`}>
               <span className="station-dot" aria-hidden="true"><Glyph><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></Glyph></span>
               <a className="sprout btn orange menu-cta" data-no-tumble href="/book">
-                <Glyph><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></Glyph>Get directions
+                <Glyph><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" /><path d="M9 14.5V12a1.5 1.5 0 011.5-1.5H15M13 8.5l2 2-2 2" /></Glyph>Book Free Consult
               </a>
             </li>
           </ol>
