@@ -24,9 +24,10 @@ export function MenuButton() {
   return (
     <button type="button" className="sprout btn icon menubtn" id="menubtn" data-no-tumble aria-label="Menu" aria-haspopup="dialog" aria-expanded="false" aria-controls="sitemenu"
       onClick={() => window.dispatchEvent(new Event("tcg:menu"))}>
-      {/* ☰ turns into × while the menu is open: the button stays put, above the drawer */}
-      <svg className="glyph mb-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-      <svg className="glyph mb-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      {/* ☰ morphs into × while the menu is open (D06): the top and bottom bars rotate onto the diagonals, the middle one fades */}
+      <svg className="glyph mb-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path className="mb-t" d="M4 7h16" /><path className="mb-m" d="M4 12h16" /><path className="mb-b" d="M4 17h16" />
+      </svg>
     </button>
   );
 }

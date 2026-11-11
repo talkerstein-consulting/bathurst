@@ -99,6 +99,28 @@ export function createBathurstEngine(area?: string) {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(60000,60000), flatMat(GROUND));
   ground.rotation.x = -Math.PI/2; ground.position.z = -4000; ground.renderOrder = flatOrder++; scene.add(ground);
 
+  // the sky (light hero): pale at the horizon (the haze, so the land fades straight into it), deepening to a dusty blue
+  // overhead, like a gouache poster sky. It rides with the camera, is painted first, and only shows in the light style.
+  const sky = (() => {
+    const R = 60000, g = new THREE.SphereGeometry(R, 48, 24), p = g.getAttribute('position');
+    g.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(p.count * 3), 3));
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.BackSide, depthWrite: false, depthTest: false }));
+    m.renderOrder = -100; m.frustumCulled = false; scene.add(m);
+    // paint the dome for a palette's sky [horizon, low, overhead] (applyStyle)
+    m.userData.paint = ([a, b, c]) => {
+      const hz = new THREE.Color(a), mid = new THREE.Color(b), top = new THREE.Color(c), t = new THREE.Color(), col = g.getAttribute('color');
+      for (let i = 0; i < p.count; i++) {
+        const e = p.getY(i) / R;   // sine of the elevation
+        if (e <= 0) t.copy(hz); else if (e < .07) t.copy(hz).lerp(mid, e / .07); else t.copy(mid).lerp(top, Math.min(1, (e - .07) / .33));
+        col.setXYZ(i, t.r, t.g, t.b);
+      }
+      col.needsUpdate = true;
+    };
+    m.userData.paint([0xDCDDD9, 0xB3C4D3, 0x7F9FBE]);
+    return m;
+  })();
+
+
   function ribbon(pts, width, color, y, opts={}){
     const pos=[], idx=[];
     pts.forEach((p,i)=>{
@@ -123,7 +145,8 @@ export function createBathurstEngine(area?: string) {
     roadLabels.push({name, pos:new THREE.Vector3(x+900,0,z), cls:''});
   });
   // hero: every cross street named right where it meets Bathurst, so the low 3D fly-through reads like a street map
-  CROSS.forEach(([name,lat])=>{ const z=zOf(lat); roadLabels.push({name, pos:new THREE.Vector3(xAt(z)+70,0,z), cls:'hero', hero:true}); });
+  const HERO_UNLABELLED = ['Hwy 401'];   // removed for now from the hero street
+  CROSS.forEach(([name,lat])=>{ if(HERO_UNLABELLED.includes(name)) return; const z=zOf(lat); roadLabels.push({name, pos:new THREE.Vector3(xAt(z)+70,0,z), cls:'hero', hero:true}); });
   // Map furniture so the paper reads like a real atlas: more avenues, the parallel streets, parks, landmarks
   // and neighbourhoods. Positions are approximate (hand-placed from OSM), which is fine for labels.
   // Priority is array order: the collision pass drops later labels first.
@@ -139,21 +162,70 @@ export function createBathurstEngine(area?: string) {
 
   // Real city from OpenStreetMap (public/map/bathurst-osm.tcgm.gz, plus the lighter region-osm.tcgm.gz around it), drawn flat like a 1940s road map.
   // Flat city layers take paint orders 2-39; the Bathurst route is painted above them.
+  const PB = new THREE.Color(0x2F4C9C);   // Print's main ink: Steel Blue brightened (same hue, clearer and lighter, not greyed)
   const PALETTES = {
     // Poster: Steel Blue land, Sea Breeze city (the 1940s route-map look)
     poster: {
-      ground: new THREE.Color(C.steel),
+      ground: new THREE.Color(C.steel), haze: new THREE.Color(C.sea),   // Steel Blue land fading into a Sea Breeze sky (the dark text stays readable on it)
       roof: new THREE.Color(C.sea), wallLit: mix(C.sea, C.steel, .10), wallShade: mix(C.sea, C.steel, .34), ink: new THREE.Color(C.steel),
       roads: [mix(C.steel,C.sea,.20), mix(C.steel,C.sea,.30), mix(C.steel,C.sea,.36), mix(C.steel,C.sea,.44), mix(C.steel,C.sea,.58), mix(C.steel,C.sea,.30)],
       park: mix(C.steel, C.sea, .09), water: mix(C.steel, C.sea, .42), footprint: mix(C.steel, C.sea, .30),
     },
-    // Paper: Google Maps colours (grey land, green parks, blue water, white streets, yellow arterials, amber
-    // motorways) desaturated about 40% toward the Sea Breeze / Steel Blue brand so they sit with the page; Steel Blue ink
+    // Paper (the light hero): painted like a mid-century gouache street poster. Cream sunlit facades and roofs, mauve-taupe
+    // shaded walls, warm grey land with cream streets, sage parks, dusty blue water; distance fades to a pale horizon
+    // that the dusty blue sky rises from (the sky dome below). Outlines stay soft (frame loop: inkK) and a printed grain
+    // sits over the canvas (app/bathurst-map.css, #stage::after).
     paper: {
-      ground: new THREE.Color(0xE9EBE6),
-      roof: new THREE.Color(0xE4E3DD), wallLit: new THREE.Color(0xD6D5CE), wallShade: new THREE.Color(0xC3C2BB), ink: new THREE.Color(C.steel),
-      roads: [0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF].map(h => new THREE.Color(h)),   // local, tertiary, secondary, primary, motorway, link
-      park: new THREE.Color(0xCFE2C6), water: new THREE.Color(0xAFD0E4), footprint: new THREE.Color(0xDADAD3),
+      ground: new THREE.Color(0xD3CBC5), haze: new THREE.Color(0xDCDDD9),
+      roof: new THREE.Color(0xF4EEE2), wallLit: new THREE.Color(0xEADFCB), wallShade: new THREE.Color(0xA2948F), ink: new THREE.Color(0x5B4E5C),
+      roads: [0xF1EBDF, 0xF1EBDF, 0xF4EEE3, 0xF6F1E7, 0xF8F4EC, 0xF4EEE3].map(h => new THREE.Color(h)),   // local, tertiary, secondary, primary, motorway, link
+      park: new THREE.Color(0xBBC4A6), water: new THREE.Color(0x93AEC6), footprint: new THREE.Color(0xDDD5CD),
+      inkK: .45,
+      sky: [0xDCDDD9, 0xB3C4D3, 0x7F9FBE],   // horizon, low, overhead
+    },
+    // Print (the default): a two-ink screenprint with black for the deepest shadow. Flat inks only, no gradients: a solid
+    // Steel Blue sky (the brand blue), deeper steel land, white roofs as the highlight, Steel Blue sunlit walls, black shaded
+    // walls; streets Steel Blue, parks black. The haze starts far out so the inks stay flat. Muted Orange stays on the route and pins.
+    print: {
+      ground: new THREE.Color(C.steel), haze: PB, page: new THREE.Color(C.sea),
+      roof: new THREE.Color(C.sea), wallLit: PB, wallShade: new THREE.Color(0x0A0A14), ink: new THREE.Color(0x0A0A14),
+      roads: [PB, PB, PB, PB, mix(PB.getHex(), C.sea, .22), PB],   // highways a lighter blue, not white
+      park: new THREE.Color(0x0A0A14), water: PB, footprint: PB,
+      inkK: 0, fogK: 3, skyDark: true,
+      sky: [PB.getHex(), PB.getHex(), PB.getHex()],   // one flat ink
+    },
+    // Mono: the railway poster in one colour. Everything is a shade of the poster blue: the same dusk sky,
+    // pale blue roofs, mid-blue sunlit walls, deep blue shade, navy land with blue-tint streets. No outlines.
+    mono: {
+      ground: new THREE.Color(C.steel), haze: mix(0x3D6385, C.sea, .32), page: new THREE.Color(C.sea),
+      roof: mix(0x3D6385, C.sea, .78), wallLit: mix(0x3D6385, C.sea, .55), wallShade: mix(0x3D6385, C.sea, .2), ink: new THREE.Color(C.steel),
+      roads: [mix(C.steel, 0x3D6385, .45), mix(C.steel, 0x3D6385, .6), mix(C.steel, 0x3D6385, .75), mix(C.steel, 0x3D6385, .9), mix(0x3D6385, C.sea, .15), mix(C.steel, 0x3D6385, .6)],
+      park: mix(C.steel, 0x3D6385, .3), water: mix(C.steel, 0x3D6385, .7), footprint: mix(C.steel, 0x3D6385, .55),
+      inkK: 0, fogK: 1.6, skyDark: true,
+      sky: [mix(0x3D6385, C.sea, .32).getHex(), 0x3D6385, mix(0x3D6385, C.steel, .7).getHex()],
+    },
+    // Railway: a mid-century railway travel poster. A solid poster-blue sky, the city in ivory (cream roofs and
+    // sunlit walls, a warmer ivory in shade, never blue), Steel Blue land like the poster's dark foreground, no outlines.
+    // The far city fades into the sky blue; Muted Orange stays on the route and pins. The hero text turns Sea Breeze on it.
+    railway: {
+      ground: new THREE.Color(C.steel), haze: mix(0x3D6385, C.sea, .32), page: new THREE.Color(C.sea),   // haze = the sky's horizon blue
+      roof: new THREE.Color(0xF4EEE2), wallLit: new THREE.Color(0xEADFCB), wallShade: new THREE.Color(0xCDBB9C), ink: new THREE.Color(C.steel),
+      roads: [mix(C.steel, C.sea, .14), mix(C.steel, C.sea, .2), mix(C.steel, C.sea, .26), mix(C.steel, C.sea, .34), mix(C.steel, C.sea, .44), mix(C.steel, C.sea, .2)],
+      park: mix(C.steel, 0x3D6385, .3), water: mix(C.steel, 0x3D6385, .7), footprint: mix(C.steel, C.sea, .22),
+      inkK: 0, fogK: 1.6, skyDark: true,
+      sky: [mix(0x3D6385, C.sea, .32).getHex(), 0x3D6385, mix(0x3D6385, C.steel, .7).getHex()],   // a dusk gradient: pale blue at the horizon, poster blue, deep navy overhead
+    },
+    // Flat: a two-tone screen-print poster. Steel Blue land, every building face solid Sea Breeze (no shading,
+    // no outlines), streets as lighter Steel Blue tints, parks and water as quiet tints of the land; Muted Orange only on the
+    // route and pins. The land fades into a flat Sea Breeze sky at the horizon.
+    flat: {
+      ground: new THREE.Color(C.steel), haze: new THREE.Color(C.sea),
+      roof: new THREE.Color(C.sea), wallLit: mix(C.sea, C.steel, .2), wallShade: mix(C.sea, C.steel, .2), ink: new THREE.Color(C.steel),   // walls one flat tint (no light), so blocks keep their shape
+      page: new THREE.Color(C.sea),   // the page around the map stays paper, not the Steel Blue land
+      roads: [mix(C.steel, C.sea, .22), mix(C.steel, C.sea, .3), mix(C.steel, C.sea, .38), mix(C.steel, C.sea, .48), mix(C.steel, C.sea, .6), mix(C.steel, C.sea, .3)],
+      park: mix(C.steel, C.sea, .1), water: mix(C.steel, C.sea, .22), footprint: mix(C.steel, C.sea, .3),
+      inkK: 0, fogK: 1.6,   // no outlines; the haze starts further out, so the near streets stay crisp and the far rows still fade
+      sky: [C.sea, C.sea, C.sea],
     },
   };
   const PALETTE = PALETTES.paper;
@@ -164,7 +236,7 @@ export function createBathurstEngine(area?: string) {
     const idle = () => (window.requestIdleCallback || (f=>setTimeout(f, 200)))(res, {timeout:1500});
     if(document.readyState==='complete') idle(); else addEventListener('load', idle, {once:true, signal});
   });
-  afterPageLoad().then(()=>dead ? Promise.reject(new DOMException('gone','AbortError')) : loadCity('/map/bathurst-osm.tcgm.gz', {lite, signal})).then(baked=>{
+  afterPageLoad().then(()=>dead ? Promise.reject(new DOMException('gone','AbortError')) : loadCity('/map/bathurst-osm.tcgm.gz', {lite: weak, signal})   /* 3D buildings on phones too; only weak devices get them flat */).then(baked=>{
     if(dead) return;
     const data = {roads: baked.roads};
     let o=12; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(39, o++));   // 2-11 stay free for the region backdrop
@@ -377,7 +449,7 @@ export function createBathurstEngine(area?: string) {
     // a chip filters the map: only that industry's pins stay, framed on screen; press it again (or All) to bring the rest back
     b.onclick=()=>{ if(target<1) scrollToProg(1);
       // from the Route Preview (or later): jump straight back to the map overview first, so the filtered pins show on the plain map
-      if(dirIdx>=0){ scrollTo({top: hero.offsetTop + (PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
+      if(dirIdx>=0){ scrollTo({top: heroTop() + (PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
       filter = (k==='all' || filter===k) ? 'all' : k;
       [...chips.children].forEach((c,j)=>c.setAttribute('aria-pressed', INDS[j][0]===filter)); centreChip(chips.children[INDS.findIndex(x=>x[0]===filter)]);
       // like Google Maps: the open place closes and the matching pins are framed in the middle of the map left visible
@@ -401,7 +473,7 @@ export function createBathurstEngine(area?: string) {
     chipEnds();
   }
   // markers arrive one by one, top of the screen first
-  function popPins(){ LOCAL.filter(p=>p.pos).map(p=>({p, y:project(p.pos).y})).sort((a,b)=>a.y-b.y).forEach(({p},i)=>{ p.el.style.setProperty('--d', (reduce?0:i*35)+'ms'); p.el.classList.remove('pop'); void p.el.offsetWidth; p.el.classList.add('pop'); }); }
+  function popPins(){ LOCAL.filter(p=>p.pos).map(p=>({p, y:project(p.pos).y})).sort((a,b)=>a.y-b.y).forEach(({p},i)=>{ p.el.style.setProperty('--d', '0ms');   /* every pin at once, no stagger */ p.el.classList.remove('pop'); void p.el.offsetWidth; p.el.classList.add('pop'); }); }
   // Google-style: an arrow only shows at an end the row can still scroll toward (i.e. when the chips overflow)
   const pageChips = d => chips.scrollBy({left: d*chips.clientWidth*.7, behavior: reduce?'auto':'smooth'});
   chipPrev.onclick=()=>pageChips(-1); chipNext.onclick=()=>pageChips(1);
@@ -455,7 +527,7 @@ export function createBathurstEngine(area?: string) {
   // Back to map (in place of the search field): closes whatever is open, clears the chip filter, returns to the overview
   $('backmap').onclick=()=>{ if(fPlace) leaveFPlace(false); resumeY=null; walkTo=null; filter='all'; query=''; q.value=''; markChip('all');
     selected=null; view={type:'list'}; render(); refresh(); if(W<760) setSheet('peek');
-    const y=hero.offsetTop + (PH_A+PH_LEAD*.5)*H; if(Math.abs(scrollY-y)>H*.25) goTo(PH_A+PH_LEAD*.5); else resetView(); };
+    const y=heroTop() + (PH_A+PH_LEAD*.5)*H; if(Math.abs(scrollY-y)>H*.25) goTo(PH_A+PH_LEAD*.5); else resetView(); };
   qclear.onclick=()=>{ q.value=''; query=''; qclear.hidden=true; view={type:'list'}; selected=null; render(); refresh(); q.focus(); };
   const PH=["Search “bagels”","Search “website”","Search “brand identity”","Search “menu”","Search “booking”"]; let phI=0;
   const phTimer = setInterval(()=>{ if(!q.value && document.activeElement!==q && view.type!=='place'){ q.placeholder=PH[phI++%PH.length]; } }, 2600);
@@ -465,7 +537,7 @@ export function createBathurstEngine(area?: string) {
   layersEl.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{ layer=b.dataset.layer; layersEl.querySelectorAll('[data-layer]').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); });
   $('mvclose').onclick=()=>{ setLayers(false); layerBtn.focus(); };
   // Map view settings: view (3D / 2D), style (poster / paper), what to show
-  const mapView = {view:'3d', style:'paper', show:{buildings:false, blocks:true, nature:true}};
+  const mapView = {view:'3d', style:'print', show:{buildings:true, blocks:true, nature:true}};
   const pressGroup = (attr, val) => layersEl.querySelectorAll(`[data-${attr}]`).forEach(x=>x.setAttribute('aria-pressed', x.dataset[attr]===val));
   layersEl.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mapView.view=b.dataset.view; pressGroup('view', mapView.view); applyView(); });
   layersEl.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{ mapView.style=b.dataset.style; pressGroup('style', mapView.style); applyStyle(); });
@@ -479,8 +551,9 @@ export function createBathurstEngine(area?: string) {
     const pal = PALETTES[mapView.style];
     ground.material.color.copy(pal.ground);
     // one seamless grey: sky, fog, the clear colour and the page behind all match the land, so far-out views have no edge
-    HAZE.copy(pal.ground); scene.fog.color.copy(pal.ground); renderer.setClearColor(pal.ground, 1);
-    document.documentElement.style.setProperty('--map-ground', '#'+pal.ground.getHexString());
+    const haze = pal.haze ?? pal.ground;
+    HAZE.copy(haze); scene.fog.color.copy(haze); renderer.setClearColor(haze, 1);
+    document.documentElement.style.setProperty('--map-ground', '#'+(pal.page ?? pal.ground).getHexString());
     for(const m of city.meshes){
       const k=m.userData.kind;
       if(k==='park') m.material.color.copy(pal.park);
@@ -489,7 +562,11 @@ export function createBathurstEngine(area?: string) {
       else if(k?.startsWith('road')) m.material.color.copy(pal.roads[+k.slice(4)]);
     }
     city.recolor?.(pal);
+    if(pal.sky) sky.userData.paint(pal.sky);
+    // paper is the light-land style (printed grain, dark-ink labels); the others have dark land and take the paper labels
     document.getElementById('stick').classList.toggle('paper-map', mapView.style==='paper');
+    document.getElementById('stick').classList.toggle('sky-dark', !!pal.skyDark);   // railway: the hero text turns Sea Breeze on the blue sky
+    if(city.ink) city.ink.visible = (pal.inkK ?? 1) > 0;   // flat: no outlines at all, not just transparent ones
   }
   applyStyle();
   function applyShow(){
@@ -701,18 +778,19 @@ export function createBathurstEngine(area?: string) {
     if(!selected) beforePin={goal:{...goal}, filter};
     if(dirIdx===DIRECTIONS.length+1) return;   // Find Your Way Forward: pins show their name on hover, but open nothing
     if(dirIdx>=0){ const j=NODES.findIndex(n=>n.id===id); resumeY ??= scrollY;   // remember the Route Preview step, to come back to it
-      scrollTo({top: hero.offsetTop + (j>=0 ? PH_A+PH_LEAD+(j+.5)*SLOT : PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
-    openPlace(id);
+      scrollTo({top: heroTop() + (j>=0 ? PH_A+PH_LEAD+(j+.5)*SLOT : PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
+    openPlace(id, false);   // the map underneath stays exactly where the visitor left it
     if(W<760) setCollapsed(true);   // phones: the map card is the preview; its View button opens the sheet
   }
-  function viewPlace(id){ openPlace(id); setSheet('half'); setCollapsed(false); }
-  function openPlace(id){
+  function viewPlace(id){ openPlace(id, false); setSheet('half'); setCollapsed(false); }
+  function openPlace(id, fly=true){
     const p=ALL.find(x=>x.id===id); if(!p) return;
     view={type:'place',id}; selected=id; { const j=NODES.findIndex(n=>n.id===id); if(j>=0) nodeIdx=j; markChip(p.ind); } render(); refresh(); setSheet('half'); setCollapsed(false);
     if(target<1) scrollToProg(1);
-    if(p.pos){ const stop = nodeIdx>=0 && NODES[nodeIdx]?.id===id; flyTo(p.pos, stop ? 4200 : Math.min(goal.dist, 1500), true); }   // the client in focus lands on the centre of the screen   // scroll stops: wide enough that the neighbouring icons stay on screen
+    if(fly && p.pos){ const stop = nodeIdx>=0 && NODES[nodeIdx]?.id===id; flyTo(p.pos, stop ? 4200 : Math.min(goal.dist, 1500), true); }   // the client in focus lands on the centre of the screen   // scroll stops: wide enough that the neighbouring icons stay on screen
   }
   function refresh(){
+    document.getElementById('stick')?.classList.toggle('filtered', filter!=='all');   // a category chip is on: its pins grow, logo with the name underneath
     LOCAL.forEach(p=>{ p.el.classList.toggle('dim', !matches(p)); if(p.el.classList.contains('sel')!==(selected===p.id)){ p.el.classList.toggle('sel', selected===p.id); p.cw=0; } if(p.sub.textContent!==subLine(p)){ p.sub.textContent=subLine(p); p.cw=0; } });
     tabs.forEach(t=>{ t.el.style.opacity = t.members.some(matches) ? 1 : .35; });
   }
@@ -885,14 +963,18 @@ export function createBathurstEngine(area?: string) {
   let target=0, prog=0, lastTs=0, covered=false, sliding=false, winPx=null;   // covered: the reviews sheet is fully over the map, nothing to draw
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero=$('hero'), stick=$('stick'), coverEl=$('cover');
-  const PH_A=1.6, PH_LEAD=1, SLOT=.8, DIR_SLOTS=0, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
+  // a lead-in before the front page (home only): the question box sits over the playing horizon and slides up on the first scroll
+  // (components/terminal/BusinessTerminal.tsx). Every scroll position below counts from the end of it.
+  const LEAD = parseFloat(hero.dataset.lead || '0') || 0;
+  const heroTop = () => hero.offsetTop + LEAD*H;
+  const PH_A=.5, PH_LEAD=1,   /* PH_A: the hero → map move, half a screen of scroll (was 1) */ SLOT=.8, DIR_SLOTS=0, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
   const phB = () => 0;   // the project-by-project scroll is retired: the map holds, then the reviews sheet
   const DSLOT = () => W<760 ? 1.25 : SLOT;   // route steps: a longer slot on phones, where one swipe covers more of the page
   let coverH=0;
-  function sizeHero(){ coverH = coverEl.offsetHeight || H; hero.style.height = ((PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+HOLD+1)*H + Math.max(0, coverH - H))+'px'; }
+  function sizeHero(){ coverH = coverEl.offsetHeight || H; hero.style.height = ((LEAD+PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+HOLD+1)*H + Math.max(0, coverH - H))+'px'; }
   let scrollNode=-2;
   function onScroll(){
-    const s=Math.max(0, scrollY - hero.offsetTop)/H;
+    const s=Math.max(0, scrollY - heroTop())/H;
     target=Math.min(1, s/PH_A);
     const nodesEnd=PH_A+PH_LEAD+phB(), dirEnd=nodesEnd+DIR_SLOTS*DSLOT();
     // the cover sheet's images (reviews, reels) start loading once the visitor is a couple of screens from it (components/bathurst/useCoverNear.ts)
@@ -921,14 +1003,14 @@ export function createBathurstEngine(area?: string) {
     if(stick._sheet!==sliding){ stick._sheet=sliding; stick.classList.toggle('sheeted', sliding); }   // the sheet is rising: the pinned logo takes over from the map's, in place
     if(stage._cov!==covered){ stage._cov=covered; stick.classList.toggle('covered', covered); stage.style.visibility = labels.style.visibility = covered ? 'hidden' : ''; }   // sheet fully up: drop the map canvas and labels from compositing
     // the sheet is about to slide over the logo row: the navbar (logo + booking CTA on a fade) takes over above it
-    { const nav = k1>.7; if(stick._nav!==nav){ stick._nav=nav; stick.classList.toggle('navbar-on', nav); } }
+    if(!stick._nav){ stick._nav=true; stick.classList.add('navbar-on'); }   // one navbar, on from the first screen to the footer
     if(k1>0 && fPlace) leaveFPlace(false);   // the reviews sheet takes over: close the project opened on Find Your Way Forward
     const up=Math.min(Math.max(0, coverH-H+16), Math.max(0, (s-dirEnd-PH_C)*H));   // once it is up, it keeps rising with the scroll
     coverEl.style.transform=`translate3d(0,${((1-k1)*H - up).toFixed(1)}px,0)`; coverEl.style.visibility = k1>0 ? 'visible' : 'hidden';
     // where the visitor is, for the menu (tcg:section) and the progress bar (tcg:progress: the section and how far through it),
     // measured after the sheet has moved. Services starts once its heading passes mid-screen; the sheet tracks the scroll 1:1.
     { const svcTop = $('services')?.getBoundingClientRect().top ?? 1e9, revStart = dirEnd+PH_C*.5, svcStart = s + (svcTop - H*.5)/H,
-        endS = Math.max(svcStart+.01, (document.documentElement.scrollHeight - innerHeight - hero.offsetTop)/H);
+        endS = Math.max(svcStart+.01, (document.documentElement.scrollHeight - innerHeight - heroTop())/H);
       const R = [['top',0,PH_A*.5], ['work',PH_A*.5,nodesEnd], ['how',nodesEnd,revStart], ['reviews',revStart,svcStart], ['services',svcStart,endS]];
       const [sec,a0,a1] = R.find(([,,b],i)=>s<b || i===R.length-1), f = Math.min(1, Math.max(0, (s-a0)/Math.max(.01, a1-a0)));
       if(sec!==onScroll._sec){ onScroll._sec=sec; dispatchEvent(new CustomEvent('tcg:section', {detail:sec})); }
@@ -997,7 +1079,7 @@ export function createBathurstEngine(area?: string) {
     left:'<svg class="glyph" viewBox="0 0 24 24"><path d="M17 20v-7a4 4 0 00-4-4H5M9.5 4.5L5 9l4.5 4.5"/></svg>',
     arrive:'<svg class="glyph" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
   };
-  const goTo = s => scrollTo({top: hero.offsetTop + s*H, behavior: reduce?'auto':'smooth'});
+  const goTo = s => scrollTo({top: heroTop() + s*H, behavior: reduce?'auto':'smooth'});
   function scrollToProg(p){ goTo(p>=1 ? PH_A+.05 : p*PH_A); }
   function scrollToNode(j){ walkTo=null; if(NODES[j]) openPlace(NODES[j].id); }   // no scroll slots per project: open it in place
   { const ro=new ResizeObserver(()=>{ if(!dead){ sizeHero(); onScroll(); } }); ro.observe(coverEl); signal.addEventListener('abort', ()=>ro.disconnect()); }   // the sheet's height sets the page length
@@ -1021,7 +1103,7 @@ export function createBathurstEngine(area?: string) {
       : i===L+1 ? nodesEnd()+L*DSLOT()+DSLOT()*.5                                                  // Find Your Way Forward
       : dirEnd()+PH_C+.02;                                                                         // on to the reviews, sheet fully up
     let lockUntil=0, quietT=0;
-    const inDirs = () => { const s=Math.max(0, scrollY-hero.offsetTop)/H; return s>=nodesEnd()-.01 && s<dirEnd(); };
+    const inDirs = () => { const s=Math.max(0, scrollY-heroTop())/H; return s>=nodesEnd()-.01 && s<dirEnd(); };
     const step = dir => { const cur = dirIdx<1 ? 0 : dirIdx; goTo(stepAt(Math.max(0, Math.min(L+2, cur+dir)))); lockUntil=performance.now()+400; };   // one step per gesture, then a short lock so a flick cannot skip two
     addEventListener('wheel', e=>{
       if(e.ctrlKey || e.metaKey || !inDirs() || (e.target.closest && e.target.closest('.dircard select, .dircard input, .menu, .bsel-list'))) return;
@@ -1045,10 +1127,10 @@ export function createBathurstEngine(area?: string) {
   addEventListener('tcg:nav', e=>{ const to=e.detail?.to;
     if(fPlace) leaveFPlace(false); resumeY=null; walkTo=null;
     const L=DIRECTIONS.length, step1=PH_A+PH_LEAD+phB()+DSLOT()*.5+.5*DSLOT()*(L-.5)/L;   // the middle of step 1 (as the route's own stepping lands)
-    const at = {top:0, work:PH_A+PH_LEAD*.5, how:coverUp(), reviews:coverUp(), services:coverUp()}[to]; if(at===undefined) return;
+    const at = {top:-LEAD, work:PH_A+PH_LEAD*.5, how:coverUp(), reviews:coverUp(), services:coverUp()}[to]; if(at===undefined) return;
     filter='all'; query=''; markChip('all'); selected=null; view={type:'list'}; render(); refresh(); setCollapsed(true);   // a jump starts clean: no filter, nothing open
     if(to==='work') resetView();
-    scrollTo({top: hero.offsetTop + at*H, behavior:'instant'}); onScroll();
+    scrollTo({top: heroTop() + at*H, behavior:'instant'}); onScroll();
     if(to==='services'){ const el=$('services'); for(let i=0; i<4; i++){ const d=el.getBoundingClientRect().top-24; if(Math.abs(d)<2) break; scrollBy({top:d, behavior:'instant'}); onScroll(); } }
   }, {signal});
   // the hero's Continue scrolling down: glide on to the map overview (Our Work Across Toronto)
@@ -1151,12 +1233,13 @@ export function createBathurstEngine(area?: string) {
     if(view.type==='place'){ view={type:query?'results':'list'}; selected=null; render(); refresh(); } }, {signal});
 
   const winEl=$('win'); let WIN={t:0,r:0,b:0,l:0,drop:0}; const SKY_R=.4;   /* where the skyline starts, as a share of the window's height */
-  function measureWin(){ const r=winEl.getBoundingClientRect(), s=stick.getBoundingClientRect(); WIN={t:r.top-s.top, l:r.left-s.left, r:s.right-r.right, b:s.bottom-r.bottom}; stick._win=null;
+  function measureWin(){ const r=winEl.getBoundingClientRect(), s=stick.getBoundingClientRect(); WIN={t:0, l:0, r:0, b:0};   /* full bleed: the map fills the screen from the first frame (was the #win box, inset and rounded) */ void r; stick._win=null;
     // front page: the chips sit under the standfirst, on its left edge (measured untransformed, before the scroll moves it)
     const body=$('svhero').querySelector('p'), hb=body.getBoundingClientRect(), ty=new DOMMatrix(getComputedStyle($('svhero')).transform).m42;
     stick.style.setProperty('--hc-top', (hb.bottom - s.top - ty + 24).toFixed(0)+'px'); stick.style.setProperty('--hc-left', (hb.left - s.left).toFixed(0)+'px');
     /* the hero text sits on the sky inside the window: lower the skyline (the rendered image) until it clears the text block */
-    { const tb=$('svhero').getBoundingClientRect().bottom - ty - s.top, wh=H-WIN.t-WIN.b; WIN.tb=tb; WIN.drop=Math.max(0, tb + (W<760 ? 110 : 100) - (WIN.t + SKY_R*wh)); } }   /* clear sky under the ratings row, so the far-off pins gathering at the horizon never touch it */   /* phones: the text box's own padding is the gap, so the skyline and the dot sit close under the text */
+    { const term=document.querySelector('#terminal:not(.is-full) .term-main'), tty=term ? parseFloat(getComputedStyle(term.closest('#terminal')).translate.split(' ')[1]||'0')||0 : 0;
+      const tb=(term ? term.getBoundingClientRect().bottom - tty : $('svhero').getBoundingClientRect().bottom - ty) - s.top, wh=H-WIN.t-WIN.b; WIN.tb=tb; WIN.drop=Math.max(0, tb + (W<760 ? 110 : 100) - (WIN.t + SKY_R*wh)); } }   /* clear sky under the ratings row, so the far-off pins gathering at the horizon never touch it */   /* phones: the text box's own padding is the gap, so the skyline and the dot sit close under the text */
   function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
   addEventListener('resize', resize, {signal}); resize();
   document.fonts?.ready.then(()=>{ if(!dead) measureWin(); });
@@ -1213,20 +1296,21 @@ export function createBathurstEngine(area?: string) {
     const hh = (1-smooth(0,.2,prog)) * (reduce?0:1);
     pos.x += Math.sin(ts*.0006)*0.25*hh; pos.y += Math.sin(ts*.0009)*0.12*hh;
     camera.position.copy(pos); camera.up.set(0,1,0); camera.lookAt(tgt);
+    sky.position.copy(pos); sky.visible = mapView.style !== 'poster';
     const alt = pos.y;
     { const nn=Math.max(.5, Math.min(250, alt*.04)); if(Math.abs(camera.near-nn) > nn*.02){ camera.near=nn; camera.updateProjectionMatrix(); } }
-    scene.fog.near = Math.max(80, alt*1.1); scene.fog.far = Math.max(1600, alt*3.6);
+    { const fk = PALETTES[mapView.style].fogK ?? 1; scene.fog.near = Math.max(260, alt*1.1)*fk; scene.fog.far = Math.max(2800, alt*3.6)*fk; }   // at street height the haze starts a few blocks out, so the near city keeps its full shading
 
-    { const s=Math.max(0, scrollY - hero.offsetTop)/H, on = prog>.9 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
+    { const s=Math.max(0, scrollY - heroTop())/H, on = prog>.6 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
       if(stick._work!==on){ $('workhead').classList.toggle('on', on); stick.classList.toggle('work', on); stick._work=on; if(on && !reduce){ chipBar.getAnimations().forEach(x=>x.cancel()); chipBar.animate([{transform:'translateX(120px)', opacity:0},{transform:'none', opacity:1}], {duration:600, easing:'cubic-bezier(.22,1,.36,1)'}); }   /* the categories slide in from the side */ applyShow(); } }   /* the overview hides the 3D buildings (applyShow) */
     { const named = alt < 2600 || filter!=='all'; /* zoomed in, or a chip filter is on */ if(stick._named!==named){ stick.classList.toggle('named', named); stick._named=named; } }
     const darkMap = alt > 90; if(darkMap!==stick._dark){ stick.classList.toggle('dark-map', darkMap); stick._dark=darkMap; }
     // building ink thins with altitude so the 3D corridor never reads as a dark stripe from far away
-    if(city.ink){ const io = .8 - .68*smooth(1500, 7000, alt); if(Math.abs(city.ink.material.opacity-io)>.01) city.ink.material.opacity = io; }
+    if(city.ink){ const io = (.8 - .68*smooth(1500, 7000, alt)) * (PALETTES[mapView.style].inkK ?? 1); if(Math.abs(city.ink.material.opacity-io)>.01) city.ink.material.opacity = io; }
     const mapK = smooth(.55, .92, prog), svK = 1 - smooth(.08,.28,prog), ready = mapReady();
     // front page: the view lives in a rounded window; it opens to the full screen as the headline drops away
-    { const e=smooth(.02,.42,prog), f=1-e, key=e.toFixed(4);
-      if(stick._win!==key){ stick._win=key; const st=stick.style, R=26*f;
+    { const e0=smooth(.02,.9,prog), e=e0>.999 ? 1 : e0, f=1-e, key=e.toFixed(4);   /* snap the last sliver to fully open, so the front-page rules (hero-fade, the distance fade on pins) switch off */   /* the window opens across the whole crane, in step with the camera */
+      if(stick._win!==key){ stick._win=key; const st=stick.style, R=0;   /* square corners: the map runs edge to edge */
         st.setProperty('--wt', (WIN.t*f).toFixed(1)+'px'); st.setProperty('--wr', (WIN.r*f).toFixed(1)+'px'); st.setProperty('--wb', (WIN.b*f).toFixed(1)+'px'); st.setProperty('--wl', (WIN.l*f).toFixed(1)+'px'); st.setProperty('--wrad', R.toFixed(1)+'px'); { const sky = WIN.t + SKY_R*(H-WIN.t-WIN.b) + WIN.drop; st.setProperty('--lt', (sky*f).toFixed(1)+'px'); } stick.classList.toggle('hero-fade', f>0);   /* pins in the sky fade; the streets below the skyline keep them at full strength (#labels mask) */
         const ox=((WIN.l+W-WIN.r)/2-W/2)*f, oy=((WIN.t+H-WIN.b)/2-H/2)*f;
         if(f>0) camera.setViewOffset(W,H,-ox,-oy-WIN.drop*f,W,H); else camera.clearViewOffset();
@@ -1236,7 +1320,7 @@ export function createBathurstEngine(area?: string) {
       // stage 1 (first scroll): wordmark into the mark, search out of it, chips settle, cue goes
       const open = prog<.02; if(stick._open!==open){ stick._open=open; flipChips(()=>stick.classList.toggle('open', open)); }
       // stage 2: map chrome slides in from its edge, then the markers pop in one by one
-      const mapped = prog>.88; if(stick._mapped!==mapped){ stick._mapped=mapped; stick.classList.toggle('mapped', mapped); if(mapped) popPins(); }
+      const mapped = prog>.6; if(stick._mapped!==mapped){ stick._mapped=mapped; stick.classList.toggle('mapped', mapped); if(mapped) popPins(); }
       chipBar.classList.toggle('dock', mapUI.classList.contains('dock')); chipBar.classList.toggle('pc', mapUI.classList.contains('pc')); }
     if(ready!==wasReady){ stick.classList.toggle('mapready', ready); wasReady=ready;
       if(!ready){ closeDrawer(); setLayers(false); }
@@ -1264,7 +1348,7 @@ export function createBathurstEngine(area?: string) {
     if(ghost){ ghost.material.opacity=.45*smooth(.05,.4,prog); trail.visible = false; ghost.visible = false;
       // scroll-triggered, not scroll-driven: once the crane starts, the route draws start → office in one timed motion
       // (never parked halfway); scrolling back to the hero resets it for next time
-      { const s=Math.max(0, scrollY - hero.offsetTop)/H;
+      { const s=Math.max(0, scrollY - heroTop())/H;
         if(s<.05){ ghostRun=-1; ghostD.value=0; }
         else if(ghostRun<0) ghostRun=0;
         if(ghostRun>=0 && ghostRun<1){ ghostRun = reduce ? 1 : Math.min(1, ghostRun + dt/2.4); const e=1-Math.pow(1-ghostRun,3); ghostD.value = ghostRun>=1 ? 1e9 : DIR.total*e; wakeUntil = performance.now()+100; } }
@@ -1316,15 +1400,25 @@ export function createBathurstEngine(area?: string) {
     // overlap. Each pin keeps its offset from the last frame (warm start) and is eased back toward its address, so a
     // cluster settles once and stays still instead of being re-solved from scratch every frame (which jittered).
     // Zoomed in, the overlaps go away and every icon eases back onto its own address.
-    if(!streetMode){ const GAP=38, live=order.filter(o=>o.sp.ok);
+    const big = filter!=='all';   // filtered: logo 56px with its name underneath, so each pin is a box, not a circle
+    if(!streetMode){ const GAP=38, live=order.filter(o=>o.sp.ok && (!big || matches(o.p)));
+      if(big) live.forEach(o=>{ if(!o.p.nw){ const n=o.p.el.querySelector('.nm'); o.p.nw=n?.offsetWidth||0; } o.hw=Math.max(64, o.p.nw+12)/2; });
       live.forEach(o=>{ o.ox=(o.p._ox||0)*.9; o.oy=(o.p._oy||0)*.9; });   // the .9 is the gentle pull home
-      for(let it=0; it<40; it++){ let moved=false;
+      for(let it=0; it<(big?150:40); it++){ let moved=false;
         for(let i=0;i<live.length;i++) for(let j=i+1;j<live.length;j++){ const a=live[i], b=live[j];
           let dx=(b.sp.x+b.ox)-(a.sp.x+a.ox), dy=(b.sp.y+b.oy)-(a.sp.y+a.oy), d=Math.hypot(dx,dy);
+          if(big){ const px=a.hw+b.hw+8-Math.abs(dx), py=96-Math.abs(dy);   // box: icon (56) + gap + name (~26), plus breathing room
+            if(px<=0 || py<=0) continue; moved=true;
+            const fa = selected===a.p.id ? 0 : selected===b.p.id ? 1 : .5;
+            if(px<py){ const m=(dx>=0?1:-1)*px; a.ox-=m*fa; b.ox+=m*(1-fa); } else { const m=(dy>=0?1:-1)*py; a.oy-=m*fa; b.oy+=m*(1-fa); }
+            continue; }
           if(d>=GAP) continue; moved=true;
           if(d<.5){ const t=((a.p._k??=LOCAL.indexOf(a.p))*2.399+(b.p._k??=LOCAL.indexOf(b.p))*1.17)%(2*Math.PI); dx=Math.cos(t); dy=Math.sin(t); d=1; }   // same spot: a fixed direction per pair
           const fa = selected===a.p.id ? 0 : selected===b.p.id ? 1 : .5, push=(GAP-d)/d;   // the pin in focus stays on its address
           a.ox-=dx*push*fa; a.oy-=dy*push*fa; b.ox+=dx*push*(1-fa); b.oy+=dy*push*(1-fa); }
+        if(big) live.forEach(o=>{ const x=o.sp.x+o.ox, y=o.sp.y+o.oy, m=10;   // keep every enlarged pin and its name on screen (Fitts: no half-hidden targets), inside the spread so it can't re-create overlaps
+          const cx=Math.max(0, o.hw+m-x) - Math.max(0, x-(W-o.hw-m)), cy=Math.max(0, 28+m-y) - Math.max(0, y-(H-70-m));
+          if(cx||cy){ o.ox+=cx; o.oy+=cy; moved=true; } });
         if(!moved) break; }
       live.forEach(o=>{ if(Math.abs(o.ox)<.3) o.ox=0; if(Math.abs(o.oy)<.3) o.oy=0; o.p._ox=o.ox; o.p._oy=o.oy; }); }
     else LOCAL.forEach(p=>{ p._ox=p._oy=0; });
@@ -1358,7 +1452,7 @@ export function createBathurstEngine(area?: string) {
       }
       // icon pins: the round icon on the address itself, kept clear of the open callout
       if(!full){
-        if(!streetMode) placedCards.push({x0:sp.x-22, x1:sp.x+22, y0:sp.y-22, y1:sp.y+22});   // the icon circle sits on the address (no stem)
+        if(!streetMode) placedCards.push(big && matches(p) ? {x0:sp.x+ox-(p.nw||56)/2-6, x1:sp.x+ox+(p.nw||56)/2+6, y0:sp.y+oy-32, y1:sp.y+oy+60} : {x0:sp.x-22, x1:sp.x+22, y0:sp.y-22, y1:sp.y+22});   // the icon circle sits on the address (no stem)
       }
       if(p._side!==side){ p.el.classList.remove('l','r'); p.el.classList.add(side); p._side=side; }
       // phones: the selected card is wide, so it centres over its pin and stays 10px inside the screen edges

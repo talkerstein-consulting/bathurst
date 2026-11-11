@@ -244,6 +244,11 @@
 /* ================= neatline: full checkered map border (the scale bar, wrapped around the view) =================
    paper margin → outer ink line → two checkered rows offset by one block (each block = one scale unit, --seg) → inner ink line */
 .neatline { --seg: 48px; --row: 2px; --margin: 4px; position: absolute; inset: var(--wt,0) var(--wr,0) var(--wb,0) var(--wl,0); border-radius: var(--wrad,0); overflow: hidden; pointer-events: none; z-index: 0; border: var(--margin) solid var(--sea); }
+/* snow over the front-page cityscape (components/bathurst/Snowfall.tsx): cut to the same rounded window; gone with the window */
+#snow { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+  clip-path: inset(var(--wt,0) var(--wr,0) var(--wb,0) var(--wl,0) round var(--wrad,0)); pointer-events: none; opacity: 0; transition: opacity .4s ease; }
+#stick.hero-fade #snow { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #snow { display: none; } }
 .neatline::before { content: ""; position: absolute; inset: 0; border: 1px solid var(--steel); border-radius: max(0px, calc(var(--wrad,0px) - var(--margin)));
   --a: repeating-linear-gradient(90deg, var(--steel) 0 var(--seg), var(--sea) var(--seg) calc(var(--seg) * 2));
   --b: repeating-linear-gradient(90deg, var(--sea) 0 var(--seg), var(--steel) var(--seg) calc(var(--seg) * 2));
@@ -318,7 +323,7 @@
 .mast-space { flex: none; height: calc(var(--mark-open) + var(--mast-gap)); }
 #win { flex: 1 1 auto; min-height: 180px; position: relative; display: flex; align-items: flex-start; }   /* headline on the sky */
 .sv-hero { padding: var(--s5); max-width: 1100px; will-change: transform, opacity; text-shadow: var(--halo); }
-.sv-hero h1 { margin: 0; color: var(--steel); font-size: clamp(48px, 6.4vw, var(--h1-size)); line-height: 1; }
+.sv-hero .h1 { margin: 0; color: var(--steel); font-size: clamp(48px, 6.4vw, var(--h1-size)); line-height: 1; }
 .sv-hero p { max-width: 640px; font-weight: 500; margin: var(--s2) 0 0; font-size: 19px; line-height: 1.55; color: var(--steel); }
 /* brand: the mark shrinks to the search row; the wordmark slides left and disappears into it */
 .searchrow { position: relative; }
@@ -348,7 +353,7 @@
 
 /* map chrome waits off its edge until the camera lands, then slides in */
 .ctrls, .layers-top { transition: translate .6s cubic-bezier(.22,1,.36,1), opacity .4s ease; }
-.foot { transition: translate .6s cubic-bezier(.22,1,.36,1) .1s, opacity .4s ease .1s; }
+.foot { transition: translate .6s cubic-bezier(.22,1,.36,1), opacity .4s ease; }   /* with the rest of the chrome, no delay */
 #stick.open .ctrls { translate: calc(100% + var(--inset) + 16px) 0; opacity: 0; pointer-events: none; }
 #stick:not(.mapped) .foot { translate: 0 calc(100% + var(--inset) + 16px); opacity: 0; }
 /* the sidebar and its tab only belong to the client walk-through */
@@ -481,7 +486,7 @@
 /* short landscape phones: keep the headline off the chips */
 @media (max-height: 520px) {
   .sv-hero { padding: var(--s3); }
-  .sv-hero h1 { font-size: clamp(32px, 7vh, 56px); }
+  .sv-hero .h1 { font-size: clamp(32px, 7vh, 56px); }
   .sv-hero p { display: none; }
 }
 /* the fine print clears the control column (the compass is wider than the buttons) */
@@ -661,7 +666,7 @@
   .hero-ratings b { font-size: 20px; }
   .hero-ratings .stars { font-size: 12px; letter-spacing: 0; }
   .hero-ratings small { font-size: 11px; }
-  .sv-hero h1 { font-size: 40px; }
+  .sv-hero .h1 { font-size: 40px; }
   .sv-hero p { font-size: 15px; line-height: 1.5; margin-top: var(--s1); }
 }
 
@@ -790,7 +795,7 @@
 @media (max-width: 1100px) { .cert-shopify { width: 140px; } .cert-ghl { width: 88px; } .hero-certs { top: var(--s4); right: var(--s4); } }
 @media (max-width: 760px) {
   /* phones: a smaller headline so the section rises; the badges on one row under the ratings */
-  .sv-hero h1 { font-size: 34px; }
+  .sv-hero .h1 { font-size: 34px; }
   .hero-certs { position: static; grid-auto-flow: column; justify-content: start; justify-items: start; gap: var(--s3); padding: 0 var(--s3) var(--s3); }
   #win { flex-direction: column; justify-content: flex-start; align-items: stretch; }
   .cert-shopify { width: 120px; }
@@ -802,7 +807,7 @@
   column-gap: var(--s5); row-gap: var(--s4); }
 .hero-grid > .sv-hero { grid-column: 1; grid-row: 1; align-self: center; max-width: none; padding: 0 0 0 var(--s3); text-shadow: none; pointer-events: auto; }
 .hero-grid > #win { grid-column: 2; grid-row: 1; min-height: 240px; }
-.hero-grid .sv-hero h1 { font-size: clamp(40px, 4.6vw, 76px); line-height: 1.02; }
+.hero-grid .sv-hero .h1 { font-size: clamp(40px, 4.6vw, 76px); line-height: 1.02; }
 .hero-grid .sv-hero p { font-size: 18px; max-width: 46ch; }
 /* the proof: one ruled strip, ratings then badges */
 .hero-proof { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; justify-content: space-between; gap: var(--s3) var(--s5); flex-wrap: wrap;
@@ -819,7 +824,7 @@
   .hero-grid > .sv-hero { grid-column: 1; grid-row: 1; padding: 0 var(--s1); }
   .hero-grid > #win { grid-column: 1; grid-row: 2; min-height: 200px; }
   .hero-proof { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: 1fr; gap: var(--s2); padding: var(--s2) var(--s1) 0; }
-  .hero-grid .sv-hero h1 { font-size: 34px; }
+  .hero-grid .sv-hero .h1 { font-size: 34px; }
   .hero-grid .sv-hero p { font-size: 15px; }
   .hero-proof .hero-certs { gap: var(--s3); }
   .hero-proof .cert-shopify { width: 112px; }
@@ -867,7 +872,7 @@
 .hero-grid > .sv-hero { grid-column: 1; grid-row: 1; align-self: start; position: relative; z-index: 2; pointer-events: none;
   padding: clamp(24px, 3.2vw, 56px); max-width: 780px; }
 .hero-grid > .sv-hero > * { pointer-events: auto; }
-.hero-grid .sv-hero h1 { font-size: clamp(40px, 4.4vw, 72px); line-height: 1.02; }
+.hero-grid .sv-hero .h1 { font-size: clamp(40px, 4.4vw, 72px); line-height: 1.02; }
 .hero-grid .sv-hero p { font-size: 18px; max-width: 52ch; }
 .hero-proofrow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s4); margin-top: var(--s3); }
 .sv-hero .hero-proofrow .hero-ratings { display: flex; flex-wrap: nowrap; gap: var(--s3); margin: 0; }
@@ -882,7 +887,7 @@
 @media (max-width: 760px) {
   .hero-grid { grid-template-rows: minmax(0, 1fr); }
   .hero-grid > .sv-hero { padding: var(--s3); }
-  .hero-grid .sv-hero h1 { font-size: 32px; }
+  .hero-grid .sv-hero .h1 { font-size: 32px; }
   .hero-grid .sv-hero p { font-size: 15px; }
   .hero-proofrow { gap: var(--s2) var(--s3); margin-top: var(--s2); }
   .sv-hero .hero-proofrow .hero-ratings { gap: var(--s2); }
@@ -896,7 +901,7 @@
 /* desktop: the heading on one line across the window, the whole block centred */
 @media (min-width: 761px) {
   .hero-grid > .sv-hero { max-width: none; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
-  .hero-grid .sv-hero h1 { white-space: nowrap; font-size: clamp(32px, 4.1vw, 76px); }
+  .hero-grid .sv-hero .h1 { white-space: nowrap; font-size: clamp(32px, 4.1vw, 76px); }
   .hero-grid .sv-hero p { margin-left: auto; margin-right: auto; max-width: 60ch; }
   .hero-proofrow { justify-content: center; }
 }
@@ -1317,7 +1322,12 @@
   .pin .co .txt small { font-size: 18px; }
 }
 /* one uniform hero: the neatline's margin and corner-rounding shadow take the land grey, not paper */
-.neatline { border-color: var(--map-ground, var(--sea)); box-shadow: 0 0 0 max(0px, calc(var(--wrad,0px) * 1.2)) var(--map-ground, var(--sea)); }
+/* the WebGL window is a square scissor cleared to the haze: the spread covers the whole surround (its corners outside the
+   rounded border too) in one land grey, so there is no haze band or square corner. Off-screen once the view is full. */
+/* the inset ring is a solid Steel Blue band, as wide as the two checker rows, that follows the rounded corners: the checker
+   rows are straight strips the corner radius clips away, so without it the corners had only the hairlines */
+.neatline { border-color: var(--map-ground, var(--sea));
+  box-shadow: 0 0 0 100vmax var(--map-ground, var(--sea)), inset 0 0 0 calc(var(--row) * 2) var(--steel); }
 /* the outline "Get directions" in the top bar: steel label and glyph on the Sea Breeze fill */
 .layers-top .btn.dirbtn .dirlabel, .layers-top .btn.dirbtn .glyph { color: var(--steel); }
 .layers-top .btn.dirbtn .glyph { stroke: var(--steel); }
@@ -1593,10 +1603,10 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
   --speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='s' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -0.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
 }
 .lines-static :is(.lines g, .stroke g, .mk g, .pin .ld, .rule::before, .sp-row::before, .sp-tab.on::before, .zoomgrp i, .item + .item::before,
-  .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before) { filter: none !important; }
+  .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before, .navbar::after) { filter: none !important; }
 @media (min-width: 760px) {   /* phones keep their clean, unspeckled lines (see above) */
   .lines-static :is(.lines, .stroke, .pin .ld, .rule::before, .sp-row::before, .sp-tab.on::before, .zoomgrp i, .item + .item::before,
-    .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before) { -webkit-mask: var(--speckle) 0 0 / 160px 160px; mask: var(--speckle) 0 0 / 160px 160px; }
+    .ptabs::after, .ptab[aria-selected="true"]::after, .svc-stage + .svc-stage::before, .svc-after::before, .navbar::after) { -webkit-mask: var(--speckle) 0 0 / 160px 160px; mask: var(--speckle) 0 0 / 160px 160px; }
 }
 /* Find Your Way Forward: the destination dropdown (lib/bathurst/brand-select.ts). The native select stays in the form,
    hidden; the field is a button and the list a framed paper card with a Cheltenham-caps eyebrow, the pick in orange. */
@@ -1643,10 +1653,13 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .menu-brand { background: none; border: 0; padding: 0; cursor: pointer; }
 .menu-brand .tcg-logo { height: 40px; }
 /* ☰ ⇄ ×: the button rises above the open drawer (same stacking context, #stick) */
-.menubtn .mb-close { display: none; }
 .menubtn[aria-expanded="true"] { z-index: 61; }
-.menubtn[aria-expanded="true"] .mb-open { display: none; }
-.menubtn[aria-expanded="true"] .mb-close { display: block; }
+/* ☰ → ×: each bar turns about the icon's centre; the outer bars meet on the diagonals, the middle one fades out */
+.menubtn .mb-icon path { transform-box: view-box; transform-origin: 12px 12px; transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .2s ease; }
+.menubtn[aria-expanded="true"] .mb-t { transform: rotate(45deg) translateY(5px); }
+.menubtn[aria-expanded="true"] .mb-m { opacity: 0; }
+.menubtn[aria-expanded="true"] .mb-b { transform: rotate(-45deg) translateY(-5px); }
+@media (prefers-reduced-motion: reduce) { .menubtn .mb-icon path { transition: none; } }
 /* the route map: one thick steel line, a circle per station, well spaced. The line runs straight down through the middle of the
    ☰/× button above it (the node column is the button's width). Only where you are is orange; visited and upcoming stations look alike. */
 .route { display: grid; }
@@ -1943,14 +1956,14 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 /* logos drawn in white sit on the client's dark ink instead of white */
 .pin.has-logo[data-logo="elis"] .ic { background: var(--steel); }
 
-/* after the map: a solid navbar with a fixed hairline outline along its foot (no fade); the TCG logo slides back in from the left */
-.navbar { height: calc(var(--inset) * 2 + var(--icon-btn)); background: var(--sea); border-bottom: 1.5px solid var(--steel); }
+/* the navbar has no fill and no rule along its foot: the ☰, the logo and the CTA float on the page; the TCG logo slides back in from the left */
+.navbar { height: calc(var(--inset) * 2 + var(--icon-btn)); background: none; }
 .brandpin { translate: -40px 0; transition: opacity .3s ease, translate .45s cubic-bezier(.22,1,.36,1), visibility 0s .45s; }
 #stick.navbar-on .brandpin { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .3s ease .05s, translate .45s cubic-bezier(.22,1,.36,1) .05s, visibility 0s; }
 
 /* slim navbar after the map: 8px above and below the 48px buttons (64px in all, was 96px). The ☰, the logo and the CTA
    glide up into it together; the logo keeps exactly the map's size (48px mark, 32px wordmark), so it never changes size */
-#hero { --nav-pad: 8px; }
+#hero { --nav-pad: var(--s2); }   /* 16px from the top edge (was 8px) */
 .navbar { height: calc(var(--nav-pad) * 2 + var(--icon-btn)); }
 .navbar .layers-top { top: var(--nav-pad); }
 .menubtn { transition: top .35s cubic-bezier(.22,1,.36,1); }
@@ -1963,3 +1976,349 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 #stick:not(.covered) .cover [style*="grunge"], #stick:not(.covered) .cover .lines g, #stick:not(.covered) .cover .stroke g, #stick:not(.covered) .cover .rule::before, #stick:not(.covered) .cover .sp-row::before { filter: none !important; }
 #hero #stick .navbar .layers-top { top: var(--nav-pad); }
 #hero #stick .navbar .layers-top { transition: top .35s cubic-bezier(.22,1,.36,1); }   /* glides with the ☰ and the logo */
+
+/* a category chip is on: its clients' pins grow — the logo at 56px with the client name in a larger label centred under it.
+   The engine spreads these boxes so no two clients overlap (lib/bathurst/engine.ts, the `big` collision pass). */
+#stick.filtered .pin.mini:not(.dim) .ic { width: 56px; height: 56px; left: -28px; top: -28px; }
+#stick.filtered .pin.mini:not(.dim) .ic .glyph { width: 28px; height: 28px; }
+#stick.filtered .pin.mini:not(.dim) .ic .lg { padding: 6px; }
+#stick.filtered .pin.mini:not(.dim) .nm { opacity: 1; left: 0; top: 36px; transform: translateX(-50%); font-size: 15px; font-weight: 700; padding: 3px 10px; }
+@media (max-width: 759px) {
+  #stick.filtered .pin.mini:not(.dim) .ic { width: 48px; height: 48px; left: -24px; top: -24px; }
+  #stick.filtered .pin.mini:not(.dim) .nm { top: 32px; font-size: 13px; }
+}
+/* the enlarged name is part of the target: clicking it opens the client too (Fitts) */
+#stick.filtered .pin.mini:not(.dim) .nm { pointer-events: auto; cursor: pointer; }
+
+/* Word on the Street on desktop: the phone's swipe row, paged by the ‹ › pair in the header (RowArrows), cards a fixed width */
+.rv-desk .rv-reels-h { margin-bottom: 0; }
+.rv-desk .rv-rates { grid-template-columns: repeat(2, minmax(0, 280px)); }
+.rv-desk .rv-swipe { gap: var(--s3); scroll-behavior: smooth; }
+.rv-desk .rv-slot { flex: 0 0 300px; max-width: none; }
+@media (prefers-reduced-motion: reduce) { .rv-desk .rv-swipe { scroll-behavior: auto; } }
+/* the testimonials row bleeds to the sheet's edges like the Instagram row (.cover-body .tc-row above), first card on the heading's left edge */
+.cover-body .rv-swipe { --gut: calc((100cqi - min(100cqi, 1200px)) / 2 + var(--s5)); margin-inline: calc(50% - 50cqi); padding-inline: var(--gut); scroll-padding-inline: var(--gut); }
+@media (max-width: 900px) { .cover-body .rv-swipe, .cover-body .tc-row { --gut: var(--s3); } }   /* .rv drops to --s3 side padding here */
+
+/* ================= home lead-in (components/terminal/BusinessTerminal.tsx) =================
+   While the question box is up (#stick.lead) the headline waits, unseen but in place (the engine measures it to set the
+   skyline). When the box has scrolled away the class drops, the animations below start over, and the headline rises in. */
+#stick.lead .hero-grid > .sv-hero { visibility: hidden; }
+#stick.lead .sv-hero :is(.rise-w > span, .rise-after) { animation: none; }
+
+/* ================= one navbar, everywhere =================
+   The slim bar (☰ and the TCG logo on the left edge, Book Free Consult on the right, Sea Breeze with a printed rule along its
+   foot) is the only navbar: on from the first screen to the footer, one size, never restyled by scroll stage. The map's own
+   logo row and its own Book button retire, and everything that sat at the top edge starts below the bar (--navh). */
+#hero { --navh: calc(var(--nav-pad) * 2 + var(--icon-btn)); }
+#hero #stick .navbar { opacity: 1; visibility: visible; transition: none; }
+#hero #stick .navbar > * { pointer-events: auto; }
+#hero #stick .menubtn { top: var(--nav-pad); z-index: 11; transition: none; }
+#hero #stick .brandpin { opacity: 1; visibility: visible; translate: 0 0; top: var(--nav-pad); z-index: 11; transition: none; }
+#hero #stick .navbar .layers-top { transition: none; }
+#hero #mapui .searchrow :is(.menu-slot, .brandbtn, .wordclip) { display: none; }
+#hero #mapui > .layers-top { display: none; }
+#hero #mapui::before { display: none; }
+/* the map's side panel (Back to map, then the client sheet) hangs below the bar; the neatline and the window stay full size */
+#hero #mapui .panel, #hero #mapui.dock:not(.pc) .panel { top: calc(var(--navh) + var(--s2)); }
+/* the front page: the window starts a gap below the bar */
+#hero .mast-space { height: calc(var(--navh) - var(--inset) + var(--s2)); }
+/* the map stage's heading and category row clear the bar */
+#hero #stick .workhead { top: calc(var(--navh) + var(--s3)); }
+#hero #stick.work .chipbar { top: calc(var(--navh) + var(--s3) + 72px) !important; }
+/* a conversation is open: the page holds still, so the scroll cue has nothing to offer (and would sit on the chat's fine print) */
+#stick:has(.term.is-chat) .scroll-cue { visibility: hidden; }
+/* phones: the bar holds ☰ + logo + the full "Book Free Consult" on one line (D04 text fit), so the logo sits closer to the ☰
+   and the wordmark is a touch smaller */
+@media (max-width: 420px) {
+  #hero #stick .brandpin { left: calc(var(--inset) + var(--icon-btn) + var(--s1)); gap: 8px; }
+  #hero #stick .brandpin .bp-word { height: 22px; }
+  #hero #stick .navbar .navcta, #hero #stick.open .navbar .navcta { padding: 0 10px; }
+  #hero #stick .navbar .navcta .glyph { display: none; }   /* the label alone, at every stage: there is no room for the icon too */
+  #hero #stick .navbar .navcta .dirlabel, #hero #stick.open .navbar .navcta .dirlabel { white-space: nowrap; max-width: none !important; margin-left: 0 !important; font-size: 12px; line-height: 1.1; }
+}
+
+/* printed grain over the 3D scene (the gouache-poster look of the light hero): a fixed speckle multiplied over the canvas,
+   so flat facades and the sky read as ink on paper. It never moves; the pins and labels sit above it. */
+#stage::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: multiply; opacity: .28;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .29 0 0 0 0 .24 0 0 0 0 .3 1.6 0 0 0 -.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E") 0 0 / 240px 240px; }
+#stick:not(.paper-map) #stage::after, #stage:not(.city)::after { display: none; }   /* not before the city is drawn: over the empty paper it only reads as dirt */
+
+/* the navbar's controls show on scroll up only: scrolling down tucks the ☰, the logo and the CTA up and out
+   (BathurstHero toggles #stick.nav-hidden); any scroll up, or the top of the page, brings them back */
+#hero #stick :is(.menubtn, .brandpin, .navbar .layers-top) { transition: opacity .3s ease, translate .35s cubic-bezier(.22,1,.36,1); }
+#hero #stick.nav-hidden :is(.menubtn, .brandpin, .navbar .layers-top) { opacity: 0; translate: 0 -16px; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  #hero #stick :is(.menubtn, .brandpin, .navbar .layers-top) { transition: opacity .2s ease; }
+  #hero #stick.nav-hidden :is(.menubtn, .brandpin, .navbar .layers-top) { translate: none; }
+}
+
+/* the map overview heading, two sentences: one line where it fits, one sentence per line on narrower screens */
+#hero #stick .workhead { font-size: clamp(30px, 3.1vw, 44px); }
+#hero #stick .workhead > span { white-space: nowrap; }
+@media (max-width: 1100px) { #hero #stick .workhead > span { display: block; } #hero #stick.work .chipbar { top: calc(var(--navh) + var(--s3) + 108px) !important; } }
+@media (max-width: 759px) {
+  #hero #stick .workhead { font-size: 24px; line-height: 1.15; }
+  #hero #stick.work .chipbar { top: calc(var(--navh) + var(--s3) + 66px) !important; }
+}
+
+/* front page (the rounded window is showing): no ☰, logo or CTA in the navbar; they come back once the map fills the screen */
+#hero #stick.hero-fade :is(.menubtn, .brandpin, .navbar .layers-top) { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* REMOVED FOR NOW: the hero's text column (eyebrow, headline, standfirst, Book Free Consult, ratings and certifications). Hidden, not deleted:
+   the engine measures #svhero to place the skyline and the chips, so it keeps its box. Delete this rule to bring them back. */
+#svhero :is(.hero-where, .h1, .h1 + p, .hero-cta, .hero-awards) { visibility: hidden; }
+
+/* the front page has no navbar controls, so the window takes the space on top: it starts one --inset from the top edge,
+   the same margin as its sides (the bar's height is no longer reserved above it) */
+#hero .mast-space { height: 0; }
+
+/* railway style (engine sets #stick.sky-dark): the city sits under a solid poster-blue sky and on Steel Blue land, so the
+   text printed straight on the view turns Sea Breeze (the question box keeps its own paper fill and ink) */
+#stick.sky-dark :is(.term:not(.is-full) .term-h, .term:not(.is-full) .term-sub, .term:not(.is-full) .term-fine, .term:not(.is-full) .term-fine b, .scroll-cue:not(:hover, :focus-visible), .workhead) {
+  color: var(--sea); text-shadow: none; }
+
+/* Larger map nodes (3D and top view): the client pins read from across the map */
+.pin.mini .ic { width: 44px; height: 44px; left: -22px; top: -22px; box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 3px 8px rgba(0,0,0,.25); }
+.pin.mini .ic .glyph { width: 24px; height: 24px; }
+.pin.mini .nm { left: 32px; }
+.pin .ic .lg { padding: 5px; }
+.pin:not(.mini) .ic { width: 52px; height: 52px; left: -26px; top: -26px; }
+.pin:not(.mini) .ic .glyph { width: 28px; height: 28px; }
+.pin:not(.mini) .ld { bottom: 26px; height: calc(var(--L) - 26px); }
+#stick.filtered .pin.mini:not(.dim) .ic { width: 72px; height: 72px; left: -36px; top: -36px; }
+#stick.filtered .pin.mini:not(.dim) .ic .glyph { width: 36px; height: 36px; }
+#stick.filtered .pin.mini:not(.dim) .nm { top: 46px; }
+@media (max-width: 760px) {
+  .pin.mini .ic { width: 36px; height: 36px; left: -18px; top: -18px; }
+  .pin.mini .nm { left: 26px; }
+  .pin:not(.mini) .ic { width: 48px; height: 48px; left: -24px; top: -58px; }
+  .pin:not(.mini) .ld { bottom: 58px; }
+  #stick.filtered .pin.mini:not(.dim) .ic { width: 60px; height: 60px; left: -30px; top: -30px; }
+}
+
+/* full-bleed map: no neatline frame around the screen edge */
+.neatline { display: none; }
+
+/* ================= What we can do: six capability cards in a sideways row (components/bathurst/Services.tsx) =================
+   the row is the Instagram row (.tc-row: bleeds to the sheet's edges, snaps, ‹ › in the header); each card is a .frame
+   with a drawn UI (CapDiagrams.tsx) on top, then the number, the area, one line, its services and an outline link */
+.svc-head.rv-reels-h { align-items: flex-end; }
+.cap-row { margin-top: var(--s4); padding-block: 8px 24px; margin-block: var(--s4) -8px; align-items: stretch; }
+.cap-row > li { flex: 0 0 clamp(290px, 30vw, 380px); perspective: none; display: flex; }
+.cap { display: grid; grid-template-rows: auto auto auto auto auto 1fr; align-content: start; width: 100%; padding: var(--s2); }
+.cap > :not(.lines) { position: relative; z-index: 1; }
+.cap-art { container-type: inline-size; border-radius: 10px; overflow: hidden; }
+.cap-t { margin: var(--s2) 0 0; font: 400 24px/1.1 var(--head); color: var(--steel); }
+.cap-line { margin: 8px 0 0; font-size: 15px; line-height: 1.45; color: var(--steel-70); }
+.cap-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 6px; align-content: start; }
+.cap-list li { position: relative; padding-left: 18px; font-size: 14px; line-height: 1.4; color: var(--steel); }
+.cap-list li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+.cap-foot { display: flex; align-items: flex-end; justify-content: flex-end; margin-top: var(--s2); }
+.cap-more { justify-self: start; margin-top: var(--s1); border: 0; background: none; padding: 6px 0; font: 600 14px/1.2 var(--body); color: var(--steel); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.cap-more:hover, .cap-more:focus-visible { color: var(--orange); outline: none; }
+.cap-ask { margin-left: auto; }
+.cap-ask .glyph { width: 16px; height: 16px; }
+
+@media (max-width: 759px) {
+  .cap-row > li { flex-basis: min(84vw, 360px); }
+  .cap-t { font-size: 22px; }
+}
+
+/* ---- the real UIs on the capability cards (components/bathurst/CapDiagrams.tsx) ----
+   each screen in its own product's colours and system type (not the site's inks), on a 340 x 210 design grid in em
+   (1em = 10 design px, scaled to the card by the container) */
+.u-screen { --u-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --u-head: var(--u-font);
+  --u-ink: #1f2328; --u-mut: #656d76; --u-soft: #f3f4f6; --u-line: #e5e7eb; --u-acc: #2563eb; --u-on: #fff; --u-bg: #eef0f3; }
+/* a boutique storefront: warm paper, black button, gold stars, serif product name */
+.u-pdp { --u-ink: #1b1b1b; --u-mut: #6f6a64; --u-soft: #f3efe9; --u-line: #e4ded5; --u-acc: #1b1b1b; --u-bg: #faf7f2; --u-head: Georgia, "Times New Roman", serif; }
+.u-pdp .u-stars { color: #e0a526; }
+/* a mail inbox and the brand's email on the phone */
+.u-mail { --u-ink: #202124; --u-mut: #5f6368; --u-soft: #f2f6fc; --u-line: #e8eaed; --u-acc: #b5655c; --u-bg: #f6f8fc; --u-font: Roboto, "Segoe UI", Arial, sans-serif; --u-head: Georgia, serif; }
+.u-mail .u-row.on { background: #fff8f0; box-shadow: inset .3em 0 0 #1a73e8; }
+.u-mail .u-av { background: #c58b7e; color: #fff; }
+.u-mail .u-phone { border-color: #1f1f1f; }
+/* a store admin: grey canvas, white cards, black primary button, status badges */
+.u-admin { --u-ink: #303030; --u-mut: #616161; --u-soft: #f1f1f1; --u-line: #ebebeb; --u-acc: #303030; --u-bg: #fff; --u-font: Inter, -apple-system, "Segoe UI", sans-serif; }
+.u-admin .u-pill { background: #e3e3e3; color: #303030; }
+.u-admin .u-pill.ok { background: #e3e3e3; color: #616161; }
+.u-admin .u-pill.warn { background: #ffeb78; color: #4f4700; }
+.u-admin .u-tabs i.on { box-shadow: none; background: #ebebeb; border-radius: .5em; padding: .4em .7em; margin: .2em 0; }
+.u-admin .u-float > svg { background: #29845a; }
+/* a social feed and a story */
+.u-ads { --u-ink: #262626; --u-mut: #737373; --u-soft: #efefef; --u-line: #dbdbdb; --u-acc: #0095f6; --u-bg: #fafafa; }
+.u-ads .u-post-cta { background: #0095f6; color: #fff; }
+.u-ads .u-story .u-btn { background: #fff; color: #262626; }
+.u-ads .u-story-t { font-family: var(--u-font); font-weight: 700; letter-spacing: -.01em; }
+/* an analytics dashboard: white, grey KPI tiles, indigo line, green deltas */
+.u-dash { --u-ink: #111827; --u-mut: #6b7280; --u-soft: #f9fafb; --u-line: #e5e7eb; --u-acc: #4f46e5; --u-bg: #fff; --u-font: Inter, -apple-system, "Segoe UI", sans-serif; }
+.u-dash .u-kpi { border: .1em solid var(--u-line); }
+.u-dash .u-kpi em { color: #059669; }
+.u-dash .u-kpi:nth-child(3) em { color: #059669; }
+/* a support chat widget: blue header and bubbles */
+.u-chatwrap, .u-screen:has(> .u-chat) { --u-ink: #1a1a1a; --u-mut: #6b7280; --u-soft: #f1f3f5; --u-line: #e5e7eb; --u-acc: #0b5cff; --u-bg: #eef1f6; }
+.u-screen:has(> .u-chat) .u-chat-h { background: #0b5cff; }
+.u-screen:has(> .u-chat) .u-msgs .me { background: #0b5cff; color: #fff; }
+.u-screen:has(> .u-chat) .u-send { background: #0b5cff; color: #fff; }
+.u-screen:has(> .u-chat) .u-av.bot { background: #fff; color: #0b5cff; }
+.u-screen:has(> .u-chat) .u-float > svg { background: #16a34a; }
+.u-screen { position: relative; width: 100%; aspect-ratio: 34 / 21; font-size: calc(100cqi / 34); font-family: var(--u-font);
+  color: var(--u-ink); background: var(--u-bg); overflow: hidden; line-height: 1.25; }
+.u-screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.u-screen b { font-weight: 600; }
+.u-screen small { font-size: .95em; color: var(--u-mut); }
+.u-screen svg { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.u-btn { display: inline-flex; align-items: center; justify-content: center; height: 2.8em; padding: 0 1.4em; border-radius: .7em; background: var(--u-acc); color: #fff; font-weight: 600; font-size: 1.15em; }
+.u-btn.sm { height: 2.4em; padding: 0 1em; font-size: 1em; }
+.u-av { width: 2.8em; height: 2.8em; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--u-ink); color: var(--u-on); font-weight: 700; font-size: 1em; overflow: hidden; }
+.u-float { position: absolute; display: flex; align-items: center; gap: .8em; padding: .9em 1.1em; border-radius: .9em; background: #fff; box-shadow: 0 .6em 1.8em rgb(0 0 0 / .22); }
+.u-float > svg { width: 2.2em; height: 2.2em; padding: .45em; border-radius: 50%; background: var(--u-acc); color: #fff; stroke-width: 3; flex: none; }
+.u-float span { display: grid; gap: .15em; font-size: 1.05em; }
+.u-pill { display: inline-block; padding: .25em .7em; border-radius: 1em; background: var(--u-soft); font-size: .95em; font-weight: 500; white-space: nowrap; }
+.u-pill.ok { background: rgb(0 0 0 / .9); color: var(--u-on); }
+.u-pill.warn { background: color-mix(in srgb, var(--u-acc) 14%, transparent); color: var(--u-acc); }
+
+/* 1. product page */
+.u-pdp { display: grid; grid-template-columns: 15em 1fr; gap: 1.4em; padding: 1.6em; }
+.u-pdp-img { position: relative; border-radius: .9em; overflow: hidden; box-shadow: 0 .4em 1.2em rgb(0 0 0 / .18); }
+.u-badge { position: absolute; left: .8em; top: .8em; padding: .3em .7em; border-radius: 1em; background: #fff; font-size: .95em; font-weight: 600; }
+.u-pdp-info { display: grid; align-content: start; gap: .55em; }
+.u-pdp-info > b { font: 400 1.9em/1.05 var(--u-head); }
+.u-rate { font-size: .95em; color: var(--u-mut); }
+.u-stars { color: var(--u-acc); letter-spacing: .05em; margin-right: .3em; }
+.u-price { font-size: 1.5em; font-weight: 600; }
+.u-price s { font-size: .7em; font-weight: 400; color: var(--u-mut); margin-left: .3em; }
+.u-seg { display: flex; gap: .4em; }
+.u-seg i { font-style: normal; padding: .35em .7em; border-radius: .5em; border: .1em solid var(--u-line); font-size: .95em; background: #fff; }
+.u-seg i.on { border-color: var(--u-ink); box-shadow: inset 0 0 0 .1em var(--u-ink); font-weight: 600; }
+.u-fine { font-size: .9em; color: var(--u-mut); }
+.u-pdp .u-btn { justify-self: start; margin-top: .2em; }
+.u-cvr { right: 1.2em; top: 1.2em; flex-direction: column; align-items: flex-start; gap: .1em; padding: .7em 1em; }
+.u-cvr b { font-size: 1.8em; line-height: 1; }
+.u-cvr em { font-style: normal; font-size: .9em; font-weight: 600; color: var(--u-acc); }
+
+/* 2. email */
+.u-mail { display: grid; grid-template-columns: 1fr 12.5em; gap: 1.2em; padding: 1.4em 0 0 1.4em; }
+.u-inbox { align-self: start; display: grid; border-radius: .9em; background: #fff; box-shadow: 0 .4em 1.2em rgb(0 0 0 / .14); overflow: hidden; }
+.u-row { display: flex; gap: .8em; padding: .9em 1em; border-top: .1em solid var(--u-line); align-items: flex-start; }
+.u-row:first-child { border-top: 0; }
+.u-row.on { background: color-mix(in srgb, var(--u-acc) 7%, transparent); box-shadow: inset .3em 0 0 var(--u-acc); }
+.u-row-t { display: grid; gap: .15em; min-width: 0; flex: 1; }
+.u-row-t i { font-style: normal; font-weight: 600; font-size: 1.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.u-row-t small, .u-row-t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.u-row-t b { font-size: .95em; color: var(--u-mut); font-weight: 500; }
+.u-row time { font-size: .9em; color: var(--u-mut); }
+.u-phone { display: grid; align-content: start; gap: .6em; padding: .9em .9em 0; border-radius: 1.8em 1.8em 0 0; background: #fff; border: .5em solid var(--u-ink); border-bottom: 0; text-align: center; justify-items: center; }
+.u-phone-img { width: 100%; height: 7em; border-radius: .8em; overflow: hidden; }
+.u-phone > b { font: 400 1.25em/1.1 var(--u-head); }
+.u-phone > small { font-size: .95em; }
+.u-phone .u-btn { width: 100%; }
+
+/* 3. admin orders */
+.u-admin { padding: 1.3em 1.4em; background: #fff; }
+.u-admin-bar { display: flex; align-items: center; gap: .8em; }
+.u-admin-bar > b { font-size: 1.6em; margin-right: auto; }
+.u-search { padding: .5em 1em; border-radius: .6em; background: var(--u-soft); font-size: .95em; color: var(--u-mut); }
+.u-tabs { display: flex; gap: 1.4em; margin: 1em 0 .2em; border-bottom: .1em solid var(--u-line); }
+.u-tabs i { font-style: normal; padding: .5em 0; font-size: 1em; color: var(--u-mut); }
+.u-tabs i.on { color: var(--u-ink); font-weight: 600; box-shadow: inset 0 -.2em 0 var(--u-acc); }
+.u-admin table { width: 100%; border-collapse: collapse; font-size: 1em; }
+.u-admin th { text-align: left; font-weight: 500; font-size: .9em; color: var(--u-mut); padding: .6em .3em; }
+.u-admin td { padding: .6em .3em; border-top: .1em solid var(--u-line); white-space: nowrap; }
+.u-admin td:last-child, .u-admin th:last-child { text-align: right; }
+.u-sync { right: 1.2em; bottom: 1.1em; }
+
+/* 4. ads */
+.u-ads { display: flex; justify-content: center; align-items: flex-start; gap: 1.4em; padding: 1.3em 1.4em 0; }
+.u-post { width: 15em; border-radius: .9em .9em 0 0; background: #fff; box-shadow: 0 .4em 1.2em rgb(0 0 0 / .16); overflow: hidden; }
+.u-post-h { display: flex; align-items: center; gap: .6em; padding: .6em .8em; }
+.u-post-h .u-av { width: 2.2em; height: 2.2em; }
+.u-post-h b { font-size: 1em; }
+.u-post-h small { margin-left: auto; font-size: .85em; }
+.u-post-img { height: 10.5em; }
+.u-post-cta { display: flex; justify-content: space-between; align-items: center; padding: .6em .8em; background: var(--u-ink); color: var(--u-on); font-size: 1em; font-weight: 600; }
+.u-post-cta svg { width: 1.4em; height: 1.4em; }
+.u-post-f { display: grid; gap: .2em; padding: .6em .8em; font-size: .95em; }
+.u-story { position: relative; width: 10.5em; height: 19em; border-radius: 1.2em; overflow: hidden; box-shadow: 0 .4em 1.2em rgb(0 0 0 / .22); color: #fff; }
+.u-story::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(0 0 0 / .35), transparent 30%, transparent 55%, rgb(0 0 0 / .55)); }
+.u-story > *:not(img) { position: absolute; z-index: 1; }
+.u-story-bar { left: .7em; right: .7em; top: .6em; display: flex; gap: .3em; }
+.u-story-bar i { flex: 1; height: .25em; border-radius: .2em; background: rgb(255 255 255 / .5); }
+.u-story-bar i:first-child { background: #fff; }
+.u-story-h { left: .8em; top: 1.3em; display: grid; font-size: .95em; }
+.u-story-h small { color: rgb(255 255 255 / .8); font-size: .9em; }
+.u-story-t { left: .8em; bottom: 4.2em; font: 400 1.6em/1.05 var(--u-head); }
+.u-story .u-btn { left: .8em; right: .8em; bottom: .9em; }
+
+/* 5. dashboard */
+.u-dash { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 1em; padding: 1.3em 1.4em; background: #fff; }
+.u-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7em; }
+.u-kpi { display: grid; gap: .2em; padding: .7em .8em; border-radius: .7em; background: var(--u-soft); }
+.u-kpi small { font-size: .9em; }
+.u-kpi b { font-size: 1.45em; letter-spacing: -.01em; }
+.u-kpi em { font-style: normal; font-size: .9em; font-weight: 600; color: var(--u-acc); }
+.u-chart { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .4em; min-height: 0; }
+.u-chart-h { display: flex; justify-content: space-between; align-items: center; font-size: 1.05em; }
+.u-legend { display: flex; align-items: center; gap: .4em; font-size: .9em; color: var(--u-mut); }
+.u-legend i { width: .9em; height: .25em; border-radius: .2em; background: var(--u-acc); }
+.u-legend i.b { background: var(--u-line); margin-left: .6em; }
+.u-chart svg { display: block; width: 100%; height: 100%; min-height: 0; overflow: visible; }
+.u-chart .g { stroke: var(--u-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.u-chart .prev { stroke: rgb(0 0 0 / .28); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-dasharray: 4 3; }
+.u-chart .area { fill: color-mix(in srgb, var(--u-acc) 12%, transparent); stroke: none; }
+.u-chart .line { stroke: var(--u-acc); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.u-axis { display: flex; justify-content: space-between; }
+.u-axis small { font-size: .85em; }
+
+/* 6. support chat */
+.u-chat { display: grid; grid-template-rows: auto 1fr auto; margin: 1.2em 0 0 1.4em; width: 19em; height: calc(100% - 1.2em); border-radius: 1.2em 1.2em 0 0; background: #fff; box-shadow: 0 .4em 1.4em rgb(0 0 0 / .18); aspect-ratio: auto; }
+.u-chat-h { display: flex; align-items: center; gap: .8em; padding: .9em 1.1em; background: var(--u-ink); color: var(--u-on); border-radius: 1.2em 1.2em 0 0; }
+.u-chat-h small { display: flex; align-items: center; gap: .4em; color: rgb(255 255 255 / .8); }
+.u-chat-h span { display: grid; gap: .1em; font-size: 1.05em; }
+.u-av.bot { background: var(--u-acc); color: #fff; }
+.u-dot { width: .6em; height: .6em; border-radius: 50%; background: #7BD389; }
+.u-msgs { display: grid; align-content: start; gap: .6em; padding: .9em 1.1em; }
+.u-msgs p { margin: 0; max-width: 82%; padding: .65em .9em; border-radius: 1em; font-size: 1.02em; line-height: 1.3; }
+.u-msgs .me { justify-self: end; background: var(--u-ink); color: var(--u-on); border-bottom-right-radius: .3em; }
+.u-msgs .bot { background: var(--u-soft); border-bottom-left-radius: .3em; }
+.u-msgs u { text-decoration-color: var(--u-acc); text-underline-offset: .2em; font-weight: 600; }
+.u-quick { display: flex; gap: .5em; }
+.u-quick i { white-space: nowrap; font-style: normal; padding: .4em .8em; border-radius: 1em; border: .1em solid var(--u-acc); color: var(--u-acc); font-size: .95em; font-weight: 600; }
+.u-compose { display: flex; align-items: center; justify-content: space-between; margin: 0 1.1em .9em; padding: .4em .4em .4em 1em; border-radius: 2em; border: .1em solid var(--u-line); color: var(--u-mut); font-size: .95em; }
+.u-send { display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--u-ink); color: var(--u-on); }
+.u-send svg { width: 1.3em; height: 1.3em; }
+.u-crm { right: 1em; top: 50%; translate: 0 -50%; max-width: 13em; }
+
+
+/* the logo over the dark map: the wordmark (type) turns light; it goes back to Steel Blue over the reviews sheet and the paper map */
+#stick:not(.covered):not(.paper-map) .brandpin .bp-word { filter: brightness(0) invert(1); }
+
+/* the screens sit on a Steel Blue backdrop, so they stand out from the light card; each carries its client's own logo */
+.cap-art { padding: 14px; background: radial-gradient(120% 90% at 20% 0%, #2B3E72, var(--steel) 70%); }
+.cap-art .u-screen { border-radius: 8px; box-shadow: 0 10px 24px rgb(0 0 0 / .35); }
+.u-logo { display: block; object-fit: contain; background: #fff; }
+img.u-av { padding: .2em; border: .1em solid var(--u-line); }
+.u-av.sq { border-radius: .5em; }
+.u-brand { display: flex; align-items: center; gap: .5em; }
+.u-brand .u-logo { width: 2.2em; height: 2.2em; border-radius: 50%; border: .1em solid var(--u-line); }
+.u-phone-logo { width: 2.6em; height: 2.6em; border-radius: 50%; }
+.u-story-h { display: flex !important; align-items: center; gap: .5em; }
+.u-story-h > span { display: grid; }
+.u-story-h .u-av { width: 2.2em; height: 2.2em; border: .15em solid #fff; }
+.u-dash { grid-template-rows: auto auto minmax(0, 1fr); gap: .8em; }
+.u-dash-h { display: flex; align-items: center; gap: .6em; font-size: 1.1em; }
+.u-dash-h .u-av { width: 2.2em; height: 2.2em; }
+.u-dash-h small { margin-left: auto; padding: .3em .7em; border-radius: .5em; border: .1em solid var(--u-line); font-size: .85em; }
+.u-admin-bar .u-av { width: 2.2em; height: 2.2em; }
+
+/* the Canada flag after the wordmark (flat, its own colours; a hairline keeps the white field off a light page) */
+.brandpin .bp-flag { display: block; height: 18px; width: auto; flex: none; border-radius: 2px; box-shadow: 0 0 0 1px rgb(25 37 74 / .18); }
+@media (max-width: 760px) { .brandpin .bp-flag { height: 14px; } }
+/* logos keep their own size (the screens' photo rule, .u-screen img, fills its box) */
+.u-screen img.u-logo { width: 2.8em; height: 2.8em; object-fit: contain; border-radius: 50%; }
+.u-screen .u-brand img.u-logo, .u-screen .u-story-h img.u-logo, .u-screen .u-dash-h img.u-logo, .u-screen .u-admin-bar img.u-logo, .u-screen .u-post-h img.u-logo { width: 2.2em; height: 2.2em; }
+.u-screen .u-admin-bar img.u-logo { border-radius: .5em; }
+.u-screen img.u-phone-logo { width: 2.6em; height: 2.6em; }
+.u-phone { gap: .45em; padding-top: .6em; }
+.u-screen .u-phone-img { height: 5.6em; }
+.u-screen img.u-phone-logo { width: 2em; height: 2em; }

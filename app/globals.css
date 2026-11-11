@@ -178,6 +178,9 @@
     stroke-dasharray: var(--len) var(--rest); stroke-dashoffset: calc(-1 * var(--from));
   }
   .sprout:focus-visible { outline: none; }
+  /* hover / focus accent: the sprouting line (and the label, where it takes --ink) turns orange. In this layer, so a
+     filled button that sets its own --ink (e.g. the orange send button's Sea Breeze line) keeps it */
+  .sprout.on { --ink: var(--orange); }
   /* a checked radio card keeps its outer line drawn and turns orange (active = orange) */
   .sprout:has(> input:checked) { --ink: var(--orange); }
   .sprout:has(> input:checked) > .stroke .outer { stroke-dasharray: var(--len) var(--rest); stroke-dashoffset: calc(-1 * var(--from)); }

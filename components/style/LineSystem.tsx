@@ -85,6 +85,10 @@ export default function LineSystem() {
         el._outerD = rrect(i, r);
         el._perimeter = 2 * (W - 2 * i - 2 * r) + 2 * (H - 2 * i - 2 * r) + 2 * Math.PI * r;
       }
+      // the paths are drawn on the border box, but the svg sits at -outer-stroke from the padding box, and browsers round the
+      // 1.5px border down to 1px: shift the lines back by the difference so they sit centred (equal inset on every side)
+      { const off = -(el.clientLeft + parseFloat(getComputedStyle(svg).left || "0")), offY = -(el.clientTop + parseFloat(getComputedStyle(svg).top || "0"));
+        const g = svg.querySelector(":scope > g"); if (g) { if (Math.abs(off) > .01 || Math.abs(offY) > .01) g.setAttribute("transform", `translate(${off} ${offY})`); else g.removeAttribute("transform"); } }
       if (!el._seeded) seedOuter(el);
       else svg.querySelectorAll(".outer").forEach((p) => p.setAttribute("d", el._outerD!));
     }

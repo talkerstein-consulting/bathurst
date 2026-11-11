@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
 import Testimonials from "@/components/bathurst/Testimonials";
+import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
 import Services from "@/components/bathurst/Services";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
+import Snowfall from "@/components/bathurst/Snowfall";
 import SiteMenu, { MenuButton } from "@/components/bathurst/SiteMenu";
 import { COMPASS_ROSE } from "@/lib/bathurst/icons";
 import "@/app/bathurst-map.css";
@@ -53,12 +55,16 @@ function Toggle({ show, label }: { show: string; label: string }) {
   );
 }
 
+/** How many screens of scroll the home page's lead-in (the question box sliding up) takes before the front page starts.
+ *  lib/bathurst/engine.ts offsets every scroll position by it; components/terminal/BusinessTerminal.tsx follows it. */
+export const LEAD_SCREENS = 0.35;
+
 /**
  * Hero: Street View fly-through up Bathurst, crane move, then a live maps-app view of the clients.
  * React owns this markup; lib/bathurst/engine.ts attaches the three.js scene and all map behaviour
  * to it by element id. The markup must not re-render after mount, so keep this component stateless.
  */
-export default function BathurstHero({ area }: { area?: string } = {}) {
+export default function BathurstHero({ area, headingLevel = "h1", lead }: { area?: string; headingLevel?: "h1" | "h2"; lead?: ReactNode } = {}) {
   const A = area ? AREAS[area] : undefined;   // an area page: the copy names that area
   useEffect(() => {
     let engine: { destroy: () => void } | null = null;
@@ -74,11 +80,29 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
     };
   }, [area]);
 
+  // the navbar's ☰, logo and booking CTA: tucked away while scrolling down, back on any scroll up (and at the very top)
+  useEffect(() => {
+    const stick = document.getElementById("stick");
+    if (!stick) return;
+    let last = scrollY;
+    const onScroll = () => {
+      const y = scrollY, d = y - last;
+      if (Math.abs(d) < 6) return;   // ignore jitter (and phone toolbar nudges)
+      last = y;
+      const menuOpen = stick.querySelector('.menubtn[aria-expanded="true"]');
+      stick.classList.toggle("nav-hidden", d > 0 && y > 40 && !menuOpen);
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    return () => { removeEventListener("scroll", onScroll); stick.classList.remove("nav-hidden"); };
+  }, []);
+
   return (
-    <section id="hero" aria-label="Talkerstein Consulting Group">
-      <div id="stick" className="open">
+    <section id="hero" aria-label="Talkerstein Consulting Group" data-lead={lead ? LEAD_SCREENS : undefined}>
+      {/* .lead: the question box (lead) is up, so the headline waits; it rises in once the box has scrolled away */}
+      <div id="stick" className={lead ? "open navbar-on lead" : "open navbar-on"}>
         <div id="stage" tabIndex={0} aria-label={`Map of Talkerstein clients ${A ? `in ${A.name}` : "on Bathurst Street"}. Drag to pan, arrow keys to move, plus and minus to zoom.`} />
         <div id="labels" />
+        <Snowfall />
 
         {/* opening "front page": masthead row; then the headline column on paper (left), the moving view in its
             rounded, neatlined window (right; #win reserves the box the engine opens to full screen). The column holds the
@@ -86,9 +110,11 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
         <div id="sv">
           <div className="mast-space" aria-hidden="true" />
           <div className="hero-grid">
+            {/* home: the question box over the playing horizon, in the headline's place, before the headline (lead-in) */}
+            {lead}
             <div className="sv-hero" id="svhero">
               <p className="eyebrow hero-where rise-after">{A ? A.eyebrow : <>Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></>}</p>
-              <RiseHeading className="h1" text="Find your way to the right customers." delay={120} />
+              <RiseHeading as={headingLevel} className="h1" text="Find your way to the right customers." delay={120} />
               <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work."}</p>
               {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
               <CtaLink href="/book" label="Book Free Consult" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
@@ -156,7 +182,11 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
               </fieldset>
               <fieldset><legend className="eyebrow">Style</legend>
                 <div className="seg">
-                  <button type="button" className="sprout btn sm" data-style="paper" aria-pressed="true">Paper</button>
+                  <button type="button" className="sprout btn sm" data-style="print" aria-pressed="true">Print</button>
+                  <button type="button" className="sprout btn sm" data-style="mono" aria-pressed="false">Mono</button>
+                  <button type="button" className="sprout btn sm" data-style="railway" aria-pressed="false">Railway</button>
+                  <button type="button" className="sprout btn sm" data-style="flat" aria-pressed="false">Flat</button>
+                  <button type="button" className="sprout btn sm" data-style="paper" aria-pressed="false">Paper</button>
                   <button type="button" className="sprout btn sm" data-style="poster" aria-pressed="false">Poster</button>
                 </div>
               </fieldset>
@@ -200,9 +230,12 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
           <div className="layers-top"><a className="sprout btn icon dirbtn navcta" data-no-tumble aria-label="Book a free consult" href="/book"><Glyph g="turn" /><span className="dirlabel">Book Free Consult</span></a></div>
         </div>
         {/* after the last direction step: reviews, services and the footer, one sheet that rises over the map */}
-        <div className="cover frame" id="cover" aria-label="Reviews">
+        <div className="cover frame" id="cover" aria-label="Partner stories, services, interviews and contact">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
-          <div className="cover-body" id="coverbody"><Testimonials /><Services /><SignatureLine /><SiteFooter /></div>
+          <div className="cover-body" id="coverbody">
+            {/* 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer */}
+            <Testimonials /><Services /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter />
+          </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
         <div className="dircard" id="dircard" role="status" aria-live="polite">
@@ -212,7 +245,7 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className="workhead" id="workhead">Our Work in {A ? A.name : "Toronto"}</h2>
+        <h2 className="workhead" id="workhead"><span>Rooted in business.</span> <span>Connected across {A ? A.name : "Toronto"}.</span></h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
         {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}
@@ -220,7 +253,7 @@ export default function BathurstHero({ area }: { area?: string } = {}) {
         {/* over the reviews sheet (which covers the map's own top row) the TCG logo (mark and logo text) stays pinned beside the ☰ */}
         <button type="button" className="brandpin" aria-label="Talkerstein Consulting Group, back to the top" onClick={() => window.dispatchEvent(new CustomEvent("tcg:nav", { detail: { to: "top" } }))}>
           {/* the same two pieces as the map's top row (the mark, then the logo text), so it lands in exactly the same place */}
-          <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" />
+          <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" /><svg className="bp-flag" viewBox="0 0 1000 500" role="img" aria-label="Canada"><path fill="#fff" d="M250 0h500v500H250z"/><path fill="#D52B1E" d="M0 0h250v500H0zM750 0h250v500H750zM499 52l-34 64c-4 7-11 6-18 2l-25-13 19 99c4 18-9 18-15 10l-43-49-7 25c-1 3-4 7-9 6l-55-12 15 53c3 12 6 16-3 19l-20 9 95 77c4 3 6 8 4 15l-8 27c33-4 63-10 96-13 3 0 8 4 8 8l-4 104h16l-3-104c0-4 4-8 7-8 33 3 63 9 96 13l-8-27c-2-7 0-12 4-15l95-77-20-9c-9-3-6-7-3-19l15-53-55 12c-5 1-8-3-9-6l-7-25-43 49c-6 8-19 8-15-10l19-99-25 13c-7 4-14 5-18-2z"/></svg>
         </button>
         <SiteMenu />
       </div>

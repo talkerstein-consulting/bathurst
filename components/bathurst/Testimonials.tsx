@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
-import ReelCards from "./ReelCards";
+import RowArrows from "./RowArrows";
 import { useCoverNear } from "./useCoverNear";
 
 type Item = (typeof TESTIMONIALS)[number];
-type Tile = { key: string; weight: number; node: ReactNode; rating?: boolean };
+type Tile = { key: string; node: ReactNode };
 
-/** Share of its column each video card takes; cycles so neighbouring columns stagger like a masonry wall. */
-const WEIGHTS = [7, 6, 5, 6, 7, 5, 6];
 
 
 const Play = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>;
@@ -20,8 +18,7 @@ const Close = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true
 
 /**
  * Reviews on the cover sheet (STYLE.md: Sea Breeze surfaces, double-line frames, outline CTAs).
- * A masonry wall of framed video cards with the two ratings as tiles in it; every column stretches to the same
- * height (flat bottom edge). A card: the video's own poster in a hairline frame, then one row with the logo,
+ * The two ratings side by side, then one side-swiping row of framed video cards (‹ › on desktop, swipe on phones). A card: the video's own poster in a hairline frame, then one row with the logo,
  * name and position, and the outline play button. On hover the quote shows, truncated, over the poster's foot.
  * Play opens a dialog with the video and the whole testimonial. Only real quotes are shown.
  */
@@ -33,6 +30,7 @@ export default function Testimonials() {
   const step = (d: number) => setAt((i) => (i === null ? i : (i + d + TESTIMONIALS.length) % TESTIMONIALS.length));
   const dialog = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
+  const swipe = useRef<HTMLDivElement>(null);
   const near = useCoverNear();   // posters load once the visitor heads for the sheet, not with the first page load
 
   useEffect(() => {
@@ -55,7 +53,7 @@ export default function Testimonials() {
   }, [at]);
 
   const rating = (key: string, href: string, score: string, label: string, stars: string | undefined, muted = false): Tile => ({
-    key, weight: 0, rating: true,
+    key,
     node: (
       <a className="rv-score rv-tile frame" href={href} target="_blank" rel="noopener">
         <b>{score}</b>
@@ -64,8 +62,8 @@ export default function Testimonials() {
     ),
   });
 
-  const cards: Tile[] = TESTIMONIALS.map((s, i) => ({
-    key: s.id, weight: WEIGHTS[i % WEIGHTS.length],
+  const cards: Tile[] = TESTIMONIALS.map((s) => ({
+    key: s.id,
     node: (
       <article className="rv-card rv-tile frame" tabIndex={0} role="button" data-sprout-host aria-label={`Play video from ${s.who}, ${s.role}`}
         onClick={() => setOpen(s)} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setOpen(s); } }}>
@@ -124,43 +122,17 @@ export default function Testimonials() {
     </>
   );
 
-  // TCG's Instagram reels, as trading cards (components/bathurst/ReelCards.tsx)
-  const reels = <ReelCards />;
-
-  // phones: the ratings side by side, then one swipeable row of full-size video cards
-  if (cols === 1) return (
-    <div className="rv rv-phone">
-      <h2 className="h2 rv-title">Word on the Street</h2>
+  // one side-swiping row of video cards at every width (desktop pages it with the ‹ › pair, phones swipe with the next card peeking in)
+  return (
+    <div className={`rv rv-phone${cols === 1 ? "" : " rv-desk"}`}>
+      <div className="rv-reels-h">
+        <h2 className="h2 rv-title">Word on the Street</h2>
+        <RowArrows row={swipe} what="testimonials" />
+      </div>
       <div className="rv-rates">{clutch.node}{google.node}</div>
-      <div className="rv-swipe" aria-label="Video testimonials">
+      <div ref={swipe} className="rv-swipe" aria-label="Video testimonials">
         {cards.map((t) => <div key={t.key} className="rv-slot">{t.node}</div>)}
       </div>
-      {reels}
-      {modal}
-    </div>
-  );
-
-  // deal the cards into columns, then give the ratings to the shortest columns (Clutch on top, Google mid-way)
-  const columns: Tile[][] = Array.from({ length: cols }, () => []);
-  cards.forEach((c, i) => columns[i % cols].push(c));
-  const short = columns.map((c, i) => [c.length, i]).sort((a, b) => a[0] - b[0] || b[1] - a[1]).map(([, i]) => i);
-  columns[short[0]].unshift(clutch);
-  columns[short[1]].splice(1, 0, google);
-
-  return (
-    <div className="rv">
-      <h2 className="h2 rv-title">Word on the Street</h2>
-      <div className="rv-wall" style={{ "--cols": cols } as CSSProperties} aria-label="Video testimonials">
-        {columns.map((col, c) => (
-          <div className="rv-col" key={c}>
-            {col.map((t) => (
-              <div key={t.key} className={`rv-cell${t.rating ? " rating" : ""}`} style={t.rating ? undefined : { flexGrow: t.weight }}>{t.node}</div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {reels}
       {modal}
     </div>
   );
