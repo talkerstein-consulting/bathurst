@@ -8,15 +8,39 @@ The front end is built and runs in **demo mode** until one environment variable 
 | Network call (live + demo) | `lib/terminal/client.ts` |
 | Types and jurisdiction codes | `lib/terminal/contract.ts` |
 
+## The backend (built 2026-11-12)
+
+| Piece | File |
+|---|---|
+| Route: validation, guards, Gemini streaming, citations | `app/api/terminal/route.ts` |
+| The instructions to Gemini ("the script") | `lib/terminal/prompt.ts` |
+| Knowledge base loader and passage picker (BM25) | `lib/terminal/knowledge.ts` |
+| Knowledge base (Markdown) | `research/canadian-sme-knowledge-base/` (brief: `research/RESEARCH-BRIEF.md`) |
+
+**How an answer is made:** the route validates the conversation, then picks the knowledge base passages that best match the last two questions (up to `KB_CONTEXT_CHARS`, about 6k tokens) and up to 15 citable sources. It sends those to Gemini with the instructions in `prompt.ts` and streams the reply back as the events below. The model cites `[S#]` tags, and the route renumbers them in the order the visitor sees them, sending each `source` event before the text that cites it. A tag that isn't in the list is dropped, so **only an `https` URL that appears in the knowledge base can ever be cited**.
+
+**Unreviewed sources:** a source-register entry whose "Relevant findings" starts with `Seed:` has been checked to exist but not yet read into the knowledge base. Such a source is still listed under an answer as a place to confirm, but never gets an inline `[n]`, because the model only knew its topic. When the research replaces `Seed:` with real findings, inline citations start working for that source without any code change.
+
+**Guards:** cross-site browser requests are refused (403); bodies over 64 KB (413) and malformed requests (400) are rejected; the newest 12 turns of up to 4,000 characters each go upstream. Rate limiting is per visitor **per server instance** (8 a minute, 80 a day). That's best effort on serverless. For a hard limit across instances, add a Vercel Firewall rate-limit rule on `/api/terminal` or a shared store (for example Upstash).
+
+**Models:** tried in order, and the first to start streaming within 10 s wins. Default: `gemini-3.5-flash` (thinking `low`), then `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`. Measured on 2026-11-12: about 2–4 s to first word. `gemini-3.8-flash` was overloaded (503) that day, and `gemini-2.5-flash` is closed to new keys (404). A model that rejects the thinking setting is retried once without it.
+
+**Vercel cost:** this is the site's second function (after `/api/book`) and is needed because the key must stay secret. It's a thin streaming proxy that spends nearly all its time waiting on Gemini, with `maxDuration` 60 s. Nothing has been deployed.
+
 ## Turning it on
 
 ```bash
-NEXT_PUBLIC_TERMINAL_URL=/api/terminal     # same-origin path (recommended) or a full https URL
+# .env.local (git-ignored) locally; Project Settings → Environment Variables on Vercel
+GEMINI_API_KEY=…                             # server only. Never NEXT_PUBLIC_
+NEXT_PUBLIC_TERMINAL_URL=/api/terminal       # unset = demo mode in the page
+GEMINI_MODELS=gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite   # optional
+GEMINI_THINKING=low                          # optional: low | medium | high | off
+KB_CONTEXT_CHARS=24000                       # optional
 ```
 
-Unset or empty means demo mode: a scripted placeholder streams locally, and the UI says "Demo" in the panel header and the fine print. It's a build-time value (`NEXT_PUBLIC_*` is inlined), so rebuild after you change it.
+With `NEXT_PUBLIC_TERMINAL_URL` unset, the page runs in demo mode: a scripted placeholder streams locally, and the UI says "Demo". It's a build-time value (`NEXT_PUBLIC_*` is inlined), so rebuild after you change it.
 
-A same-origin route (`app/api/terminal/route.ts`) avoids CORS and keeps model and search keys on the server. Don't put any secret in a `NEXT_PUBLIC_` variable.
+**Before going live:** the key is on Gemini's **free tier**, which has low daily limits and no Pro access. Check Google's current terms on how free-tier prompts may be used, and enable billing on the Google Cloud project before real traffic. The key was also shared in a chat, so rotate it and set the new one in the environment.
 
 ## Request
 
@@ -81,7 +105,8 @@ The text for each code is in `ERRORS` in `BusinessTerminal.tsx`. The UI doesn't 
 
 The page says this to every visitor. Confirm each point before going live, or change the copy:
 
-1. **"Answers point to official federal and provincial sources."** Every answer should cite at least one source, and sources should be government or official publishers (Justice Laws, canada.ca, CRA, provincial e-Laws and the like). If you allow other publishers, update `.term-fine` in `BusinessTerminal.tsx`.
+1. **"Answers link to their sources."** Answers cite only the knowledge base (official sources first, plus BDC, CFIB, Google and W3C). Some answers, for example on automation and marketing, cite nothing until the research covers them.
+1a. **Scope: the four pillars.** The page copy, the example questions (`PILLARS` in `BusinessTerminal.tsx`) and the `out_of_scope` message cover customers, efficiency, digital presence and AI, plus the rules around each, matching the research brief and `prompt.ts`.
 2. **"General information, not legal advice."** The answers should read that way too. Talkerstein is a consultancy, not a law firm. Questions that need a lawyer ("should I sue…") should be answered generally, pointing to the law society's referral service.
 3. **Coverage:** the page sends `ON` and its panel header reads "Ontario and federal law". If a visitor asks about another province, answer for that province if you can, or say plainly that the terminal covers Ontario and federal law.
 

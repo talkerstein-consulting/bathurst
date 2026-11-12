@@ -145,22 +145,24 @@ a.term-cite:hover, a.term-cite:focus-visible { background: var(--orange); color:
 .term.is-full .term-panel { view-transition-name: term-box; }
 #stick:has(.term.is-full) #sv { z-index: 20; }
 .term-open .offer-corner { visibility: hidden; }
-.hero-grid > .term.is-full { position: fixed; inset: 0; z-index: 1; padding: var(--s2); background: rgb(from var(--steel) r g b / .35); }
+/* edge to edge at every width: nothing of the page shows around it, and the page's scrollbar goes while it is open
+   (the same overflow lock the testimonial and reel dialogs use); the conversation scrolls inside .term-log */
+html.term-open { overflow: hidden; }
+.hero-grid > .term.is-full { position: fixed; inset: 0; z-index: 1; padding: 0; background: var(--sea); }
 .term.is-full .term-main { max-width: none; height: 100%; }
-.term.is-full .term-panel { height: 100%; border-radius: var(--frame-radius, 14px); }
+.term.is-full .term-panel { height: 100%; border-radius: 0; }
 /* the content keeps a readable column inside the full-width panel */
 .term.is-full .term-bar, .term.is-full .term-log { padding-inline: max(var(--s3), calc((100% - 880px) / 2)); }
 .term.is-full .term-compose { width: min(880px, calc(100% - 2 * var(--s2))); margin: 0 auto var(--s2); }
 .term-close { margin-left: auto; flex: none; }
 .term-close .glyph { width: 20px; height: 20px; }
-.term-empty { margin: auto 0 0; display: grid; gap: var(--s1); max-width: 36em; color: var(--steel); }
-.term-empty .term-ah { margin: 0; }
-.term-empty p { margin: 0; color: var(--steel-70); }
+/* follow-up question buttons wrap: the line system's tumble label (.label, white-space: pre) would otherwise run off a phone's edge */
+.term-next .btn .label { white-space: normal; max-width: 100%; }
+.term-next .btn .label > span > span { min-width: 0; }
 ::view-transition-group(term-box) { animation-duration: .45s; animation-timing-function: cubic-bezier(.22,1,.36,1); }
 ::view-transition-old(term-box), ::view-transition-new(term-box) { height: 100%; object-fit: none; overflow: clip; }
 @media (max-width: 760px) {
-  .hero-grid > .term.is-full { padding: 0; }
-  .term.is-full .term-panel { border-radius: 0; }
+  .term-bar-name { display: none; }   /* phones: the header keeps just the disclaimer */
   .term.is-full .term-bar, .term.is-full .term-log { padding-inline: var(--s2); }
   .term.is-full .term-compose { width: calc(100% - 2 * var(--s1)); margin: 0 auto var(--s1); }
 }

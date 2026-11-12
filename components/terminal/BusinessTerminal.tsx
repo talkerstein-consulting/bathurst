@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { CSSProperties, FormEvent, KeyboardEvent, ReactNode } from "react";
 import RiseHeading from "@/components/style/RiseHeading";
@@ -20,25 +20,42 @@ import "@/app/terminal.css";
  * in (#stick.lead); while the box is focused or a conversation is open, the page holds still.
  * There is no location picker: every question goes out as Ontario + federal law (DEFAULT_JURISDICTION). The first question turns the panel into a conversation:
  * answers stream in with numbered citations to official sources, follow-up suggestions and a way to a person.
- * Pressing or focusing the box morphs it to full screen (a view transition from the box to the panel); × or Escape morphs it
- * back, keeping the conversation. The textarea stays the same element throughout, so focus and the phone keyboard survive.
+ * Only sending a question morphs the box to full screen (a view transition from the box to the panel): typing in it, or
+ * pressing it, leaves the page as it is. The open panel shows only the conversation, no preset text. × or Escape morphs it
+ * back, keeping the conversation (the next question sent reopens it); New question clears it and closes the panel. The textarea stays the same element throughout, so focus and the phone keyboard survive.
  * The network side is lib/terminal/client.ts (demo mode until NEXT_PUBLIC_TERMINAL_URL is set); contract in lib/terminal/BACKEND.md.
  */
 
-const EXAMPLES = [
-  "How do I incorporate my business in Ontario?",
-  "When do I have to register for GST/HST?",
-  "Can I ask new hires to sign a non-compete?",
-  "What do I need before I send marketing emails?",
-  "How do I register a business name?",
-  "What must my privacy policy cover?",
-  "Do I need a French version of my website?",
-  "What records do I have to keep for employees?",
-];
+/* the four pillars of the Canadian SME research (research/RESEARCH-BRIEF.md); each pillar's questions include one about
+   the rules that come with it, since the terminal answers both. `key` is the identifier; `title` is display only. */
+const PILLARS = [
+  { key: "customers", title: "Getting more customers", questions: [
+    "How do I show up higher on Google Maps?",
+    "Why isn’t my website bringing in leads?",
+    "What do I need before I send marketing emails?",
+  ] },
+  { key: "efficiency", title: "Running a more efficient business", questions: [
+    "What should I automate first in my business?",
+    "Which CRM makes sense for a small team?",
+    "When do I have to register for GST/HST?",
+  ] },
+  { key: "digital", title: "Improving your digital presence", questions: [
+    "When is Shopify enough, and when do I need a custom site?",
+    "Why is my website slow, and does it matter?",
+    "Does my website have to meet AODA accessibility rules?",
+  ] },
+  { key: "ai", title: "Using AI to grow", questions: [
+    "How can AI help me answer customer emails?",
+    "Which jobs shouldn’t I hand over to AI?",
+    "What privacy rules apply when I use AI tools?",
+  ] },
+] as const;
+// the closed box's placeholder walks through them, one pillar after another
+const EXAMPLES = [0, 1, 2].flatMap((i) => PILLARS.map((p) => p.questions[i]));
 
 const ERRORS: Record<TerminalErrorCode, string> = {
   rate_limited: "That’s a lot of questions in a short time. Wait a minute, then try again.",
-  out_of_scope: "The terminal only answers questions about Canadian business law and government programs. Try asking it another way.",
+  out_of_scope: "The terminal answers questions about running a business in Canada: customers, operations, websites, AI and the rules around them. Try asking it another way.",
   unavailable: "The terminal couldn’t answer just now. Try again in a moment.",
   bad_request: "That question couldn’t be sent. Shorten it and try again.",
   network: "You seem to be offline. Check your connection and try again.",
@@ -90,7 +107,7 @@ export default function BusinessTerminal() {
   const section = useRef<HTMLElement>(null);
   const stick = useRef(true);   // keep the log pinned to the newest line unless the reader scrolled up
   const chatting = msgs.length > 0;
-  const locked = open || focused;   // the visitor is using the box: the page doesn't scroll away under them
+  const locked = open || focused;   // typing in the box or reading the conversation: the page doesn't scroll away underneath
   const openRef = useRef(open); openRef.current = open;
   // the same textarea carries on into the panel; it is focused again after the morph, since a press that lands mid-transition
   // hits the transition overlay, not the box
@@ -213,11 +230,13 @@ export default function BusinessTerminal() {
   }, [msgs, where, chatting, patch, expand]);
 
   const stop = () => ctrl.current?.abort();
+  // the panel only exists for a conversation: a new question closes it and returns to the box, ready to type
   const reset = () => {
     ctrl.current?.abort();
     conv.current = null;
-    setMsgs([]); setDraft(""); setHint(null);
-    requestAnimationFrame(() => input.current?.focus());
+    setDraft(""); setHint(null);
+    morph(() => { setMsgs([]); setOpen(false); });
+    requestAnimationFrame(() => input.current?.focus({ preventScroll: true }));
   };
   // try again: drop the failed answer and its question, then ask the same question again
   const retry = (id: string) => {
@@ -235,12 +254,12 @@ export default function BusinessTerminal() {
   const composer = (
     <form className="term-compose" onSubmit={onSubmit}
       onMouseDown={(e) => { if (!(e.target as HTMLElement).closest("textarea, button")) { e.preventDefault(); input.current?.focus(); } }}>
-      <label className="sr-only" htmlFor="term-q">Ask a question about Canadian business law</label>
+      <label className="sr-only" htmlFor="term-q">Ask a question about running your business</label>
       <textarea
         id="term-q" ref={input} rows={1} value={draft} maxLength={MAX_QUESTION} enterKeyHint="send" autoComplete="off"
         placeholder={chatting ? "Ask a follow-up question" : `Try ‘${EXAMPLES[ex]}’`}
         onChange={(e) => { setDraft(e.target.value); if (hint) setHint(null); }}
-        onKeyDown={onKey} onFocus={() => { setFocused(true); expand(); }} onBlur={() => setFocused(false)}
+        onKeyDown={onKey} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         aria-describedby={hint ? "term-hint" : undefined}
       />
       <div className="term-tools">
@@ -276,22 +295,16 @@ export default function BusinessTerminal() {
                   <Glyph g="chevL" /><span>New question</span>
                 </button>
               )}
-              <span className="term-bar-t">Not legal advice · {jurisdictionLabel(where)} and federal law{DEMO ? " · Demo" : ""}</span>
+              <span className="term-bar-t"><span className="term-bar-name">Canadian Business Terminal · </span>Not legal or tax advice{DEMO ? " · Demo" : ""}</span>
               <button type="button" className="sprout btn icon term-close" onClick={collapse} aria-label="Close the terminal"><Glyph g="close" /></button>
             </div>
           ) : null}
           {open ? (
             <div ref={log} className="term-log" role="log" aria-live="polite" aria-relevant="additions"
               onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
-              {chatting ? msgs.map((m) => m.role === "user"
+              {msgs.map((m) => m.role === "user"
                 ? <p key={m.id} className="term-q">{m.text}</p>
-                : <Answer key={m.id} m={m} busy={busy} onRetry={() => retry(m.id)} onAsk={(s) => send(s)} />)
-                : (
-                  <div className="term-empty">
-                    <h2 className="term-ah">Ask about Canadian business law</h2>
-                    <p>Ontario and federal rules, with links to the official sources. Type a question below.</p>
-                  </div>
-                )}
+                : <Answer key={m.id} m={m} busy={busy} onRetry={() => retry(m.id)} onAsk={(q) => send(q)} />)}
             </div>
           ) : null}
           {composer}
@@ -299,7 +312,7 @@ export default function BusinessTerminal() {
 
         {!open && (
           <p className="term-fine">
-            Answers point to official federal and provincial sources. They’re general information, not legal advice.
+            Ask about customers, operations, your website or AI. Answers link to their sources and are general information, not legal or tax advice.
             {DEMO && <> <b>Demo: the live terminal isn’t connected yet.</b></>}
           </p>
         )}
@@ -324,7 +337,7 @@ function Answer({ m, busy, onRetry, onAsk }: {
     return (
       <div className="term-a" aria-busy="true">
         <p className="term-wait"><span className="term-load" aria-hidden="true"><img src="/brand/tcg-icon.svg" alt="" /><img src="/brand/tcg-icon.svg" alt="" /></span>
-          Checking {m.where === "CA" ? "federal" : `${jurisdictionLabel(m.where)} and federal`} sources…</p>
+          Finding your answer…</p>
       </div>
     );
   }
@@ -382,19 +395,29 @@ function Answer({ m, busy, onRetry, onAsk }: {
 
 /* ---------- a small, safe Markdown subset: paragraphs, - and 1. lists, ### headings, **bold**, [n] citations ---------- */
 
+// a line's kind; consecutive lines of one kind form one element, so a heading or a lead-in sentence followed straight away
+// by a list (no blank line between, as models often write) still renders as heading/paragraph + list
+const kindOf = (l: string) => (/^\s*[-*•]\s+/.test(l) ? "ul" : /^\s*\d+[.)]\s+/.test(l) ? "ol" : /^#{1,4}\s/.test(l) ? "h" : "p");
+const strip = { ul: /^\s*[-*•]\s+/, ol: /^\s*\d+[.)]\s+/, h: /^#+\s*/, p: /^/ } as const;
+
 function Rich({ text, sources }: { text: string; sources: Source[] }) {
-  const blocks = text.replace(/\r/g, "").split(/\n{2,}/).filter((b) => b.trim());
+  const runs: { kind: keyof typeof strip; lines: string[] }[] = [];
+  for (const block of text.replace(/\r/g, "").split(/\n{2,}/)) {
+    let prev: (typeof runs)[number] | null = null;
+    for (const l of block.split("\n").filter((x) => x.trim())) {
+      const kind = kindOf(l);
+      if (prev && prev.kind === kind && kind !== "h") prev.lines.push(l);
+      else runs.push(prev = { kind, lines: [l] });
+    }
+  }
   return (
     <>
-      {blocks.map((b, i) => {
-        const lines = b.split("\n").filter((l) => l.trim());
-        if (lines.every((l) => /^\s*[-*•]\s+/.test(l)))
-          return <ul key={i}>{lines.map((l, j) => <li key={j}><Inline text={l.replace(/^\s*[-*•]\s+/, "")} sources={sources} /></li>)}</ul>;
-        if (lines.every((l) => /^\s*\d+[.)]\s+/.test(l)))
-          return <ol key={i}>{lines.map((l, j) => <li key={j}><Inline text={l.replace(/^\s*\d+[.)]\s+/, "")} sources={sources} /></li>)}</ol>;
-        if (/^#{1,4}\s/.test(lines[0]))
-          return <Fragment key={i}><h3 className="term-ah"><Inline text={lines[0].replace(/^#+\s*/, "")} sources={sources} /></h3>{lines.length > 1 && <p><Inline text={lines.slice(1).join(" ")} sources={sources} /></p>}</Fragment>;
-        return <p key={i}><Inline text={lines.join(" ")} sources={sources} /></p>;
+      {runs.map((r, i) => {
+        const items = r.lines.map((l) => l.replace(strip[r.kind], ""));
+        if (r.kind === "ul") return <ul key={i}>{items.map((t, j) => <li key={j}><Inline text={t} sources={sources} /></li>)}</ul>;
+        if (r.kind === "ol") return <ol key={i}>{items.map((t, j) => <li key={j}><Inline text={t} sources={sources} /></li>)}</ol>;
+        if (r.kind === "h") return <h3 key={i} className="term-ah"><Inline text={items[0]} sources={sources} /></h3>;
+        return <p key={i}><Inline text={items.join(" ")} sources={sources} /></p>;
       })}
     </>
   );
