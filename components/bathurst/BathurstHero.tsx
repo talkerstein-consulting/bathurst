@@ -8,6 +8,7 @@ import Testimonials from "@/components/bathurst/Testimonials";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
 import Services from "@/components/bathurst/Services";
+import Showcase from "@/components/bathurst/Showcase";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
 import Snowfall from "@/components/bathurst/Snowfall";
@@ -234,7 +235,7 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
           <div className="cover-body" id="coverbody">
             {/* 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer */}
-            <Testimonials /><Services /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter />
+            <Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter />
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
@@ -253,8 +254,10 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         {/* over the reviews sheet (which covers the map's own top row) the TCG logo (mark and logo text) stays pinned beside the ☰ */}
         <button type="button" className="brandpin" aria-label="Talkerstein Consulting Group, back to the top" onClick={() => window.dispatchEvent(new CustomEvent("tcg:nav", { detail: { to: "top" } }))}>
           {/* the same two pieces as the map's top row (the mark, then the logo text), so it lands in exactly the same place */}
-          <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" /><svg className="bp-flag" viewBox="0 0 1000 500" role="img" aria-label="Canada"><path fill="#fff" d="M250 0h500v500H250z"/><path fill="#D52B1E" d="M0 0h250v500H0zM750 0h250v500H750zM499 52l-34 64c-4 7-11 6-18 2l-25-13 19 99c4 18-9 18-15 10l-43-49-7 25c-1 3-4 7-9 6l-55-12 15 53c3 12 6 16-3 19l-20 9 95 77c4 3 6 8 4 15l-8 27c33-4 63-10 96-13 3 0 8 4 8 8l-4 104h16l-3-104c0-4 4-8 7-8 33 3 63 9 96 13l-8-27c-2-7 0-12 4-15l95-77-20-9c-9-3-6-7-3-19l15-53-55 12c-5 1-8-3-9-6l-7-25-43 49c-6 8-19 8-15-10l19-99-25 13c-7 4-14 5-18-2z"/></svg>
+          <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" />
         </button>
+        {/* centred in the bar: the small flag and the line it stands for */}
+        <p className="proudca"><svg className="pc-flag" viewBox="0 0 1000 500" aria-hidden="true"><path fill="#fff" d="M250 0h500v500H250z"/><path fill="#D52B1E" d="M0 0h250v500H0zM750 0h250v500H750zM499 52l-34 64c-4 7-11 6-18 2l-25-13 19 99c4 18-9 18-15 10l-43-49-7 25c-1 3-4 7-9 6l-55-12 15 53c3 12 6 16-3 19l-20 9 95 77c4 3 6 8 4 15l-8 27c33-4 63-10 96-13 3 0 8 4 8 8l-4 104h16l-3-104c0-4 4-8 7-8 33 3 63 9 96 13l-8-27c-2-7 0-12 4-15l95-77-20-9c-9-3-6-7-3-19l15-53-55 12c-5 1-8-3-9-6l-7-25-43 49c-6 8-19 8-15-10l19-99-25 13c-7 4-14 5-18-2z"/></svg>Proudly Canadian company</p>
         <SiteMenu />
       </div>
     </section>
