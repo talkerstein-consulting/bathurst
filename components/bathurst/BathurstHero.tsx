@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
 import { assessHref } from "@/components/home/AssessLead";
-import { Assessment, Results, Solution, Engagement, FinalCta } from "@/components/home/HomeSections";
+import { Assessment, Results, Opportunities, Solution, Engagement, FinalCta } from "@/components/home/HomeSections";
 import Testimonials from "@/components/bathurst/Testimonials";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
@@ -116,10 +116,10 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
             {lead}
             <div className="sv-hero" id="svhero">
               <p className="eyebrow hero-where rise-after">{A ? A.eyebrow : <>Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></>}</p>
-              <RiseHeading as={headingLevel} className="h1" text={A ? "Find your way to the right customers." : "Helping Businesses Move Forward."} delay={120} />
-              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "A growing network of businesses working with Talkerstein. Tap a pin to see the client, where they are, their industry and the project."}</p>
+              <RiseHeading as={headingLevel} className="h1" text={A ? "Find your way to the right customers." : "Businesses We Work With"} delay={120} />
+              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "From growing businesses to established companies, we work with teams that want to make better use of technology and build for what’s next."}</p>
               {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
-              <CtaLink href={A ? "/book" : assessHref()} label={A ? "Book Free Consult" : "Analyze My Website"} accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
+              <CtaLink href={A ? "/book" : assessHref()} label={A ? "Book Free Consult" : "Assess My Website"} accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               {/* proof: each rating and each certification in its own cell, split by hairline dividers, every one labelled */}
               <ul className="hero-awards rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties} aria-label="Ratings and certifications">
@@ -233,7 +233,7 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
           <div className="cover-body" id="coverbody">
             {/* 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer */}
             {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /></>
-              : <><Assessment /><Results /><Solution /><Engagement /><FinalCta /></>}<SiteFooter />
+              : <><Assessment /><Results /><Opportunities /><Solution /><Engagement /><FinalCta /></>}<SiteFooter />
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
@@ -244,7 +244,8 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className={A ? "workhead" : "workhead h2 wh-one"} id="workhead">{A ? <><span>Rooted in business.</span> <span>Connected across {A.name}.</span></> : "Helping Businesses Move Forward."}</h2>
+        <h2 className={A ? "workhead" : "workhead h2 wh-one"} id="workhead">{A ? <><span>Rooted in business.</span> <span>Connected across {A.name}.</span></> : "Businesses We Work With"}</h2>
+        {!A && <p className="worksub">From growing businesses to established companies, we work with teams that want to make better use of technology and build for what’s next.</p>}
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
         {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}

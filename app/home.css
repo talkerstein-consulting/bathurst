@@ -153,3 +153,59 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
   #hero #stick .workhead.wh-one { font-size: 30px; }   /* two lines on a phone */
   #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 72px) !important; }
 }
+
+/* ---------- section heads + uniform feature cards (components/home/HomeSections.tsx) ---------- */
+.hs-head { max-width: 760px; margin-bottom: var(--s5); }
+.hs-head .hs-h { margin: var(--s1) 0 var(--s3); }
+.hs-head .hs-lead { margin: 0; }
+.hs-lead { font-size: 19px; line-height: 1.5; color: var(--steel-70); }
+
+/* every card the same size in every section: one column width, equal heights, the diagram panel a fixed ratio */
+.hc-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+.hc { display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--frame-radius); background: var(--sea); }
+.hc-art { aspect-ratio: 4 / 3; background: var(--steel-08); display: grid; place-items: center; border-bottom: 1px solid var(--steel-15); }
+.hc-ph { display: grid; justify-items: center; gap: var(--s1); color: var(--steel-50); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+.hc-ph .hc-icon { width: 40px; height: 40px; }
+.hc-body { flex: 1; display: flex; flex-direction: column; padding: var(--s4); }
+.hc-body > .hc-icon { width: 32px; height: 32px; color: var(--steel); margin-bottom: var(--s3); }
+.hc-label { margin: 0 0 var(--s2); font: 500 13px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--steel); }
+.hc-title { margin: 0 0 var(--s2); font-size: 26px; line-height: 1.08; }
+.hc-copy { margin: 0; font-size: 16px; line-height: 1.55; color: var(--steel-70); }
+@media (max-width: 1100px) { .hc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .hc-grid { grid-template-columns: 1fr; } .hc-body { padding: var(--s3); } }
+
+/* the sample report */
+.hs-report { padding: var(--s4); }
+.hs-report-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s4); }
+.hs-report-top .hc-title { margin: 0; }
+.hs-report .hs-tag { position: static; margin: 0; }
+.hs-scores { grid-template-columns: repeat(3, 1fr); margin-bottom: var(--s4); }
+.hs-score { display: grid; justify-items: center; text-align: center; }
+.hs-score .hs-meter { margin-bottom: var(--s2); }
+.hs-score-t { margin: 0; font-weight: 600; font-size: 17px; }
+.hs-score .hs-k { margin-top: 4px; }
+.hs-opp { padding: var(--s3); border-radius: var(--btn-radius); background: var(--orange-15); }
+.hs-opp p:last-child { margin: 0; font-size: 17px; line-height: 1.5; }
+.hs-note { margin: var(--s2) 0 0 !important; font-size: 13px; color: var(--steel-70); }
+@media (max-width: 640px) { .hs-scores { grid-template-columns: 1fr; gap: var(--s4); } .hs-report-top { flex-direction: column; } }
+
+/* how we work */
+.hs-steps .hc-title { margin-top: 0; }
+
+/* final CTA: centred */
+.hs-final .wrap { text-align: center; justify-items: center; }
+.hs-final .hs-lead { max-width: 40em; margin: var(--s2) auto 0; }
+
+/* section 2: the line under "Businesses We Work With" (shows with the heading) */
+.worksub { display: none; }
+#hero #stick.work .worksub { display: block; opacity: 0; transition: opacity .45s ease; position: absolute; left: 50%; translate: -50% 0; top: calc(var(--navh) + var(--s3) + 56px); z-index: 4; width: min(640px, calc(100% - 32px));
+  margin: 0; text-align: center; font-size: 16px; line-height: 1.45; color: var(--steel); text-shadow: 0 0 6px var(--sea), 0 0 2px var(--sea); pointer-events: none; }
+#hero #stick.work .workhead.on + .worksub { opacity: 1; }   /* in step with the heading (hidden while a client is open) */
+#hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 112px) !important; }
+@media (max-width: 759px) {
+  #hero #stick.work .worksub { top: calc(var(--navh) + var(--s3) + 70px); font-size: 13px; }
+  #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 132px) !important; }
+}
+/* the heading block reads over the pins: subline and chips sit above them, on a soft Sea Breeze wash */
+#hero #stick.work .worksub { z-index: 6; padding: 4px 12px; border-radius: 12px; background: rgb(243 247 243 / .85); text-shadow: none; }
+#hero #stick.work #chipbar { z-index: 6; }

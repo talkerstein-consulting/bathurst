@@ -16,12 +16,12 @@ test("book page loads", async ({ page }) => {
 test("hero assessment carries the URL to the form", async ({ page }) => {
   await page.goto("/");
   await page.locator("#al-url").fill("example.com");
-  await page.getByRole("button", { name: "Analyze My Website" }).click();
+  await page.getByRole("button", { name: "Assess My Website" }).click();
   await expect(page).toHaveURL(/\/book\?.*website=(https%3A%2F%2F)?example\.com/, { timeout: 20_000 });   // the dev server compiles /book on first visit
   await expect(page.locator('input[name="website"]')).toHaveValue(/example\.com$/, { timeout: 20_000 });
 });
 
-test("homepage sections 03–07 are present", async ({ page }) => {
+test("homepage sections 03–08 are present", async ({ page }) => {
   await page.goto("/");
-  for (const id of ["assess", "results", "solution", "engagement", "final-cta"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
+  for (const id of ["assess", "results", "opportunities", "solution", "engagement", "final-cta"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
 });

@@ -10,7 +10,7 @@ import "@/app/home.css";
 /**
  * 01 · Hero: the website-assessment lead-in. It takes the old question box's place over the playing horizon (same
  * #terminal / .term positioning and scroll lead-in), so the map engine's hero timing is unchanged.
- * Until the assessment itself is built, "Analyze My Website" carries the URL to /book (?website=), which pre-fills the form.
+ * Until the assessment itself is built, "Assess My Website" carries the URL to /book (?website=), which pre-fills the form.
  */
 export const assessHref = (website = "") =>
   `/book?${new URLSearchParams({ service: "Website assessment", ...(website ? { website } : {}) })}`;
@@ -51,19 +51,20 @@ export default function AssessLead() {
     <section ref={section} id="terminal" className="term assess-lead" aria-label="Free website assessment">
       <div className="term-main">
         <div className="term-intro">
-          <RiseHeading className="h1 term-h" text="Is Your Website Turning Visitors Into Customers?" delay={80} />
+          <RiseHeading className="h1 term-h" text="Is Your Website Bringing You Business?" delay={80} />
           <p className="term-sub rise-after" style={{ "--rise-delay": "380ms" } as CSSProperties}>
-            Discover how your website performs, captures leads, and manages incoming inquiries.
+            Your website should do more than tell people what you offer. It should help them find what they need, get in touch, and take the next step with your business.
           </p>
+          <p className="term-sub al-sub2 rise-after" style={{ "--rise-delay": "450ms" } as CSSProperties}>Find out how well your website is doing with a free assessment.</p>
         </div>
         <form className="al-form rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties} action="/book" method="get" onSubmit={submit}>
           <input type="hidden" name="service" value="Website assessment" />
           <label className="sr-only" htmlFor="al-url">Your website address</label>
-          <input id="al-url" name="website" className="al-input" type="text" inputMode="url" autoComplete="url" placeholder="yourbusiness.ca"
+          <input id="al-url" name="website" className="al-input" type="text" inputMode="url" autoComplete="url" placeholder="Enter your website URL"
             value={url} onChange={(e) => setUrl(e.target.value)} />
-          <CtaButton type="submit" label="Analyze My Website" accent className="al-go" />
+          <CtaButton type="submit" label="Assess My Website" accent className="al-go" />
         </form>
-        <p className="al-fine rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties}>Free website assessment · No obligation</p>
+        <p className="al-fine rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties}>Free website assessment. No commitment required.</p>
       </div>
     </section>
   );
