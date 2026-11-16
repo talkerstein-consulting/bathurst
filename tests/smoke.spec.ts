@@ -17,7 +17,7 @@ test("hero assessment carries the URL to the form", async ({ page }) => {
   await page.goto("/");
   await page.locator("#al-url").fill("example.com");
   await page.getByRole("button", { name: "Analyze My Website" }).click();
-  await expect(page).toHaveURL(/\/book\?.*website=(https%3A%2F%2F)?example\.com/);
+  await expect(page).toHaveURL(/\/book\?.*website=(https%3A%2F%2F)?example\.com/, { timeout: 20_000 });   // the dev server compiles /book on first visit
   await expect(page.locator('input[name="website"]')).toHaveValue(/example\.com$/, { timeout: 20_000 });
 });
 

@@ -10,7 +10,7 @@ import { CtaLink } from "@/components/style/Cta";
  */
 const TEXT = "Built for what’s next.";
 
-export default function SignatureLine() {
+export default function SignatureLine({ bare = false }: { bare?: boolean } = {}) {
   const box = useRef<HTMLDivElement>(null);
   const [glyphs, setGlyphs] = useState<{ ch: string; x: number }[]>([]);
   const [size, setSize] = useState({ w: 1000, h: 200, fs: 160, family: "cursive" });
@@ -44,21 +44,25 @@ export default function SignatureLine() {
   }, []);
 
   let n = 0;   // index among the visible (non-space) letters, for the stagger
+  const line = (
+    <div ref={box} className={`sig-line${play ? " on" : ""}${bare ? " sig-bare" : ""}`} role={bare ? "img" : undefined} aria-label={bare ? TEXT : undefined}>
+      <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true" style={{ fontFamily: size.family }}>
+        {glyphs.map((g, i) => {
+          if (g.ch === " ") return null;
+          const d = n++;
+          return (
+            <text key={i} x={g.x + size.fs * 0.2} y={size.fs * 1.08} fontSize={size.fs}
+              style={{ ["--d" as string]: `${d * 0.16}s` }}>{g.ch}</text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+  if (bare) return line;   // just the written line, for use inside another section
   return (
     <section className="sig" aria-labelledby="sig-h">
       <h2 id="sig-h" className="sr-only">Built for what’s next.</h2>
-      <div ref={box} className={`sig-line${play ? " on" : ""}`}>
-        <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true" style={{ fontFamily: size.family }}>
-          {glyphs.map((g, i) => {
-            if (g.ch === " ") return null;
-            const d = n++;
-            return (
-              <text key={i} x={g.x + size.fs * 0.2} y={size.fs * 1.08} fontSize={size.fs}
-                style={{ ["--d" as string]: `${d * 0.16}s` }}>{g.ch}</text>
-            );
-          })}
-        </svg>
-      </div>
+      {line}
       <p className="sig-body">Tell us where the business is going. We’ll help you work out what needs to happen next.</p>
       <div className="sig-ctas">
         {/* orange, like the map's Find Your Way Forward CTA (.dc-go) */}

@@ -1,5 +1,6 @@
 import { CtaLink } from "@/components/style/Cta";
 import { assessHref } from "./AssessLead";
+import SignatureLine from "@/components/bathurst/SignatureLine";
 
 /**
  * The homepage sheet that rises over the map (03–07): what we assess, an example report, the solution, how we work together,
@@ -119,7 +120,7 @@ export function FinalCta() {
     <section id="final-cta" className="section hs hs-final">
       <div className="wrap">
         <h2 className="h2 hs-h">Make More of Your Website.</h2>
-        <p className="accent">Built for what’s next.</p>
+        <SignatureLine bare />
         <CtaLink href={assessHref()} label="Analyze my website" accent className="hs-cta">Analyze My Website</CtaLink>
         <p className="al-fine">Free website assessment · No obligation</p>
       </div>
