@@ -10,7 +10,7 @@ import { BATHURST_LINE } from "./bathurst-line";
 import { CONTENT } from "./client-content";
 import LOGOS from "./logos.json";
 import { brandSelect } from "./brand-select";
-import { loadCity, buildBuildings, buildFlatLayers } from "./osm-layer";
+import { loadCity, buildBuildings, buildFlatLayers, penLines } from "./osm-layer";
 
 export function createBathurstEngine(area?: string) {
   const ac = new AbortController(); const signal = ac.signal;
@@ -77,7 +77,7 @@ export function createBathurstEngine(area?: string) {
   // render resolution: at most 1.5x (1.25x in lite; on dense phone screens edges stay clean without MSAA); drops further if frames run slow
   // dev only: ?dpr=2.5 pins the render resolution and turns off the adaptive drop (the promo capture in ../promo renders at full device pixels)
   const pinDpr = process.env.NODE_ENV !== 'production' ? Number(new URLSearchParams(location.search).get('dpr')) || 0 : 0;
-  let dprCap = pinDpr || Math.min(devicePixelRatio, lite ? 1.25 : 1.5);
+  let dprCap = pinDpr || Math.min(devicePixelRatio, lite ? 1.5 : 2);   // full sharpness: the pen lines need it
   renderer.setPixelRatio(dprCap);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setClearColor(0xF3F7F3, 1);   // outside the front-page window: paper   // with colour management off, hex values reach the screen unchanged (#B3530E is #B3530E)
@@ -121,6 +121,31 @@ export function createBathurstEngine(area?: string) {
   })();
 
 
+  // Toronto on the horizon (Print style, hero only): a line-drawn skyline with the CN Tower, set far out ahead of the
+  // camera like a poster backdrop. It rides with the camera (always on the horizon), fills with the land colour and is
+  // outlined in Steel Blue, so it reads as part of the drawing. Heights are exaggerated so it holds at this distance.
+  const skyline = (() => {
+    const D = 16000, k = 2.0;   // distance ahead, height exaggeration
+    // [x offset (m), height (m)] steps across the downtown core, west → east; the CN Tower is drawn separately
+    const steps = [[-2600,0],[-2600,60],[-2300,60],[-2300,110],[-2050,110],[-2050,80],[-1800,80],[-1800,150],[-1550,150],[-1550,120],
+      [-1300,120],[-1300,210],[-1120,210],[-1120,170],[-950,170],[-950,250],[-760,250],[-760,190],[-560,190],[-560,290],[-380,290],
+      [-380,230],[-200,230],[-200,170],[0,170],[0,0]].concat([[420,0],[420,180],[600,180],[600,298],[780,298],[780,240],[960,240],
+      [960,275],[1150,275],[1150,200],[1350,200],[1350,230],[1560,230],[1560,140],[1800,140],[1800,95],[2100,95],[2100,60],[2500,60],[2500,0]]);
+    const g = new THREE.Group(); g.renderOrder = -50;
+    const fill = new THREE.MeshBasicMaterial({ color: 0xEDE5CB, fog: false, depthWrite: false });   // a cream silhouette on the blue sky, no outline
+    const block = (pts) => {
+      const sh = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y * k)));
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), fill); m.renderOrder = -50; g.add(m);
+    };
+    block(steps.slice(0, 26));
+    block(steps.slice(26));
+    // the CN Tower (553 m): shaft, the pod, the SkyPod, the antenna
+    block([[180,0],[240,0],[226,330],[262,335],[262,352],[226,358],[221,446],[232,450],[230,458],[218,460],[214,553],[206,553],[202,460],[190,458],[188,450],[199,446],[194,358],[158,352],[158,335],[194,330]]);
+    g.children.forEach((c) => c.position.z = 0);
+    g.userData.D = D; g.visible = false; scene.add(g);
+    return g;
+  })();
+
   function ribbon(pts, width, color, y, opts={}){
     const pos=[], idx=[];
     pts.forEach((p,i)=>{
@@ -163,6 +188,7 @@ export function createBathurstEngine(area?: string) {
   // Real city from OpenStreetMap (public/map/bathurst-osm.tcgm.gz, plus the lighter region-osm.tcgm.gz around it), drawn flat like a 1940s road map.
   // Flat city layers take paint orders 2-39; the Bathurst route is painted above them.
   const PB = new THREE.Color(0x2F4C9C);   // Print's main ink: Steel Blue brightened (same hue, clearer and lighter, not greyed)
+  const CR = new THREE.Color(0xEDE5CB), INK = new THREE.Color(0x2E4F86), SKYB = new THREE.Color(0x416FA6);   // Print (the reference poster): cream paper, blue pen line, a flat blue sky
   const PALETTES = {
     // Poster: Steel Blue land, Sea Breeze city (the 1940s route-map look)
     poster: {
@@ -187,12 +213,15 @@ export function createBathurstEngine(area?: string) {
     // Steel Blue sky (the brand blue), deeper steel land, white roofs as the highlight, Steel Blue sunlit walls, black shaded
     // walls; streets Steel Blue, parks black. The haze starts far out so the inks stay flat. Muted Orange stays on the route and pins.
     print: {
-      ground: new THREE.Color(C.steel), haze: PB, page: new THREE.Color(C.sea),
-      roof: new THREE.Color(C.sea), wallLit: PB, wallShade: new THREE.Color(0x0A0A14), ink: new THREE.Color(0x0A0A14),
-      roads: [PB, PB, PB, PB, mix(PB.getHex(), C.sea, .22), PB],   // highways a lighter blue, not white
-      park: new THREE.Color(0x0A0A14), water: PB, footprint: PB,
-      inkK: 0, fogK: 3, skyDark: true,
-      sky: [PB.getHex(), PB.getHex(), PB.getHex()],   // one flat ink
+      // the pen-and-ink poster: cream land, lots, bases and buildings, every edge drawn in blue pen (buildings, lots,
+      // building bases, parks), streets a hair darker than the paper, and a blue sky meeting the land at a clean horizon
+      ground: CR, haze: CR, page: CR,
+      roof: CR.clone().lerp(new THREE.Color(0xffffff), .35), wallLit: CR, wallShade: CR.clone().lerp(INK, .13), ink: INK,   // light roofs, sunlit walls in the paper cream, shaded walls a soft blue-grey
+      roads: [CR, CR, CR, CR, CR, CR].map(c => c.clone().lerp(INK, .16)),
+      park: CR.clone().lerp(INK, .1), water: CR.clone().lerp(SKYB, .28), footprint: CR.clone().lerp(INK, .07),   // light fills, so the shapes still read in map view without outlines
+      shadow: CR.clone().lerp(INK, .17),   // contact shadows
+      inkK: 1.2, fogK: .75, skyDark: true, lotLines: true,   // the haze starts sooner, so far lines soften into shapes
+      sky: [SKYB.clone().lerp(CR, .55).getHex(), SKYB.clone().lerp(CR, .12).getHex(), SKYB.clone().lerp(INK, .55).getHex()],   // horizon, low, overhead: pale blue at the horizon deepening overhead
     },
     // Mono: the railway poster in one colour. Everything is a shade of the poster blue: the same dusk sky,
     // pale blue roofs, mid-blue sunlit walls, deep blue shade, navy land with blue-tint streets. No outlines.
@@ -229,7 +258,21 @@ export function createBathurstEngine(area?: string) {
     },
   };
   const PALETTE = PALETTES.paper;
-  const city = {meshes:[], ready:false};
+  const city = {meshes:[], ready:false, pen:[]};
+  // thick pen lines measure their width in screen pixels, so each one needs the canvas size (kept current in resize())
+  const fatLines = [];
+  function fat(l){ const s=renderer.getSize(new THREE.Vector2()); l.material.resolution.set(s.x||innerWidth, s.y||innerHeight); fatLines.push(l); return l; }
+  // Print style: blue pen over the flat layers. Lots, building bases and parks get their outline (water does not), and
+  // every road is drawn as a centre line, so the road grid divides the land into polygons across the whole map.
+  function penOutlines(flats, roads){
+    const thin = () => new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.7, depthWrite:false});
+    for(const m of flats){ const k=m.userData.kind; if(k!=='blocks' && k!=='park') continue;   // no outline on water (rivers, ponds)
+      const l=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 1), thin());   // hundreds of thousands of edges: plain 1px lines (smooth at full sharpness), the thick pen is for the buildings
+      l.position.y=.3; l.renderOrder=40; l.userData.kind=k; l.userData.outline=true; scene.add(l); city.meshes.push(l); city.pen.push(l); }
+    if(roads?.length){ const v=[];
+      for(const r of roads) for(let i=0;i<r.pts.length-1;i++){ const [ax,az]=r.pts[i], [bx,bz]=r.pts[i+1]; v.push(ax,.25,az,bx,.25,bz); }
+      const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v,3)); const l=new THREE.LineSegments(g, thin()); l.renderOrder=40; l.userData.kind='roadink'; l.userData.outline=true; scene.add(l); city.meshes.push(l); city.pen.push(l); }
+  }
   // the city's data waits until the page itself has loaded (text, fonts, images first), then is
   // decoded + triangulated in a worker (osm-layer.ts), so the page keeps scrolling while the city builds
   const afterPageLoad = () => new Promise(res=>{
@@ -241,9 +284,11 @@ export function createBathurstEngine(area?: string) {
     const data = {roads: baked.roads};
     let o=12; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(39, o++));   // 2-11 stay free for the region backdrop
     for(const m of flats){ scene.add(m); city.meshes.push(m); }
-    if(baked.buildings){ const {mesh, lines, recolor} = buildBuildings(baked.buildings, PALETTE);
-      for(const m of [mesh, lines]){ scene.add(m); city.meshes.push(m); }
-      city.recolor=recolor; city.ink=lines; }
+    // pen outlines around every lot, building base and park (the boundary edges of each flat layer; Print only)
+    penOutlines(flats, baked.roads);
+    if(baked.buildings){ const {mesh, lines, shadow, recolor} = buildBuildings(baked.buildings, PALETTE);
+      for(const m of [mesh, lines, shadow]){ scene.add(m); city.meshes.push(m); }
+      fat(lines); city.recolor=recolor; city.ink=lines; city.bmesh=mesh; city.shadow=shadow; }
     city.ready=true; city.data=data; stage.classList.add('city'); poke();   // the canvas fades in once the city is there
     paintBathurst(data);
     applyStyle(); applyShow();
@@ -253,7 +298,8 @@ export function createBathurstEngine(area?: string) {
   // Fetched only once the corridor is up, painted underneath it (orders 2-11).
   const loadRegion = () => loadCity('/map/region-osm.tcgm.gz', {lite:true, signal}).then(baked=>{
     if(dead) return;
-    let o=2; for(const m of buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(11, o++))){ scene.add(m); city.meshes.push(m); }
+    let o=2; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(11, o++)); for(const m of flats){ scene.add(m); city.meshes.push(m); }
+    penOutlines(flats, baked.roads);   // the whole region drawn in pen too, so the ground reads as polygons to the edges of the page
     applyStyle(); applyShow(); poke();
   }).catch(err=>{ if(err?.name!=='AbortError') console.warn('Region map data failed to load', err); });
   flatOrder = 40;
@@ -556,6 +602,7 @@ export function createBathurstEngine(area?: string) {
     document.documentElement.style.setProperty('--map-ground', '#'+(pal.page ?? pal.ground).getHexString());
     for(const m of city.meshes){
       const k=m.userData.kind;
+      if(m.userData.outline){ m.material.color.copy(pal.ink); continue; }
       if(k==='park') m.material.color.copy(pal.park);
       else if(k==='water') m.material.color.copy(pal.water);
       else if(k==='blocks') m.material.color.copy(pal.footprint);
@@ -565,13 +612,15 @@ export function createBathurstEngine(area?: string) {
     if(pal.sky) sky.userData.paint(pal.sky);
     // paper is the light-land style (printed grain, dark-ink labels); the others have dark land and take the paper labels
     document.getElementById('stick').classList.toggle('paper-map', mapView.style==='paper');
-    document.getElementById('stick').classList.toggle('sky-dark', !!pal.skyDark);   // railway: the hero text turns Sea Breeze on the blue sky
+    document.getElementById('stick')._skyDark=undefined;   // sky-dark itself is set per frame (frame loop), with the sky   // railway: the hero text turns Sea Breeze on the blue sky
     if(city.ink) city.ink.visible = (pal.inkK ?? 1) > 0;   // flat: no outlines at all, not just transparent ones
+    if(city.ready) applyShow();   // (not on the first call: the page elements applyShow reads are set up further down)
   }
   applyStyle();
   function applyShow(){
     for(const m of city.meshes){
       const k=m.userData.kind;
+      if(m.userData.outline && !PALETTES[mapView.style].lotLines){ m.visible=false; continue; }
       if(k==='buildings') m.visible=mapView.show.buildings && !stick._work;   // Our Work Across Toronto: a clean overview, no 3D corridor
       else if(k==='blocks') m.visible=mapView.show.blocks;
       else if(k==='park' || k==='water') m.visible=mapView.show.nature;
@@ -779,15 +828,23 @@ export function createBathurstEngine(area?: string) {
     if(dirIdx===DIRECTIONS.length+1) return;   // Find Your Way Forward: pins show their name on hover, but open nothing
     if(dirIdx>=0){ const j=NODES.findIndex(n=>n.id===id); resumeY ??= scrollY;   // remember the Route Preview step, to come back to it
       scrollTo({top: heroTop() + (j>=0 ? PH_A+PH_LEAD+(j+.5)*SLOT : PH_A+PH_LEAD*.5)*H, behavior:'instant'}); onScroll(); }
-    openPlace(id, false);   // the map underneath stays exactly where the visitor left it
-    if(W<760) setCollapsed(true);   // phones: the map card is the preview; its View button opens the sheet
+    openPlace(id, false);   // opens the panel: the sidebar on desktop, the half sheet on phones
+    // glide (same zoom) so the pin and its card sit together in the middle of the map the panel leaves free (beside the
+    // sidebar, or above the sheet). Measured now and again once the panel has finished sliding in.
+    const p=ALL.find(x=>x.id===id);
+    const dist = goal.dist > 4000 ? Math.max(4000, goal.dist*.55) : goal.dist;   // zoom in a step (like Google Maps), never closer than the street view
+    const glide=()=>{ if(!p?.pos || selected!==id) return;
+      const o=visibleOffset(); o.y -= 28;   // (y is up) the pin stands ~56px tall on its address: centre the pin, not its tip
+      const m=mpp(dist), r=rgt(goal.bearing), f=fwd(goal.bearing), k=1/Math.max(.45,Math.cos(goal.pitch));
+      mapDirty=true; setGoal({cx: p.pos.x - r.x*o.x*m - f.x*o.y*m*k, cz: p.pos.z - r.z*o.x*m - f.z*o.y*m*k, dist}); };
+    requestAnimationFrame(glide); setTimeout(glide, 450);
   }
   function viewPlace(id){ openPlace(id, false); setSheet('half'); setCollapsed(false); }
   function openPlace(id, fly=true){
     const p=ALL.find(x=>x.id===id); if(!p) return;
     view={type:'place',id}; selected=id; { const j=NODES.findIndex(n=>n.id===id); if(j>=0) nodeIdx=j; markChip(p.ind); } render(); refresh(); setSheet('half'); setCollapsed(false);
     if(target<1) scrollToProg(1);
-    if(fly && p.pos){ const stop = nodeIdx>=0 && NODES[nodeIdx]?.id===id; flyTo(p.pos, stop ? 4200 : Math.min(goal.dist, 1500), true); }   // the client in focus lands on the centre of the screen   // scroll stops: wide enough that the neighbouring icons stay on screen
+    if(fly && p.pos){ const stop = nodeIdx>=0 && NODES[nodeIdx]?.id===id; requestAnimationFrame(()=>flyTo(p.pos, stop ? 4200 : Math.min(goal.dist, 1500), false)); }   // the client in focus lands in the centre of the free map (next frame: the panel and sheet have opened by then)   // scroll stops: wide enough that the neighbouring icons stay on screen
   }
   function refresh(){
     document.getElementById('stick')?.classList.toggle('filtered', filter!=='all');   // a category chip is on: its pins grow, logo with the name underneath
@@ -937,10 +994,16 @@ export function createBathurstEngine(area?: string) {
   const mpp = dist => 2*dist*Math.tan(camera.fov*Math.PI/360)/H;
   // pixel offset of the visible map centre (panel / sheet cover part of the canvas)
   function visibleOffset(){
-    if(W<760){ const top=120, bot=sheetTop(); return {x:0, y:H/2 - (top+bot)/2}; }
-    if(mapUI.classList.contains('pc')) return {x:0,y:0};
-    // centre on what the sidebar leaves visible (its real width, which changes per breakpoint)
-    const r=mapUI.querySelector('.panel').getBoundingClientRect(), s=stick.getBoundingClientRect(); return {x:Math.max(0, r.right-s.left-(document.querySelector('.ctrls')?.offsetWidth||0)-24)/2, y:0};   // minus the control column on the right
+    // the centre of the map that is actually free: below the navbar, heading and chips, right of the side panel, left of the
+    // control column, above the bottom sheet. Returned as how far that centre sits from the screen centre (x right, y up).
+    const s=stick.getBoundingClientRect(), shown=el=>{ if(!el) return null; const cs=getComputedStyle(el); if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<.1) return null; const r=el.getBoundingClientRect(); return r.width&&r.height ? r : null; };
+    let left=0, right=W, top=0, bot=H;
+    for(const sel of ['.navbar .layers-top', '#chipbar', '#workhead', '.brandpin', '.menubtn']){ const r=shown(stick.querySelector(sel)); if(r && r.bottom-s.top < H*.45) top=Math.max(top, r.bottom-s.top); }
+    if(W<760) bot=Math.min(bot, sheetTop());
+    else if(!mapUI.classList.contains('pc')){ const r=shown(mapUI.querySelector('.panel')); if(r && r.left-s.left < W*.4) left=Math.max(left, r.right-s.left); }
+    { const r=shown(stick.querySelector('.ctrls')); if(r && r.left-s.left > W*.6) right=Math.min(right, r.left-s.left); }
+    top+=28; left+=16; right-=16; bot-=16;   // air from each edge (top: the navbar's bar runs 16px below its buttons)
+    return {x:(left+right)/2 - W/2, y:H/2 - (top+bot)/2};
   }
   function centreFor(world, dist, bearing, pitch, mid){
     // mid: the true centre of the screen. Phones: the selected pin is a teardrop standing on its address, so the address sits 28px
@@ -1240,7 +1303,7 @@ export function createBathurstEngine(area?: string) {
     /* the hero text sits on the sky inside the window: lower the skyline (the rendered image) until it clears the text block */
     { const term=document.querySelector('#terminal:not(.is-full) .term-main'), tty=term ? parseFloat(getComputedStyle(term.closest('#terminal')).translate.split(' ')[1]||'0')||0 : 0;
       const tb=(term ? term.getBoundingClientRect().bottom - tty : $('svhero').getBoundingClientRect().bottom - ty) - s.top, wh=H-WIN.t-WIN.b; WIN.tb=tb; WIN.drop=Math.max(0, tb + (W<760 ? 110 : 100) - (WIN.t + SKY_R*wh)); } }   /* clear sky under the ratings row, so the far-off pins gathering at the horizon never touch it */   /* phones: the text box's own padding is the gap, so the skyline and the dot sit close under the text */
-  function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
+  function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); for(const l of fatLines) l.material.resolution.set(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
   addEventListener('resize', resize, {signal}); resize();
   document.fonts?.ready.then(()=>{ if(!dead) measureWin(); });
   // the map fills the large viewport; while a phone's toolbar shows, the visible bottom is innerHeight, not H
@@ -1296,7 +1359,9 @@ export function createBathurstEngine(area?: string) {
     const hh = (1-smooth(0,.2,prog)) * (reduce?0:1);
     pos.x += Math.sin(ts*.0006)*0.25*hh; pos.y += Math.sin(ts*.0009)*0.12*hh;
     camera.position.copy(pos); camera.up.set(0,1,0); camera.lookAt(tgt);
-    sky.position.copy(pos); sky.visible = mapView.style !== 'poster';
+    sky.position.copy(pos); sky.visible = mapView.style !== 'poster' && !(PALETTES[mapView.style].lotLines && pos.y > 1500);   // print: from above, the land runs to the page edge (no sky at the corners)
+    { const dark = !!PALETTES[mapView.style].skyDark && city.ready && (!PALETTES[mapView.style].lotLines || pos.y < 1500);   /* city.ready: the canvas (and its blue sky) only fades in once the city is there */ if(stick._skyDark!==dark){ stick._skyDark=dark; stick.classList.toggle('sky-dark', dark); } }   // light text only over the blue sky
+    { const look = tgt.clone().sub(pos).setY(0).normalize(); skyline.position.set(pos.x + look.x*skyline.userData.D, 0, pos.z + look.z*skyline.userData.D); skyline.lookAt(pos.x, 0, pos.z); skyline.visible = mapView.style === 'print' && pos.y < 1200; }
     const alt = pos.y;
     { const nn=Math.max(.5, Math.min(250, alt*.04)); if(Math.abs(camera.near-nn) > nn*.02){ camera.near=nn; camera.updateProjectionMatrix(); } }
     { const fk = PALETTES[mapView.style].fogK ?? 1; scene.fog.near = Math.max(260, alt*1.1)*fk; scene.fog.far = Math.max(2800, alt*3.6)*fk; }   // at street height the haze starts a few blocks out, so the near city keeps its full shading
@@ -1304,9 +1369,12 @@ export function createBathurstEngine(area?: string) {
     { const s=Math.max(0, scrollY - heroTop())/H, on = prog>.6 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
       if(stick._work!==on){ $('workhead').classList.toggle('on', on); stick.classList.toggle('work', on); stick._work=on; if(on && !reduce){ chipBar.getAnimations().forEach(x=>x.cancel()); chipBar.animate([{transform:'translateX(120px)', opacity:0},{transform:'none', opacity:1}], {duration:600, easing:'cubic-bezier(.22,1,.36,1)'}); }   /* the categories slide in from the side */ applyShow(); } }   /* the overview hides the 3D buildings (applyShow) */
     { const named = alt < 2600 || filter!=='all'; /* zoomed in, or a chip filter is on */ if(stick._named!==named){ stick.classList.toggle('named', named); stick._named=named; } }
-    const darkMap = alt > 90; if(darkMap!==stick._dark){ stick.classList.toggle('dark-map', darkMap); stick._dark=darkMap; }
+    const darkMap = alt > 90 && mapView.style !== 'print'; /* print is light land: the nav keeps its dark ink */ if(darkMap!==stick._dark){ stick.classList.toggle('dark-map', darkMap); stick._dark=darkMap; }
     // building ink thins with altitude so the 3D corridor never reads as a dark stripe from far away
-    if(city.ink){ const io = (.8 - .68*smooth(1500, 7000, alt)) * (PALETTES[mapView.style].inkK ?? 1); if(Math.abs(city.ink.material.opacity-io)>.01) city.ink.material.opacity = io; }
+    // top view: the 3D buildings flatten into their footprints as the camera rises (walls fold down, roofs + bases stay outlined)
+    { const po=.7*(1-smooth(900, 2200, alt)); for(const l of city.pen){ if(Math.abs(l.material.opacity-po)>.01) l.material.opacity=po; l.material.visible = po>.01; } }   // fully faded: not drawn at all   // map view: shapes only, no pen outlines
+    if(city.bmesh){ const fy=Math.max(.002, 1-smooth(900, 2200, alt)); if(Math.abs(city.bmesh.scale.y-fy)>.001){ city.bmesh.scale.y=fy; city.ink.scale.y=fy; city.shadow.visible = fy>.4; } }
+    if(city.ink){ const io = (.8 - .68*smooth(1500, 7000, alt)) * (PALETTES[mapView.style].inkK ?? 1) * (PALETTES[mapView.style].lotLines ? 1-smooth(900, 2200, alt) : 1); if(Math.abs(city.ink.material.opacity-io)>.01) city.ink.material.opacity = io; city.ink.material.visible = io>.01; }
     const mapK = smooth(.55, .92, prog), svK = 1 - smooth(.08,.28,prog), ready = mapReady();
     // front page: the view lives in a rounded window; it opens to the full screen as the headline drops away
     { const e0=smooth(.02,.9,prog), e=e0>.999 ? 1 : e0, f=1-e, key=e.toFixed(4);   /* snap the last sliver to fully open, so the front-page rules (hero-fade, the distance fade on pins) switch off */   /* the window opens across the whole crane, in step with the camera */
@@ -1341,7 +1409,7 @@ export function createBathurstEngine(area?: string) {
       clipS.value = done>=1 && NODES.length ? lastPin().z : 1e9;   // the runner belongs to the hero; the map view is still
       if(mapK>=.5 && DIR && trail?.visible){ const q=dirAt(Math.max(0, trailD.value)).p; runner.position.set(q.x, .5, q.z); }   /* projects: the dot is the tip of the solid journey */
       else runner.position.set(roadX(z), .5, z); /* on the painted road itself, not the smoothed line */ const sc=Math.max(10, alt*.018) * (mapK<.5 ? lead/330 : 1); runner.scale.setScalar(sc);   /* further ahead on phones, scaled up to keep its size */
-      const pul=(ts*.0012)%1; runner.userData.halo.scale.setScalar(1+pul*1.4); runner.userData.halo.material.opacity=.5*(1-pul); }
+      runner.userData.halo.visible=false; }   // no pulse
     routeGlow.material.opacity = .10*mapK + .06;
     if(!DIR && city.data && mapK>.1){ DIR=buildDir(); buildCurves(); if(!mapDirty) setGoal(defaultView()); onScroll(); }   /* re-aim the journey now its pin distances exist */
     const finale = dirIdx===DIRECTIONS.length+1;   // "Find Your Way Forward": no path, just the project icons by industry
@@ -1363,7 +1431,7 @@ export function createBathurstEngine(area?: string) {
       const {p, i} = dirAt(dirD); dirPos.copy(p);
       trailD.value = dirD;
       nav.visible = !finale; nav.position.set(p.x, .6, p.z); nav.scale.setScalar(Math.max(10, alt*.02));
-      const pul=(ts*.0012)%1; nav.userData.halo.scale.setScalar(1+pul*1.4); nav.userData.halo.material.opacity=.5*(1-pul);
+      nav.userData.halo.visible=false;   // no pulse
       // follow the dot: inclined and facing north (back over the Thornhill and Concord clients), never rotating; pulled back and only gently
       // tilted so the client pins around the drive stay in view. The dot sits mid-way below the Route Preview card.
       if(!drag && dirIdx<=DIRECTIONS.length){ const dist=7500, pitch = mapView.view==='2d' ? 0 : .78, bearing=0;
@@ -1533,7 +1601,7 @@ export function createBathurstEngine(area?: string) {
       dead = true; cancelAnimationFrame(raf); clearInterval(phTimer); ac.abort();
       for(const m of city.meshes){ m.geometry.dispose(); m.material.dispose(); }
       renderer.dispose(); renderer.domElement.remove();
-      document.getElementById('labels').innerHTML=''; document.getElementById('chips').innerHTML=''; document.getElementById('sheetBody').innerHTML='';
+       for(const id of ['labels','chips','sheetBody']){ const el=document.getElementById(id); if(el) el.innerHTML=''; }   // some may already be gone when React unmounts first
     },
   };
 

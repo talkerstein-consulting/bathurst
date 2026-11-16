@@ -21,7 +21,7 @@ export type MapData = {
 /** One flat layer, in paint order. kind: park | water | blocks | road0..road5 */
 export type FlatLayer = { kind: string; pos: Float32Array; idx: Uint32Array };
 /** tone per vertex: 0 roof, 1 lit wall, 2 shaded wall (coloured on the main thread, so palettes swap without a rebake) */
-export type BakedBuildings = { pos: Float32Array; idx: Uint32Array; tone: Uint8Array; ink: Float32Array };
+export type BakedBuildings = { pos: Float32Array; idx: Uint32Array; tone: Uint8Array; ink: Float32Array; shadowPos: Float32Array; shadowIdx: Uint32Array };
 export type BakedCity = { roads: MapData["roads"]; flats: FlatLayer[]; buildings: BakedBuildings | null };
 
 const ROAD_WIDTH = [7, 11, 14, 18, 30, 8];
@@ -79,9 +79,15 @@ const ring = (pts: Pt[]) => {
 };
 
 function bakeBuildings(list: MapData["buildings"]): BakedBuildings {
-  const pos: number[] = [], idx: number[] = [], ink: number[] = [], tone: number[] = [];
+  const pos: number[] = [], idx: number[] = [], ink: number[] = [], tone: number[] = [], spos: number[] = [], sidx: number[] = [];
   for (const b of list) {
     const contour = ring(b.pts), n = contour.length, h = b.h;
+    // contact shadow: the footprint swept away from the light by a short, height-capped distance, laid flat on the ground
+    { const d = Math.min(h * .45, 22), ox = -LIGHT.x * d, oz = -LIGHT.y * d, sb = spos.length / 3;
+      for (const p of contour) spos.push(p.x + ox, .06, p.y + oz);
+      for (const t of ShapeUtils.triangulateShape(contour.slice(), [])) sidx.push(sb + t[0], sb + t[1], sb + t[2]);
+      for (let i = 0; i < n; i++) { const a = contour[i], c = contour[(i + 1) % n], q = spos.length / 3;
+        spos.push(a.x, .06, a.y, c.x, .06, c.y, c.x + ox, .06, c.y + oz, a.x + ox, .06, a.y + oz); sidx.push(q, q + 1, q + 2, q, q + 2, q + 3); } }
     const base = pos.length / 3;
     for (const p of contour) { pos.push(p.x, h, p.y); tone.push(0); }
     for (const t of ShapeUtils.triangulateShape(contour.slice(), [])) idx.push(base + t[0], base + t[1], base + t[2]);
@@ -93,12 +99,14 @@ function bakeBuildings(list: MapData["buildings"]): BakedBuildings {
       pos.push(a.x, 0, a.y, c.x, 0, c.y, c.x, h, c.y, a.x, h, a.y);
       for (let j = 0; j < 4; j++) tone.push(lit ? 1 : 2);
       idx.push(w, w + 1, w + 2, w, w + 2, w + 3);
-      // ink: roof edge, plus the corner line on anything taller than a house
+      // ink: roof edge, base edge (where the wall meets the ground, lifted a hair so it never sinks into the land), and the
+      // corners of anything taller than a house (on houses they only add noise)
       ink.push(a.x, h, a.y, c.x, h, c.y);
+      ink.push(a.x, .2, a.y, c.x, .2, c.y);
       if (h > 9) ink.push(a.x, 0, a.y, a.x, h, a.y);
     }
   }
-  return { pos: Float32Array.from(pos), idx: Uint32Array.from(idx), tone: Uint8Array.from(tone), ink: Float32Array.from(ink) };
+  return { pos: Float32Array.from(pos), idx: Uint32Array.from(idx), tone: Uint8Array.from(tone), ink: Float32Array.from(ink), shadowPos: Float32Array.from(spos), shadowIdx: Uint32Array.from(sidx) };
 }
 
 function bakeFlats(data: MapData, flatBuildings: boolean): FlatLayer[] {

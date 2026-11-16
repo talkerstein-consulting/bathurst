@@ -1,0 +1,127 @@
+/* Homepage: the assessment hero (components/home/AssessLead.tsx) and the sheet sections 03–07 (components/home/HomeSections.tsx).
+   Brand tokens only: Sea Breeze, Steel Blue, Muted Orange. */
+
+/* ---------- 01 hero ---------- */
+.assess-lead .term-h { max-width: 15em; font-size: clamp(48px, 5.6vw, var(--h1-size)); line-height: 1.02; }   /* the h1 scale (same clamp as the map hero's h1) */
+.assess-lead .term-main { align-items: center; }
+.al-form { display: flex; gap: var(--s1); width: min(640px, 100%); padding: 6px; background: var(--sea);
+  border: 1px solid var(--steel-15); border-radius: var(--radius); box-shadow: 0 10px 30px rgb(25 37 74 / .18); }
+.al-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 var(--s2); font: 500 17px var(--body); color: var(--steel); outline: none; }
+.al-input::placeholder { color: var(--steel-50); }
+.al-form:focus-within { outline: 2px solid var(--orange); outline-offset: 2px; }
+.al-go { white-space: nowrap; }
+.al-fine { margin: 0; text-align: center; font-size: 14px; font-weight: 500; color: var(--steel-70); }
+#stick.sky-dark .term:not(.is-full) .al-fine { color: var(--sea); }
+@media (max-width: 759px) {
+  .assess-lead .term-main { align-items: stretch; }
+  .al-form { flex-direction: column; }
+  .al-input { min-height: 48px; }
+  .al-fine { text-align: left; }
+}
+
+/* ---------- 03–07 sheet sections ---------- */
+.hs .hs-h { margin: var(--s1) 0 var(--s4); max-width: 18em; }
+.hs-lead { max-width: 40em; margin: calc(var(--s2) * -1) 0 var(--s4); font-size: 19px; }   /* same as the hero sub */
+.hs-t { margin: 0 0 var(--s1); font-size: 32px; line-height: 1.05; }   /* the h3 scale */
+.hs p { margin: 0; }
+.hs-n { display: block; font: 400 15px var(--body); letter-spacing: .12em; color: var(--orange); margin-bottom: var(--s2); }
+.hs-cta { margin-top: var(--s4); }
+
+.hs-areas, .hs-grid, .hs-steps, .hs-scores { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); }
+.hs-areas { grid-template-columns: repeat(3, 1fr); }
+.hs-area, .hs-card { padding: var(--s4); }
+.hs-grid { grid-template-columns: repeat(2, 1fr); }
+
+/* the example report */
+.hs-report { padding: var(--s4); position: relative; }
+.hs-tag { position: absolute; top: var(--s2); right: var(--s3); font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--steel-70); }
+.hs-scores { grid-template-columns: repeat(3, 1fr); }
+.hs-score p { font-size: 15px; margin-top: var(--s1); }
+.hs-k { display: block; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--steel-70); }
+.hs-meter { --c: var(--steel); width: 112px; aspect-ratio: 1; border-radius: 50%; margin-bottom: var(--s3); display: grid; place-items: center;
+  background: radial-gradient(closest-side, var(--sea) 80%, transparent 81%), conic-gradient(var(--c) calc(var(--v) * 1%), var(--steel-15) 0); }
+.hs-meter b { font: 700 34px var(--head); color: var(--steel); }
+.hs-score.is-low .hs-meter { --c: var(--orange); }
+
+/* how we work: a numbered line of three */
+.hs-steps { grid-template-columns: repeat(3, 1fr); counter-reset: s; }
+.hs-steps li { padding-top: var(--s3); border-top: 2px solid var(--steel); }
+
+/* closing */
+.hs-final .wrap { text-align: center; display: grid; justify-items: center; }
+.hs-final .hs-h { margin-bottom: 0; }
+.hs-final .accent { margin: var(--s1) 0 0; font-size: var(--accent-size); line-height: 1.1; }   /* the accent token is already the brand's doubled size */
+.hs-final .al-fine { margin-top: var(--s2); }
+
+@media (max-width: 899px) {
+  .hs-areas, .hs-scores, .hs-steps, .hs-grid { grid-template-columns: 1fr; }
+  .hs-tag { position: static; margin-bottom: var(--s3); }
+}
+
+/* the hero's action: the site's primary CTA treatment (same as .hero-cta, app/globals.css), keeping the line sprout and label tumble */
+html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); }
+
+@media (max-width: 899px) { .hs-t { font-size: 26px; } }
+@media (max-width: 760px) { .assess-lead .term-h { font-size: 40px; } }   /* the h1 token (48px) runs this long question to five lines on a phone */
+
+/* the map overview heading: one line on the h2 scale (wraps naturally on phones) */
+#hero #stick .workhead.wh-one { font-size: 48px; line-height: 1.02; white-space: nowrap; width: max-content; max-width: calc(100vw - 32px); }   /* its own width, not half the screen (it is placed from the centre) */
+#hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 64px) !important; }   /* right under the one-line heading */
+@media (max-width: 759px) { #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 96px) !important; } }   /* phones: the heading wraps to two lines */
+@media (max-width: 759px) { #hero #stick .workhead.wh-one { font-size: 38px; white-space: normal; max-width: calc(100vw - 32px); } }
+
+/* navbar: a solid Sea Breeze bar behind the menu, logo, flag line and CTA, so they read over the sky and the map */
+#hero #stick::before { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--navh); z-index: 10; pointer-events: none;
+  background: var(--sea); border-bottom: 1px solid var(--steel-15); transition: translate .35s cubic-bezier(.22,1,.36,1); }
+#hero #stick.nav-hidden::before { translate: 0 -100%; }
+#hero #stick .brandpin .bp-word { filter: none !important; }   /* the wordmark stays Steel Blue on the bar */
+#hero #stick .proudca { color: var(--steel) !important; text-shadow: none !important; }
+
+/* the client map keeps its navbar, even if the scroll that arrived here had tucked it away (BathurstHero sets .nav-hidden
+   before the engine marks the map as up) */
+#hero #stick.mapped:not(.covered).nav-hidden :is(.menubtn, .brandpin, .navbar .layers-top) { opacity: 1; translate: none; pointer-events: auto; }
+#hero #stick.mapped:not(.covered).nav-hidden .proudca { opacity: 1; translate: -50% 0; }
+#hero #stick.mapped:not(.covered).nav-hidden::before { translate: none; }
+
+/* Selected client (Google-Maps style): the logo becomes a location pin standing on the address, and the name slides out
+   of it in a pill. No callout card, no leader line, no marker dot. */
+#labels .pin.sel .co, #labels .pin.sel .ld, #labels .pin.sel .mk { display: none !important; }
+#labels .pin.sel { z-index: 50; }
+#labels .pin.sel .ic { width: 46px !important; height: 46px !important; left: -23px !important; top: -56px !important;
+  border-radius: 50% 50% 50% 0 !important; rotate: -45deg !important; background: #fff; overflow: hidden; z-index: 2;
+  box-shadow: 0 0 0 3px var(--orange), 0 6px 14px rgb(25 37 74 / .3) !important; animation: none !important; }
+#labels .pin.sel .ic > * { rotate: 45deg; }   /* the logo stays upright inside the tilted pin */
+#labels .pin.sel .nm { display: block !important; opacity: 1 !important; position: absolute; left: 0 !important; top: -33px !important;
+  translate: 0 -50%; z-index: 1; white-space: nowrap; padding: 7px 16px 7px 34px; border-radius: 999px;
+  background: var(--sea); color: var(--steel); font: 700 16px/1 var(--head); box-shadow: 0 0 0 1.5px var(--orange), 0 4px 10px rgb(25 37 74 / .2);
+  animation: pin-name .35s cubic-bezier(.22,1,.36,1) both; }
+@keyframes pin-name { from { clip-path: inset(0 100% 0 0 round 999px); } to { clip-path: inset(0 0 0 0 round 999px); } }
+@media (max-width: 760px) { #labels .pin.sel .nm { font-size: 14px; padding: 6px 12px 6px 30px; } }
+@media (prefers-reduced-motion: reduce) { #labels .pin.sel .nm { animation: none; } }
+
+/* navbar CTA: the full label on desktop; on phones a short one-line "Book a call", filled Muted Orange, as tall as the menu button */
+.navcta .dl-short { display: none; }
+@media (max-width: 759px) {
+  .navcta .dl-long { display: none; }
+  .navcta .dl-short { display: inline; }
+  html body #hero #stick .navbar .navcta.dirbtn { height: var(--icon-btn); padding: 0 14px; background: var(--orange) padding-box; --ink: var(--orange); }
+  html body #hero #stick .navbar .navcta.dirbtn .glyph { display: none; }
+  html body #hero #stick .navbar .navcta.dirbtn .dirlabel { max-width: none !important; margin-left: 0 !important; white-space: nowrap; font: 600 14px/1 var(--body); color: var(--sea); text-align: center; }
+}
+
+/* phones: burger on the left margin, the logo centred on the bar; the booking CTA leaves the bar for the thumb button below */
+@media (max-width: 759px) {
+  html body #hero #stick .brandpin { left: 50% !important; translate: -50% 0 !important; }
+  html body #hero #stick .navbar .layers-top { display: none !important; }
+}
+
+/* the thumb button (components/home/ThumbCta.tsx): phones only, bottom centre, over everything but the menu */
+.thumb-cta-wrap { display: none; }
+@media (max-width: 759px) {
+  .thumb-cta-wrap { display: block; position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 60;
+    translate: -50% 140%; opacity: 0; pointer-events: none; transition: translate .35s cubic-bezier(.22,1,.36,1), opacity .25s ease; }
+  .thumb-cta-wrap.on { translate: -50% 0; opacity: 1; pointer-events: auto; }
+  html body .thumb-cta.btn { --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); height: 52px; padding: 0 28px;
+    font: 600 16px/1 var(--body); box-shadow: 0 8px 22px rgb(25 37 74 / .28); }
+}
+@media (prefers-reduced-motion: reduce) { .thumb-cta-wrap { transition: opacity .2s ease; } }

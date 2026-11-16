@@ -49,10 +49,10 @@ function Select({ label, value, onChange, options, placeholder, required }: {
   );
 }
 
-export default function BookingForm({ initial }: { initial: { from: string; goal: string; service: string } }) {
+export default function BookingForm({ initial }: { initial: { from: string; goal: string; service: string; website?: string } }) {
   const svcMatch = SERVICES.find((s) => [s.name, s.short, s.slug].some((x) => x.toLowerCase() === initial.service.toLowerCase()));
   const [f, setF] = useState({
-    business: initial.from, website: "", industry: "", goal: GOALS.some(([k]) => k === initial.goal) ? initial.goal : "",
+    business: initial.from, website: initial.website ?? "", industry: "", goal: GOALS.some(([k]) => k === initial.goal) ? initial.goal : "",
     obstacle: "", timeline: "", name: "", email: "", phone: "", company_url: "",
   });
   const [services, setServices] = useState<string[]>(svcMatch ? [svcMatch.short] : []);

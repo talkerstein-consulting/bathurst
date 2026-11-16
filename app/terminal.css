@@ -8,7 +8,7 @@
 */
 .hero-grid > .term { grid-column: 1; grid-row: 1; align-self: start; position: relative; z-index: 4; pointer-events: auto;
   display: flex; flex-direction: column; min-height: 0; color: var(--steel);
-  padding: clamp(24px, 3.2vw, 56px) var(--s3) 0;   /* no halo: the Steel Blue text reads straight on the poster sky */
+  padding: clamp(72px, 18vh, 200px) var(--s3) 0;   /* sits about a third down the sky; no halo: the Steel Blue text reads straight on the poster sky */
   translate: 0 calc(var(--lead, 0) * -50vh); opacity: calc(1 - var(--lead, 0) * 2); will-change: translate, opacity; }
 .term.is-gone { visibility: hidden; }
 .hero-grid > .term.is-chat { align-self: stretch; padding: var(--s2) var(--s2) var(--s3); text-shadow: none; translate: none; opacity: 1; visibility: visible; }
@@ -110,7 +110,7 @@ a.term-cite:hover, a.term-cite:focus-visible { background: var(--orange); color:
 
 /* ---------- phones ---------- */
 @media (max-width: 760px) {
-  .hero-grid > .term { padding: var(--s3) var(--s2) 0; }
+  .hero-grid > .term { padding: clamp(64px, 12vh, 120px) var(--s2) 0; }   /* clear of the top bar */
   .hero-grid > .term.is-chat { padding: var(--s1) var(--s1) var(--s1); }
   .term-main { gap: var(--s2); }
   /* D10: headings left-aligned on phones */

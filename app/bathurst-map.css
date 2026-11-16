@@ -1315,11 +1315,11 @@
 
 /* the company chip on the map, at twice the size (desktop and tablet; phones keep the compact chip) */
 @media (min-width: 761px) {
-  .pin .co { gap: 20px; padding: 14px 30px 14px 14px; }
-  .pin .co .th { width: 96px; height: 96px; }
-  .pin .co .txt { gap: 5px; }
-  .pin .co .txt b { font-size: 28px; font-family: var(--head); line-height: 1; }
-  .pin .co .txt small { font-size: 18px; }
+  .pin .co { gap: 14px; padding: 10px 20px 10px 10px; }
+  .pin .co .th { width: 64px; height: 64px; }
+  .pin .co .txt { gap: 4px; }
+  .pin .co .txt b { font-size: 22px; font-family: var(--head); line-height: 1; }
+  .pin .co .txt small { font-size: 14px; }
 }
 /* one uniform hero: the neatline's margin and corner-rounding shadow take the land grey, not paper */
 /* the WebGL window is a square scissor cleared to the haze: the spread covers the whole surround (its corners outside the
@@ -1362,10 +1362,10 @@
 .co-rate, .co-act { display: none; }
 @media (max-width: 760px) {
   /* the selected card is the preview on a phone: bigger, with its rating and a View button that opens the case study */
-  .pin.sel .co { gap: 12px; padding: 10px 12px 10px 10px; align-items: stretch; white-space: normal; width: min(78vw, 300px); }
-  .pin.sel .co .th { width: 76px; height: auto; min-height: 76px; align-self: stretch; }
+  .pin.sel .co { gap: 10px; padding: 8px 10px 8px 8px; align-items: stretch; white-space: normal; width: min(76vw, 280px); }
+  .pin.sel .co .th { width: 60px; height: auto; min-height: 60px; align-self: stretch; }
   .pin.sel .co .txt { gap: 3px; flex: 1; min-width: 0; align-content: center; }
-  .pin.sel .co .txt b { font-family: var(--head); font-size: 19px; line-height: 1.05; }
+  .pin.sel .co .txt b { font-family: var(--head); font-size: 18px; line-height: 1.05; }
   .pin.sel .co .txt small { font-size: 12px; }
   .pin.sel .co-rate { display: block; font-size: 12px; color: var(--steel-70); }
   .pin.sel .co-rate b { font: 600 12px/1 var(--body) !important; color: var(--steel); }
@@ -2077,23 +2077,25 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 #stick.sky-dark :is(.term:not(.is-full) .term-h, .term:not(.is-full) .term-sub, .term:not(.is-full) .term-fine, .term:not(.is-full) .term-fine b, .scroll-cue:not(:hover, :focus-visible), .workhead) {
   color: var(--sea); text-shadow: none; }
 
-/* Larger map nodes (3D and top view): the client pins read from across the map */
-.pin.mini .ic { width: 44px; height: 44px; left: -22px; top: -22px; box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 3px 8px rgba(0,0,0,.25); }
-.pin.mini .ic .glyph { width: 24px; height: 24px; }
-.pin.mini .nm { left: 32px; }
-.pin .ic .lg { padding: 5px; }
-.pin:not(.mini) .ic { width: 52px; height: 52px; left: -26px; top: -26px; }
-.pin:not(.mini) .ic .glyph { width: 28px; height: 28px; }
-.pin:not(.mini) .ld { bottom: 26px; height: calc(var(--L) - 26px); }
-#stick.filtered .pin.mini:not(.dim) .ic { width: 72px; height: 72px; left: -36px; top: -36px; }
-#stick.filtered .pin.mini:not(.dim) .ic .glyph { width: 36px; height: 36px; }
-#stick.filtered .pin.mini:not(.dim) .nm { top: 46px; }
+/* Map nodes (3D and top view): big enough to read the logo, small enough that neighbours don't pile up */
+.pin.mini .ic { width: 34px; height: 34px; left: -17px; top: -17px; box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 3px 8px rgba(0,0,0,.25); }
+.pin.mini .ic .glyph { width: 19px; height: 19px; }
+.pin.mini .nm { left: 26px; }
+.pin .ic .lg { padding: 4px; }
+.pin:not(.mini) .ic { width: 44px; height: 44px; left: -22px; top: -22px; }
+.pin:not(.mini) .ic .glyph { width: 24px; height: 24px; }
+.pin:not(.mini) .ld { bottom: 22px; height: calc(var(--L) - 22px); }
+#stick.filtered .pin.mini:not(.dim) .ic { width: 48px; height: 48px; left: -24px; top: -24px; }
+#stick.filtered .pin.mini:not(.dim) .ic .glyph { width: 26px; height: 26px; }
+#stick.filtered .pin.mini:not(.dim) .nm { top: 32px; }
 @media (max-width: 760px) {
-  .pin.mini .ic { width: 36px; height: 36px; left: -18px; top: -18px; }
-  .pin.mini .nm { left: 26px; }
-  .pin:not(.mini) .ic { width: 48px; height: 48px; left: -24px; top: -58px; }
-  .pin:not(.mini) .ld { bottom: 58px; }
-  #stick.filtered .pin.mini:not(.dim) .ic { width: 60px; height: 60px; left: -30px; top: -30px; }
+  .pin.mini .ic { width: 28px; height: 28px; left: -14px; top: -14px; }
+  .pin.mini .ic .glyph { width: 16px; height: 16px; }
+  .pin.mini .nm { left: 20px; }
+  .pin:not(.mini) .ic { width: 40px; height: 40px; left: -20px; top: -48px; }
+  .pin:not(.mini) .ld { bottom: 48px; }
+  .pin:not(.mini) .co { bottom: calc(var(--L) + 28px); }
+  #stick.filtered .pin.mini:not(.dim) .ic { width: 40px; height: 40px; left: -20px; top: -20px; }
 }
 
 /* full-bleed map: no neatline frame around the screen edge */
@@ -2290,7 +2292,7 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 
 
 /* the logo over the dark map: the wordmark (type) turns light; it goes back to Steel Blue over the reviews sheet and the paper map */
-#stick:not(.covered):not(.paper-map) .brandpin .bp-word { filter: brightness(0) invert(1); }
+#stick:is(.sky-dark, .dark-map):not(.covered):not(.paper-map) .brandpin .bp-word { filter: brightness(0) invert(1); }
 
 /* the screens sit on a Steel Blue backdrop, so they stand out from the light card; each carries its client's own logo */
 .cap-art { padding: 14px; background: radial-gradient(120% 90% at 20% 0%, #2B3E72, var(--steel) 70%); }

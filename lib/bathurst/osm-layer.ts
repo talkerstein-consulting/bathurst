@@ -1,4 +1,15 @@
-import { BufferAttribute, BufferGeometry, Color, DoubleSide, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, type Material } from "three";
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, Mesh, MeshBasicMaterial, type Material } from "three";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+
+/** Pen lines with a real on-screen width (WebGL's own lines are always 1 px and aliased). The caller keeps
+ *  material.resolution in step with the canvas size. */
+export function penLines(positions: Float32Array | number[], color: Color, width = 1.5, opacity = .8) {
+  const g = new LineSegmentsGeometry(); g.setPositions(positions instanceof Float32Array ? positions : Float32Array.from(positions));
+  const m = new LineMaterial({ color: color.getHex(), linewidth: width, transparent: true, opacity, depthWrite: false, fog: true });
+  return new LineSegments2(g, m);
+}
 import { bakeCity, gunzip, type BakedCity } from "./map-bake";
 
 /**
@@ -19,6 +30,7 @@ export type PosterPalette = {
   park: Color;
   water: Color;
   footprint: Color;
+  shadow?: Color;
 };
 
 /**
@@ -52,10 +64,15 @@ export function buildBuildings(baked: NonNullable<BakedCity["buildings"]>, pal: 
   g.computeBoundingSphere();
   const mesh = new Mesh(g, new MeshBasicMaterial({ vertexColors: true, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
 
-  const lg = new BufferGeometry();
-  lg.setAttribute("position", new BufferAttribute(baked.ink, 3));
-  lg.computeBoundingSphere();
-  const lines = new LineSegments(lg, new LineBasicMaterial({ color: pal.ink, transparent: true, opacity: 0.8 }));
+  const lines = penLines(baked.ink, pal.ink, 1.35, .8);
+
+  // contact shadows on the ground, one flat tint under every building
+  const sg = new BufferGeometry();
+  sg.setAttribute("position", new BufferAttribute(baked.shadowPos, 3));
+  sg.setIndex(new BufferAttribute(baked.shadowIdx, 1));
+  sg.computeBoundingSphere();
+  const shadow = new Mesh(sg, new MeshBasicMaterial({ color: pal.shadow ?? pal.footprint, depthWrite: false }));
+  shadow.renderOrder = 39; shadow.userData.kind = "buildings";
 
   mesh.userData.kind = "buildings";
   lines.userData.kind = "buildings";
@@ -66,10 +83,11 @@ export function buildBuildings(baked: NonNullable<BakedCity["buildings"]>, pal: 
     const byTone = [p.roof, p.wallLit, p.wallShade];
     for (let i = 0; i < tones.length; i++) { const c = byTone[tones[i]]; arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
     attr.needsUpdate = true;
-    (lines.material as LineBasicMaterial).color.copy(p.ink);
+    (lines.material as LineMaterial).color.copy(p.ink);
+    (shadow.material as MeshBasicMaterial).color.copy(p.shadow ?? p.footprint);
   };
   recolor(pal);
-  return { mesh, lines, recolor };
+  return { mesh, lines, shadow, recolor };
 }
 
 /** Flat layers: parks, water, flat building footprints, then roads. Painted in order, no depth writes. */

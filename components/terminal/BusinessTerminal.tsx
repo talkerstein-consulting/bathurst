@@ -310,12 +310,6 @@ export default function BusinessTerminal() {
           {composer}
         </div>
 
-        {!open && (
-          <p className="term-fine">
-            Ask about customers, operations, your website or AI. Answers link to their sources and are general information, not legal or tax advice.
-            {DEMO && <> <b>Demo: the live terminal isn’t connected yet.</b></>}
-          </p>
-        )}
       </div>
     </section>
   );

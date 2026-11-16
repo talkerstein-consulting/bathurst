@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
+import { assessHref } from "@/components/home/AssessLead";
+import { Assessment, Results, Solution, Engagement, FinalCta } from "@/components/home/HomeSections";
 import Testimonials from "@/components/bathurst/Testimonials";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
@@ -11,7 +13,6 @@ import Services from "@/components/bathurst/Services";
 import Showcase from "@/components/bathurst/Showcase";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
-import Snowfall from "@/components/bathurst/Snowfall";
 import SiteMenu, { MenuButton } from "@/components/bathurst/SiteMenu";
 import { COMPASS_ROSE } from "@/lib/bathurst/icons";
 import "@/app/bathurst-map.css";
@@ -91,7 +92,8 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
       if (Math.abs(d) < 6) return;   // ignore jitter (and phone toolbar nudges)
       last = y;
       const menuOpen = stick.querySelector('.menubtn[aria-expanded="true"]');
-      stick.classList.toggle("nav-hidden", d > 0 && y > 40 && !menuOpen);
+      const onMap = stick.classList.contains("mapped") && !stick.classList.contains("covered");   // the client map: the navbar stays put
+      void d; void menuOpen; void onMap; stick.classList.remove("nav-hidden");   // the navbar never hides
     };
     addEventListener("scroll", onScroll, { passive: true });
     return () => { removeEventListener("scroll", onScroll); stick.classList.remove("nav-hidden"); };
@@ -103,7 +105,6 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
       <div id="stick" className={lead ? "open navbar-on lead" : "open navbar-on"}>
         <div id="stage" tabIndex={0} aria-label={`Map of Talkerstein clients ${A ? `in ${A.name}` : "on Bathurst Street"}. Drag to pan, arrow keys to move, plus and minus to zoom.`} />
         <div id="labels" />
-        <Snowfall />
 
         {/* opening "front page": masthead row; then the headline column on paper (left), the moving view in its
             rounded, neatlined window (right; #win reserves the box the engine opens to full screen). The column holds the
@@ -115,10 +116,10 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
             {lead}
             <div className="sv-hero" id="svhero">
               <p className="eyebrow hero-where rise-after">{A ? A.eyebrow : <>Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></>}</p>
-              <RiseHeading as={headingLevel} className="h1" text="Find your way to the right customers." delay={120} />
-              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "We help businesses across Toronto and the GTA build better websites, strengthen their brands, and put AI and automation to work."}</p>
+              <RiseHeading as={headingLevel} className="h1" text={A ? "Find your way to the right customers." : "Helping Businesses Move Forward."} delay={120} />
+              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "A growing network of businesses working with Talkerstein. Tap a pin to see the client, where they are, their industry and the project."}</p>
               {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
-              <CtaLink href="/book" label="Book Free Consult" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
+              <CtaLink href={A ? "/book" : assessHref()} label={A ? "Book Free Consult" : "Analyze My Website"} accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
               {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
               {/* proof: each rating and each certification in its own cell, split by hairline dividers, every one labelled */}
               <ul className="hero-awards rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties} aria-label="Ratings and certifications">
@@ -130,10 +131,6 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
             </div>
             <div id="win" aria-hidden="true" />
           </div>
-          {/* scroll cue: bottom-centre of the window, over the moving map; a tap glides on to the map, and it fades on the first scroll */}
-          <button type="button" className="scroll-cue" onClick={() => window.dispatchEvent(new Event("tcg:scroll"))}>
-            <span>Scroll to explore</span><Glyph g="arrowD" />
-          </button>
         </div>
 
         <div id="mapui">
@@ -228,14 +225,15 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
             the square directions button is repeated here (same .layers-top styles, same spot) since the sheet covers the
             map's own; a short Sea Breeze fade sits behind the row so it reads over the reviews, services and footer */}
         <div className="navbar">
-          <div className="layers-top"><a className="sprout btn icon dirbtn navcta" data-no-tumble aria-label="Book a free consult" href="/book"><Glyph g="turn" /><span className="dirlabel">Book Free Consult</span></a></div>
+          <div className="layers-top"><a className="sprout btn icon dirbtn navcta" data-no-tumble aria-label="Book a free consult" href="/book"><Glyph g="turn" /><span className="dirlabel"><span className="dl-long">Book Free Consult</span><span className="dl-short">Book a call</span></span></a></div>
         </div>
         {/* after the last direction step: reviews, services and the footer, one sheet that rises over the map */}
         <div className="cover frame" id="cover" aria-label="Partner stories, services, interviews and contact">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
           <div className="cover-body" id="coverbody">
             {/* 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer */}
-            <Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter />
+            {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /></>
+              : <><Assessment /><Results /><Solution /><Engagement /><FinalCta /></>}<SiteFooter />
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
@@ -246,7 +244,7 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className="workhead" id="workhead"><span>Rooted in business.</span> <span>Connected across {A ? A.name : "Toronto"}.</span></h2>
+        <h2 className={A ? "workhead" : "workhead h2 wh-one"} id="workhead">{A ? <><span>Rooted in business.</span> <span>Connected across {A.name}.</span></> : "Helping Businesses Move Forward."}</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
         {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}
