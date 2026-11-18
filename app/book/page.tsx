@@ -32,7 +32,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         </p>
       </div>
       <div className="rise-after" style={{ "--rise-delay": "560ms" } as React.CSSProperties}>
-        <BookingForm initial={{ from: one(q.from), goal: one(q.goal), service: one(q.service), website: one(q.website) }} />
+        <BookingForm initial={{ from: one(q.from), goal: one(q.goal), service: one(q.service), website: one(q.website), email: one(q.email) }} />
       </div>
     </main>
   );

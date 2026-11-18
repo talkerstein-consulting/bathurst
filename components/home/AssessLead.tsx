@@ -13,8 +13,8 @@ import "@/app/home.css";
  * #terminal / .term positioning and scroll lead-in), so the map engine's hero timing is unchanged.
  * Until the assessment itself is built, "Assess My Website" carries the URL to /book (?website=), which pre-fills the form.
  */
-export const assessHref = (website = "") =>
-  `/book?${new URLSearchParams({ service: "Website assessment", ...(website ? { website } : {}) })}`;
+export const assessHref = (website = "", email = "") =>
+  `/book?${new URLSearchParams({ service: "Website assessment", ...(website ? { website } : {}), ...(email ? { email } : {}) })}`;
 
 /**
  * The rest of the domain, offered as the visitor types: "acme" → ".com", "acme.c" → ".ca" or ".com".
@@ -72,7 +72,6 @@ export default function AssessLead() {
     <section ref={section} id="terminal" className="term assess-lead" aria-label="Free website assessment">
       <div className="term-main">
         <div className="term-intro">
-          <p className="eyebrow al-eyebrow rise-after" style={{ "--rise-delay": "40ms" } as CSSProperties}>Talkerstein Consulting</p>
           <RiseHeading className="h1 term-h" text={"Turn More Leads\nInto Sales."} delay={80} />
           <p className="term-sub al-sub2 rise-after" style={{ "--rise-delay": "380ms" } as CSSProperties}>Your website, marketing, and systems should work together to attract customers, convert leads, and grow your business.</p>
           <p className="term-sub al-sub3 rise-after" style={{ "--rise-delay": "440ms" } as CSSProperties}>Start by finding out what’s working and where you can improve.</p>

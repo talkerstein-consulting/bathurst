@@ -4,13 +4,17 @@ import { cn } from "@/lib/utils";
 /**
  * STYLE.md CTAs. Outline only: the line system (LineSystem.tsx) draws the inner line and sprouts the outer one.
  * The visible label is two stacked copies for the tumble, so it is aria-hidden and the element carries aria-label.
- *   variant "btn"  primary rounded rectangle · "link" secondary underline · "icon" square icon-only
+ *   variant "btn"  primary rounded rectangle · "icon" square icon-only
  *   accent         Muted Orange (one accent CTA per section)
+ *
+ * There is no underlined variant. Every call to action on the site is the outlined button — a secondary one is the
+ * same button at the small size, not an underlined label — so the two read as one family and the only thing that
+ * ranks them is size and the accent. `.link` in app/globals.css is kept for prose links, not for actions.
  */
-type Common = { label: string; children?: ReactNode; variant?: "btn" | "link" | "icon"; accent?: boolean; small?: boolean; className?: string };
+type Common = { label: string; children?: ReactNode; variant?: "btn" | "icon"; accent?: boolean; small?: boolean; className?: string };
 
 const cls = ({ variant = "btn", accent, small, className }: Common) =>
-  cn("sprout", variant === "link" ? "link" : "btn", variant === "icon" && "icon", small && "sm", accent && "orange", className);
+  cn("sprout", "btn", variant === "icon" && "icon", small && "sm", accent && "orange", className);
 
 function Label({ label, children }: { label: string; children?: ReactNode }) {
   const inner = children ?? label;

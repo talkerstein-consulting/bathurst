@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Phone } from "./Interfaces";
 import "@/app/landing.css";
 
 /**
- * 04 · The Transformation. The heading sits off to the right over empty space, then the section splits: a short list
- * of the three steps holds still on the left while their content scrolls past on the right, and the step being read
- * is the one marked on the list.
+ * 04 · The Transformation. The section splits: a phone holds still on the left while the three steps scroll past on
+ * the right, and the phone shows the screen for whichever step is being read. It used to be a list of the three
+ * step names pinned there with a grey screen drawn inside every block — the phone says the same thing once, and
+ * shows it at the size someone would actually meet it on.
  *
  * This is the opposite mechanism to 03 (components/home/RealityPanels.tsx), where the content was pinned and swapped
  * in place. Here only the list is pinned; the blocks beside it scroll normally, so the section is as tall as its
@@ -16,7 +18,9 @@ import "@/app/landing.css";
  * moves from its own scroll handler, so `position: sticky` has no viewport to hold against and a rect read taken
  * while handling `scroll` can still be the sheet's previous position. See RealityPanels for the same note.
  *
- * LOW FIDELITY — the figures are grey placeholder schematics. Replace .tp-fig with the real screens.
+ * The phone unpins exactly as the last step ends: the travel is measured against the BLOCKS, not the whole body, so
+ * its foot and the foot of "Keep opportunities moving" leave the screen together rather than the phone hanging on
+ * through the whitespace below.
  */
 
 const STEPS = [
@@ -36,34 +40,6 @@ const STEPS = [
     body: "Capture inquiries, organize leads, and automate follow-ups so fewer opportunities get overlooked.",
   },
 ];
-
-/** Placeholder screens, one per step — enough shape to read as three different pictures. */
-function Figure({ i }: { i: number }) {
-  return (
-    <div className="tp-fig" aria-hidden="true">
-      <span className="tp-fig-bar"><i /><i /><i /></span>
-      <div className="tp-fig-body">
-        {i === 0 && <>
-          <span className="tp-ph tp-ph-field" />
-          {[0, 1, 2].map((k) => <span key={k} className="tp-ph tp-ph-row" />)}
-          <span className="tp-ph tp-ph-row is-top"><em /></span>
-        </>}
-        {i === 1 && <>
-          <span className="tp-ph tp-ph-hero" />
-          <span className="tp-ph tp-ph-line" />
-          <span className="tp-ph tp-ph-line is-short" />
-          <span className="tp-ph tp-ph-cta" />
-        </>}
-        {i === 2 && <>
-          {[0, 1, 2].map((k) => (
-            <span key={k} className="tp-ph tp-ph-lead" style={{ "--i": k } as CSSProperties}><i /><em /></span>
-          ))}
-          <span className="tp-ph tp-ph-auto" />
-        </>}
-      </div>
-    </div>
-  );
-}
 
 export default function TransformPanels() {
   const body = useRef<HTMLDivElement>(null);
@@ -88,22 +64,18 @@ export default function TransformPanels() {
     let shown = -1;
     const TOP = 140;   // where the list parks below the top of the screen
     const measure = () => {
-      const rect = b.getBoundingClientRect();
+      const rect = ol.getBoundingClientRect();
       if (rect.bottom < -400 || rect.top > innerHeight + 400) return;
-      // the list holds at TOP for as long as the column beside it has content left to scroll
-      const span = rect.height - r.offsetHeight;
+      // The phone holds at TOP for as long as the BLOCKS beside it have content left. Measuring against the whole
+      // body (which carries the heading above the two columns) kept it pinned past the end of the last step.
+      const span = ol.offsetHeight - r.offsetHeight + (ol.offsetTop - r.offsetTop);
       const pin = Math.min(Math.max(0, span), Math.max(0, TOP - rect.top));
       r.style.setProperty("--pin", `${pin}px`);
       // the step being read is the last one whose top has passed the reading line
       const line = innerHeight * 0.42;
       let i = 0;
-      const navs = r.querySelectorAll<HTMLElement>(".tp-nav");
       for (let k = 0; k < ol.children.length; k += 1) {
-        const bk = (ol.children[k] as HTMLElement).getBoundingClientRect();
-        if (bk.top <= line) i = k;
-        // the rule under each label fills with how far the reader has come through that block
-        const p = Math.min(1, Math.max(0, (line - bk.top) / Math.max(1, bk.height)));
-        navs[k]?.style.setProperty("--p", p.toFixed(3));
+        if ((ol.children[k] as HTMLElement).getBoundingClientRect().top <= line) i = k;
       }
       if (i !== shown) { shown = i; setAt(i); }
     };
@@ -112,46 +84,32 @@ export default function TransformPanels() {
     return () => cancelAnimationFrame(raf);
   }, [flat]);
 
-  const go = (i: number) => {
-    const el = blocks.current?.children[i] as HTMLElement | undefined;
-    if (!el) return;
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scrollBy({ top: el.getBoundingClientRect().top - 160, behavior: reduce ? "auto" : "smooth" });
-  };
-
   return (
     <section id="transformation" className="section hs tp" aria-label="Make every part of your digital presence work harder">
       <div className="tp-wrap">
-        {/* the heading sits in the right-hand column, over the empty half */}
-        <header className="tp-head">
-          <p className="eyebrow tp-eyebrow">The transformation</p>
-          <h2 className="h2 lp-h">Make every part of your digital presence work harder.</h2>
-          <p className="lp-lead">
-            From the first time someone discovers your business to the moment they become a customer, every
-            interaction matters.
-          </p>
-        </header>
-
+        {/* The head is INSIDE the body's grid, in the same column as the blocks. It used to sit above the grid with a
+            percentage left margin, which put it 40px to the left of "Get noticed." underneath it — close enough to
+            read as a mistake rather than as a second column. Sharing the grid, the two edges cannot drift. */}
         <div className="tp-body" ref={body}>
-          {/* left: the three steps, held still while the blocks beside them scroll */}
-          <nav className="tp-rail" ref={rail} style={{ "--pin": "0px" } as CSSProperties} aria-label="The three steps">
-            <ul>
-              {STEPS.map((s, i) => (
-                <li key={s.nav}>
-                  <button type="button" className={i === at ? "tp-nav is-on" : "tp-nav"}
-                    aria-current={i === at || undefined} onClick={() => go(i)}>{s.nav}</button>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <header className="tp-head">
+            <h2 className="h2 lp-h">Make every part of your digital presence work harder.</h2>
+            <p className="lp-lead">
+              From the first time someone discovers your business to the moment they become a customer, every
+              interaction matters.
+            </p>
+          </header>
+
+          {/* left: the phone, held still, showing the screen for the step being read */}
+          <div className="tp-rail" ref={rail} style={{ "--pin": "0px" } as CSSProperties}>
+            <Phone at={at} />
+          </div>
 
           {/* right: the content for each step, one after another */}
           <ol className="tp-blocks" ref={blocks}>
-            {STEPS.map((s, i) => (
+            {STEPS.map((s) => (
               <li key={s.title} className="tp-block">
                 <h3 className="tp-t">{s.title}</h3>
                 <p className="tp-b">{s.body}</p>
-                <Figure i={i} />
               </li>
             ))}
           </ol>

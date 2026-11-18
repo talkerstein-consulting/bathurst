@@ -29,7 +29,10 @@ export default function AssessStrip() {
   const router = useRouter();
   const [show, setShow] = useState(false);
   const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<"site" | "email">("site");
   const typing = useRef(false);
+  const mail = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let t = 0;
@@ -47,22 +50,55 @@ export default function AssessStrip() {
     return () => { removeEventListener("scroll", on); removeEventListener("resize", on); clearInterval(iv); clearTimeout(t); };
   }, []);
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    let site = url.trim();
-    if (site && !/^https?:\/\//i.test(site)) site = `https://${site}`;
-    router.push(assessHref(site));
+  const site = () => {
+    const v = url.trim();
+    return v && !/^https?:\/\//i.test(v) ? `https://${v}` : v;
   };
 
+  // Entering a website address does not leave the page: the strip turns over and asks where to send the assessment,
+  // which is the one other thing the report needs. Someone who has just typed their own address is far likelier to
+  // give an email there and then than on a form they have to be sent to first. Leaving the address empty still just
+  // opens the booking page, as it always did.
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (step === "site") {
+      if (!url.trim()) { router.push(assessHref()); return; }
+      setStep("email");
+      requestAnimationFrame(() => mail.current?.focus());
+      return;
+    }
+    router.push(assessHref(site(), email.trim()));
+  };
+
+  const asking = step === "email";
   return (
-    <form className={`as-strip${show ? " on" : ""}`} action="/book" method="get" onSubmit={submit} aria-hidden={!show} aria-label="Free website assessment">
+    <form className={`as-strip${show ? " on" : ""}${asking ? " is-asking" : ""}`} action="/book" method="get" onSubmit={submit}
+      aria-hidden={!show} aria-label="Free website assessment">
       <input type="hidden" name="service" value="Website assessment" />
-      <label className="sr-only" htmlFor="as-strip-url">Your website address</label>
-      <input id="as-strip-url" name="website" className="as-strip-input" type="text" inputMode="url" autoComplete="url" placeholder="Your website URL"
-        value={url} tabIndex={show ? 0 : -1}
-        onFocus={() => { typing.current = true; }} onBlur={() => { typing.current = false; }}
-        onChange={(e) => setUrl(e.target.value)} />
-      <CtaButton type="submit" label="Assess my website" accent small className="as-strip-go" tabIndex={show ? 0 : -1}>Assess my website</CtaButton>
+      {/* the address, kept once the strip has turned over: it is still what is being submitted */}
+      {asking && <input type="hidden" name="website" value={site()} />}
+      {asking ? (
+        <>
+          {/* what the strip is asking for now, for anyone who cannot see it change */}
+          <p className="as-strip-said" aria-live="polite">Where should we send it?</p>
+          <label className="sr-only" htmlFor="as-strip-mail">Your email address</label>
+          <input ref={mail} id="as-strip-mail" name="email" className="as-strip-input" type="email" inputMode="email"
+            autoComplete="email" required placeholder="you@yourbusiness.ca" value={email} tabIndex={show ? 0 : -1}
+            onFocus={() => { typing.current = true; }} onBlur={() => { typing.current = false; }}
+            onKeyDown={(e) => { if (e.key === "Escape") { setStep("site"); } }}
+            onChange={(e) => setEmail(e.target.value)} />
+          <CtaButton type="submit" label="Send my assessment" accent small className="as-strip-go" tabIndex={show ? 0 : -1}>Send it</CtaButton>
+        </>
+      ) : (
+        <>
+          <label className="sr-only" htmlFor="as-strip-url">Your website address</label>
+          <input id="as-strip-url" name="website" className="as-strip-input" type="text" inputMode="url" autoComplete="url" placeholder="Your website URL"
+            value={url} tabIndex={show ? 0 : -1}
+            onFocus={() => { typing.current = true; }} onBlur={() => { typing.current = false; }}
+            onChange={(e) => setUrl(e.target.value)} />
+          <CtaButton type="submit" label="Assess my website" accent small className="as-strip-go" tabIndex={show ? 0 : -1}>Assess my website</CtaButton>
+        </>
+      )}
     </form>
   );
 }

@@ -33,11 +33,7 @@ export default function SiteFooter() {
     <footer className="ft" id="site-footer" aria-label="Footer">
       <div className="ft-grid frame">
         {/* top row: who we are and where; the address itself lives once, in the brand cell below */}
-        <section className="ft-local" aria-labelledby="ft-local-h">
-          <div>
-            <p className="eyebrow">Based in North York</p>
-            <h2 id="ft-local-h" className="h2">Built in Toronto<svg className="ft-flag" viewBox="0 0 9600 4800" role="img" aria-label="Canada"><path fill="#d52b1e" d="M0 0h9600v4800H0z" /><path fill="#fff" d="m2400 0h4800v4800h-4800zm2490 4430-45-863a95 95 0 0 1 111-98l859 151-116-320a65 65 0 0 1 20-73l941-762-212-99a65 65 0 0 1-34-79l186-572-542 115a65 65 0 0 1-73-38l-105-247-423 454a65 65 0 0 1-111-57l204-1052-327 189a65 65 0 0 1-91-27l-332-652-332 652a65 65 0 0 1-91 27l-327-189 204 1052a65 65 0 0 1-111 57l-423-454-105 247a65 65 0 0 1-73 38l-542-115 186 572a65 65 0 0 1-34 79l-212 99 941 762a65 65 0 0 1 20 73l-116 320 859-151a95 95 0 0 1 111 98l-45 863z" /></svg></h2>
-          </div>
+        <section className="ft-local" aria-label="About Talkerstein">
           <p>Talkerstein is a Toronto consulting and digital agency based in North York. We work with businesses across Toronto and the Greater Toronto Area on websites, branding, SEO, automation, AI and digital strategy.</p>
         </section>
         <section className="ft-cell ft-brand">

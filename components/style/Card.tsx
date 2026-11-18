@@ -45,7 +45,7 @@ export default function Card({
           </ul>
         ) : null}
         <div className="card-body">{children}</div>
-        <CtaLink href={action.href} label={action.label} variant="link" className="card-go" />
+        <CtaLink href={action.href} label={action.label} small className="card-go" />
       </div>
     </Tag>
   );

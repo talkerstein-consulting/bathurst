@@ -70,7 +70,6 @@ export default function ProcessTabs() {
     <section id="process" className="section hs pt" aria-label="From business challenges to working solutions">
       <div className="pt-wrap">
         <header className="pt-head">
-          <p className="eyebrow pt-eyebrow">Our process</p>
           <h2 className="h2 lp-h">From business challenges to working solutions.</h2>
           <p className="lp-lead">
             We don’t start by selling you a service. We start by understanding what your business needs.
@@ -106,10 +105,9 @@ export default function ProcessTabs() {
         <div className="pt-panel" id={`pt-panel-${at}`} role="tabpanel" aria-labelledby={`pt-tab-${at}`}
           style={{ "--at": at } as React.CSSProperties}>
           <div className="pt-panel-l">
-            <p className="pt-label"><Icon g={step.icon} className="pt-label-i" />{step.name}</p>
             <h3 className="pt-t">{step.title}</h3>
             <p className="pt-b">{step.body}</p>
-            <CtaLink href={assessHref()} label="Start your assessment" variant="link" className="lp-cta" />
+            <CtaLink href={assessHref()} label="Start your assessment" className="lp-cta" />
           </div>
           {/* LOW FIDELITY placeholder for this step's picture */}
           <div className="pt-fig" aria-hidden="true">

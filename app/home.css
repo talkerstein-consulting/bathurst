@@ -2,17 +2,25 @@
    Brand tokens only: Sea Breeze, Steel Blue, Muted Orange. */
 
 /* ---------- 01 hero ---------- */
-.assess-lead .term-h { max-width: 10.2em; font-size: clamp(48px, 5.6vw, calc(880px / 10.1)); line-height: 1.02; }
+.assess-lead .term-h { max-width: none; font-size: clamp(48px, 5.6vw, calc(880px / 10.1)); line-height: 1.02; }
 /* The headline carries its own line break (components/home/AssessLead.tsx), so the measure only has to be wide enough
-   for the longer line, "Turn More Leads". The cap keeps it inside the hero column (.term-main, 880px) on a wide
-   monitor: 880 / 10.1em of type. The phone size below keeps it inside the screen. */
-/* the eyebrow over the headline; it flips to Sea Breeze over the dark sky with the rest of the hero text */
-.al-eyebrow { margin: 0; color: var(--orange); }
-#stick.sky-dark .term:not(.is-full) .al-eyebrow { color: var(--sea); }
+   for the longer line, "Turn More Leads". No max-width: the heading spans its column and the line break alone decides
+   where it turns. The cap keeps it inside the hero column (.term-main, 880px) on a wide monitor. */
 /* the second lead line is the ask, not the claim: a step down from .term-sub */
 .al-sub3 { font-size: 17px; color: var(--steel-70); }
 #stick.sky-dark .term:not(.is-full) .al-sub3 { color: var(--sea); }
 .assess-lead .term-main { align-items: center; }
+/* The hero column sits high so the land keeps the bottom of the screen (the skyline floor, SKY_MAX in
+   lib/bathurst/engine.ts): a smaller step down from the navbar than the lead-in's default, and tighter gaps on a phone,
+   where the stacked form and ratings row make the column tallest. */
+.hero-grid > .term.assess-lead { padding-top: clamp(40px, 9vh, 128px); }
+.assess-lead .term-main { gap: var(--s2); }
+@media (max-width: 759px) {
+  .hero-grid > .term.assess-lead { padding-top: calc(var(--navh) + var(--s2)); }   /* clear of the navbar: on a phone the column starts right under the bar */
+  .assess-lead .term-intro { gap: var(--s1); }
+  .assess-lead .al-awards { margin-top: calc(var(--s1) * -1); }
+  .assess-lead .term-h { font-size: min(40px, 8vw); }   /* phones: the size that keeps the two lines inside the screen */
+}
 .al-form { display: flex; gap: var(--s1); width: min(640px, 100%); padding: 6px; background: var(--sea);
   border: 1px solid var(--steel-15); border-radius: var(--radius); box-shadow: 0 10px 30px rgb(25 37 74 / .18); }
 /* the field holds the input and, behind it, the rest of the domain in grey (components/home/AssessLead.tsx).
@@ -45,7 +53,6 @@
 .hs-lead { max-width: 40em; margin: calc(var(--s2) * -1) 0 var(--s4); font-size: 19px; }   /* same as the hero sub */
 .hs-t { margin: 0 0 var(--s1); font-size: 32px; line-height: 1.05; }   /* the h3 scale */
 .hs p { margin: 0; }
-.hs-n { display: block; font: 400 15px var(--body); letter-spacing: .12em; color: var(--orange); margin-bottom: var(--s2); }
 .hs-cta { margin-top: var(--s4); }
 
 .hs-areas, .hs-grid, .hs-steps, .hs-scores { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); }
@@ -62,7 +69,7 @@
 .hs-meter { --c: var(--steel); width: 112px; aspect-ratio: 1; border-radius: 50%; margin-bottom: var(--s3); display: grid; place-items: center;
   background: radial-gradient(closest-side, var(--sea) 80%, transparent 81%), conic-gradient(var(--c) calc(var(--v) * 1%), var(--steel-15) 0); }
 .hs-meter b { font: 700 34px var(--head); color: var(--steel); }
-.hs-score.is-low .hs-meter { --c: var(--orange); }
+.hs-score.is-low .hs-meter { --c: var(--steel-50); }
 
 /* how we work: a numbered line of three */
 .hs-steps { grid-template-columns: repeat(3, 1fr); counter-reset: s; }
@@ -82,7 +89,6 @@
 html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); }
 
 @media (max-width: 899px) { .hs-t { font-size: 26px; } }
-@media (max-width: 760px) { .assess-lead .term-h { font-size: min(40px, 8vw); } }   /* phones: the size that keeps the 10.2em measure (and so the two lines) inside the screen */
 
 /* the map overview heading: one line on the h2 scale (wraps naturally on phones) */
 #hero #stick .workhead.wh-one { font-size: 48px; line-height: 1.02; white-space: nowrap; width: max-content; max-width: calc(100vw - 32px); }   /* its own width, not half the screen (it is placed from the centre) */
@@ -161,7 +167,6 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
 .hs-final .hs-cta { margin-top: var(--s4); }
 .hs-final .al-fine { margin-top: var(--s2); }
 .hs-steps li { padding-top: var(--s3); }
-.hs-steps .hs-n { margin-bottom: var(--s2); }
 @media (max-width: 760px) {
   .hs-area, .hs-card, .hs-report { padding: var(--s3); }
   .hs-cta { margin-top: var(--s4); }
@@ -209,8 +214,17 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
 .as-strip-input { flex: 1; min-width: 0; height: 40px; border: 0; background: transparent; padding: 0 var(--s2);
   font: 500 15px var(--body); color: var(--steel); outline: none; }
 .as-strip-input::placeholder { color: var(--steel-50); }
-.as-strip:focus-within { border-color: var(--orange); }
-.as-strip:has(.as-strip-input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 3px; }
+/* Focus. The strip is a fixed, translated box with a drop shadow, so an outline offset outside it drew a second
+   floating rectangle clear of the panel and cut across the shadow. The focused state belongs to the strip itself:
+   its own edge darkens to full Steel Blue and a ring is drawn just inside it, following the same corner radius, so
+   nothing moves and nothing is drawn outside the panel. The field keeps no ring of its own — it fills the strip. */
+.as-strip:focus-within { border-color: var(--steel); }
+.as-strip:has(.as-strip-input:focus-visible) { box-shadow: inset 0 0 0 2px var(--steel), 0 10px 30px rgb(25 37 74 / .18); }
+.as-strip-input:focus-visible { outline: none; }
+
+/* turned over to ask for the email (components/home/AssessStrip.tsx) */
+.as-strip-said { margin: 0; padding-left: var(--s2); flex: none; font: 500 15px var(--body); color: var(--steel-70); white-space: nowrap; }
+@media (max-width: 560px) { .as-strip-said { display: none; } }   /* the placeholder says it on a narrow strip */
 html body .as-strip-go.btn { flex: none; height: 40px; padding: 0 18px; --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); white-space: nowrap;
   border-radius: var(--btn-radius); }
 @media (max-width: 480px) { html body .as-strip-go.btn { padding: 0 14px; font-size: 14px; } }
@@ -226,7 +240,7 @@ html body .as-strip-go.btn { flex: none; height: 40px; padding: 0 18px; --ink: v
 .hs-score .hs-meter { margin-bottom: var(--s2); }
 .hs-score-t { margin: 0; font-weight: 600; font-size: 17px; }
 .hs-score .hs-k { margin-top: 4px; }
-.hs-opp { padding: var(--s3); border-radius: var(--btn-radius); background: var(--orange-15); }
+.hs-opp { padding: var(--s3); border-radius: var(--btn-radius); background: var(--steel-08); }
 .hs-opp p:last-child { margin: 0; font-size: 17px; line-height: 1.5; }
 .hs-note { margin: var(--s2) 0 0 !important; font-size: 13px; color: var(--steel-70); }
 @media (max-width: 640px) { .hs-scores { grid-template-columns: 1fr; gap: var(--s4); } .hs-report-top { flex-direction: column; } }
@@ -736,7 +750,7 @@ html body .as-strip-go.btn { flex: none; height: 40px; padding: 0 18px; --ink: v
 .lh-top b { font: 700 17px/1.2 var(--head); color: var(--steel); }
 .lh-top i { font: 600 13px/1 var(--body); font-style: normal; padding: 3px 8px; border-radius: 999px;
   background: var(--steel-08); color: var(--steel-70); }
-.lh-lane.tone-a .lh-top i { background: var(--orange-15); color: var(--orange); }
+.lh-lane.tone-a .lh-top i { background: var(--steel-08); color: var(--label); }
 .lh-lane.tone-b .lh-top i { background: rgb(14 143 128 / .14); color: var(--ls-accent); }
 .lh-card em { font: 400 14px/1.45 var(--body); font-style: normal; color: var(--steel-70); }
 .lh-fine { margin: var(--s4) 0 0; text-align: left; font: italic 400 14px/1.5 var(--head); color: var(--steel-70); }

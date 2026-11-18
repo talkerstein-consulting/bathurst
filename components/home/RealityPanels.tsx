@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
+import { REALITY_FIGURES } from "./Interfaces";
 import "@/app/landing.css";
 
 /**
@@ -16,8 +17,8 @@ import "@/app/landing.css";
  *
  * Narrow screens drop the track, the pin and the slide: every item is shown in full, each above its own diagram.
  *
- * LOW FIDELITY — the diagrams are grey placeholder schematics. Replace .rp-fig-* with the real drawings; the pin,
- * the list and the crossfade can stay as they are.
+ * The diagrams are drawn interfaces (components/home/Interfaces.tsx): the search the business is not found in, the
+ * page nobody acts on, the inbox going cold. §06 shows the same three interfaces working.
  */
 
 /** Lucide-shaped line icons on the 24px grid (STYLE.md: line only, round caps, currentColor). */
@@ -25,6 +26,7 @@ const ICONS = {
   search: <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></>,
   monitor: <><rect x="2.5" y="3.5" width="19" height="13" rx="2" /><path d="M8 20.5h8M12 16.5v4" /></>,
   inbox: <><path d="M3.5 12.5h4l1.5 3h6l1.5-3h4" /><path d="M5.2 5.6a1.5 1.5 0 011.4-1.1h10.8a1.5 1.5 0 011.4 1.1l2.2 6.9v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4z" /></>,
+  phone: <><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M10.5 5.5h3" /></>,
 } as const;
 
 const Icon = ({ g, className }: { g: keyof typeof ICONS; className?: string }) => (
@@ -48,36 +50,20 @@ const ITEMS = [
     title: "Inquiries aren’t turning into sales.",
     body: "Slow responses, scattered messages, and inconsistent follow-ups can leave good opportunities behind.",
   },
+  {
+    icon: "phone" as const,
+    title: "And all of it happens here.",
+    body: "Your customers meet your business on a screen this size — searching, deciding, and getting in touch.",
+  },
 ];
 
-/** The placeholder diagram for each item: a rough schematic, enough to read as three different pictures. */
+/** The interface for each item, crossfading as the list moves past (components/home/Interfaces.tsx). */
 function Figure({ at }: { at: number }) {
   return (
     <div className="rp-fig" aria-hidden="true">
-      {/* 01 · a result list where the business is nowhere near the top */}
-      <div className={`rp-fig-in${at === 0 ? " on" : ""}`}>
-        <span className="rp-bar rp-bar-q" />
-        {[0, 1, 2, 3].map((i) => <span key={i} className="rp-row" />)}
-        <span className="rp-row is-you"><i /></span>
-      </div>
-      {/* 02 · a page whose message and action never land */}
-      <div className={`rp-fig-in${at === 1 ? " on" : ""}`}>
-        <span className="rp-win">
-          <span className="rp-win-bar" />
-          <span className="rp-blk rp-blk-lg" />
-          <span className="rp-blk" />
-          <span className="rp-blk rp-blk-sm" />
-          <span className="rp-cta is-weak" />
-        </span>
-      </div>
-      {/* 03 · inquiries arriving and going nowhere */}
-      <div className={`rp-fig-in${at === 2 ? " on" : ""}`}>
-        <span className="rp-flow">
-          {[0, 1, 2].map((i) => <span key={i} className="rp-note" style={{ "--i": i } as CSSProperties} />)}
-          <span className="rp-gap" />
-          <span className="rp-drop" />
-        </span>
-      </div>
+      {REALITY_FIGURES.map((Fig, i) => (
+        <div key={i} className={`rp-fig-in${at === i ? " on" : ""}`}><Fig /></div>
+      ))}
     </div>
   );
 }
@@ -141,7 +127,6 @@ export default function RealityPanels() {
           {/* left half: the heading holds still, the three items move past under it */}
           <div className="rp-left">
             <header className="rp-head">
-              <p className="eyebrow rp-eyebrow">The reality</p>
               <h2 className="h2 lp-h">Getting attention is only half the job.</h2>
               <p className="lp-lead">
                 A potential customer finds your business. Can they understand what you offer, trust what they see, and

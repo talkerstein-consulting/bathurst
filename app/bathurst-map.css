@@ -194,7 +194,7 @@
 .biz-logo { height: 56px; margin: 0; }
 .meta { font-size: 13px; color: var(--steel-70); display: flex; flex-wrap: wrap; gap: 4px var(--s1); align-items: center; }
 .meta b { color: var(--steel); }
-.stars { color: var(--orange); letter-spacing: 1px; }
+.stars { color: var(--label); letter-spacing: 1px; }
 .acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s1); }
 .acts .btn { justify-content: flex-start; }
 .sec { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); padding-top: var(--s3); margin-bottom: var(--s1); }
@@ -551,7 +551,7 @@
 .rv-score { display: flex; align-items: center; gap: var(--s2); }
 .rv-score > span { display: grid; gap: 2px; }
 .rv-score b { font-family: var(--head); font-size: 95px; line-height: .9; }
-.rv-score .stars { color: var(--orange); font-size: 22px; letter-spacing: 1px; }
+.rv-score .stars { color: var(--label); font-size: 22px; letter-spacing: 1px; }
 .rv-score small { font-size: 15px; color: var(--steel-70); }
 .rv-panel { display: grid; overflow: hidden; }
 .rv-slide { grid-area: 1 / 1; display: grid; grid-template-columns: 1fr 1.15fr; gap: var(--s5); align-items: start; }
@@ -654,7 +654,7 @@
 .hero-ratings { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-top: var(--s3); pointer-events: auto; }
 .hero-ratings a { display: flex; align-items: center; gap: var(--s1); color: var(--steel); text-decoration: none; text-shadow: var(--halo); }
 .hero-ratings b { font: 700 32px/1 var(--head); }
-.hero-ratings .stars { color: var(--orange); letter-spacing: 1px; font-size: 17px; }
+.hero-ratings .stars { color: var(--label); letter-spacing: 1px; font-size: 17px; }
 .hero-ratings small { font-size: 13px; color: var(--steel-70); }
 .hero-ratings a:hover small { color: var(--orange); }
 /* the second phase (reviews, services, footer) is one long sheet that rises, then keeps scrolling up with the page */

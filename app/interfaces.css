@@ -1,0 +1,132 @@
+/* ============================================================================
+   The figures (components/home/Interfaces.tsx): the pictures for §03 The Reality and §06 What We Do.
+
+   THREE SHAPES, one per idea, not one shape for all six — see the note at the top of that file. A ranked list for
+   being found, a page for the page, a chain of containers on connectors for the follow-up. Nothing sits inside a
+   browser or app window: the frame was one more thing to decode before you could read what was inside it.
+
+   `.fg` is the stage and `.fg-cap` the line that says what you are looking at. `.is-cold` is §03's version — the
+   same drawing with the life taken out of it, so §06 reads as its answer.
+
+   Each is cut to the fewest parts that still say it: two names above yours rather than three, no pill on a row that
+   is already the odd one out, no paragraph under the headline, no label over every line of the chain.
+
+   MOTION: one movement per figure, only while it is the one being read (its stage carries `.on` from the reality's
+   crossfade, or `.is-on` from the capability slot), off entirely under `prefers-reduced-motion`.
+
+   Colour: Steel Blue at a few strengths. No Muted Orange here — it belongs to the buttons.
+   ============================================================================ */
+
+.fg { display: grid; gap: 11px; width: 100%; max-width: 400px; margin-inline: auto; font-family: var(--body); }
+/* what the picture is of, said plainly above it rather than drawn as window chrome */
+.fg-cap { margin: 0; font: 600 10px/1 var(--body); letter-spacing: .13em; text-transform: uppercase;
+  color: var(--steel-50); }
+
+/* ============================================================================
+   1 · the ranked list — the idea is a position, and only a list shows a position
+   ============================================================================ */
+.rk { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rk-row { display: flex; align-items: center; gap: 13px; padding: 13px 15px; border-radius: 10px;
+  background: color-mix(in srgb, var(--steel) 4%, transparent); }
+.rk-at { flex: none; min-width: 25px; height: 25px; padding: 0 6px; display: grid; place-items: center;
+  border-radius: 7px; background: color-mix(in srgb, var(--steel) 9%, transparent);
+  font: 600 11px/1 var(--body); color: var(--steel-50); }
+.rk-name { flex: 1; min-width: 0; font: 500 14px/1.2 var(--body); color: var(--steel-70);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-row.is-mine { background: var(--steel); }
+.rk-row.is-mine .rk-name { font-weight: 600; color: var(--sea); }
+.rk-row.is-mine .rk-at { background: color-mix(in srgb, var(--sea) 22%, transparent); color: var(--sea); }
+/* ...and in the reality, where it is down past the point anyone looks */
+.is-cold .rk-row.is-mine { background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--steel) 20%, transparent); }
+.is-cold .rk-row.is-mine .rk-name { font-weight: 500; color: var(--steel-70); }
+.is-cold .rk-row.is-mine .rk-at { background: color-mix(in srgb, var(--steel) 10%, transparent); color: var(--steel-50); }
+
+/* where the results nobody reaches are cut away */
+.rk-fold { position: relative; margin: 8px 0; justify-self: center; padding: 0 12px;
+  background: var(--sea); font: 500 10px/1 var(--body); color: var(--steel-50); }
+.rk-fold::before { content: ""; position: absolute; left: -200px; right: -200px; top: 50%; z-index: -1;
+  border-top: 1px dashed var(--steel-15); }
+
+/* the one movement: your line rises through the two above it */
+@keyframes rk-mine { 0%, 16% { translate: 0 calc(200% + 12px); } 48%, 100% { translate: 0 0; } }
+@keyframes rk-other { 0%, 16% { translate: 0 calc(-100% - 6px); } 48%, 100% { translate: 0 0; } }
+.is-on .rk-climb > li { animation: rk-other 7s cubic-bezier(.6, 0, .2, 1) infinite; }
+.is-on .rk-climb > li:first-child { animation-name: rk-mine; }
+
+/* ============================================================================
+   2 · the page — the idea is what it says and whether there is anything to press
+   ============================================================================ */
+.pg { display: grid; gap: 12px; justify-items: start; padding: 22px 20px 24px; border-radius: 12px;
+  background: var(--sea); border: 1px solid var(--steel-15); box-shadow: 0 14px 32px -16px rgb(25 37 74 / .3); }
+.is-cold .pg { box-shadow: none; }
+.pg-h { margin: 0; font: 400 21px/1.2 var(--head); color: var(--steel); }
+.is-cold .pg-h { color: var(--steel-70); }
+.pg-btn { margin-top: 2px; padding: 11px 18px; border-radius: 9px; background: var(--steel); color: var(--sea);
+  font: 600 12px/1 var(--body); }
+/* the page with no action on it: the shape of a button, with nothing in it */
+.pg-none { margin-top: 2px; padding: 11px 18px; border-radius: 9px;
+  border: 1px dashed color-mix(in srgb, var(--steel) 22%, transparent);
+  font: 500 11px/1 var(--body); color: var(--steel-50); }
+
+/* the one movement: the button asks to be pressed */
+@keyframes pg-beat { 0%, 62% { box-shadow: 0 0 0 0 rgb(25 37 74 / .22); } 72% { box-shadow: 0 0 0 7px rgb(25 37 74 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(25 37 74 / 0); } }
+.is-on .pg-btn { animation: pg-beat 7s ease-out infinite; }
+
+/* ============================================================================
+   3 · the chain — the idea is a sequence that either completes or does not
+   ============================================================================ */
+.ch { display: grid; }
+.ch-box { padding: 16px 18px; border-radius: 11px; background: var(--sea); border: 1px solid var(--steel-15);
+  box-shadow: 0 10px 24px -16px rgb(25 37 74 / .3); font: 500 14px/1.35 var(--body); color: var(--steel); }
+.is-cold .ch-box { box-shadow: none; }
+
+.ch-box.is-key { background: var(--steel); border-color: var(--steel); }
+.ch-box.is-key { color: var(--sea); }
+
+.ch-box.is-dead { background: transparent; border-style: dashed;
+  border-color: color-mix(in srgb, var(--steel) 22%, transparent); box-shadow: none; }
+.ch-box.is-dead { color: var(--steel-50); }
+
+/* the connector */
+.ch-join { position: relative; display: flex; align-items: center; gap: 10px; height: 44px; padding-left: 26px; }
+.ch-line { position: relative; width: 2px; height: 100%; border-radius: 1px;
+  background: color-mix(in srgb, var(--steel) 16%, transparent); }
+.ch-line::after { content: ""; position: absolute; left: 50%; bottom: -1px; translate: -50% 0; width: 7px; height: 7px;
+  border-right: 2px solid color-mix(in srgb, var(--steel) 24%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--steel) 24%, transparent); rotate: 45deg; }
+/* the break: the sequence that never reaches the end */
+.ch-join.is-broken .ch-line { background: none;
+  background-image: linear-gradient(color-mix(in srgb, var(--steel) 22%, transparent) 50%, transparent 0);
+  background-size: 2px 7px; }
+.ch-join.is-broken .ch-line::after { display: none; }
+.ch-join.is-broken::before, .ch-join.is-broken::after { content: ""; position: absolute; left: 27px; top: 50%;
+  width: 11px; height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--steel) 34%, transparent); }
+.ch-join.is-broken::before { translate: -50% -50%; rotate: 45deg; }
+.ch-join.is-broken::after { translate: -50% -50%; rotate: -45deg; }
+.ch-note { font: 500 11px/1.3 var(--body); color: var(--steel-50); }
+.ch-join.is-broken .ch-note { padding-left: 10px; }
+
+/* the one movement: a pulse runs the chain, and dies at the break */
+.ch-pulse { position: absolute; left: 50%; top: 0; translate: -50% 0; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--steel); opacity: 0; }
+@keyframes ch-run { 0% { opacity: 0; top: 0; } 8% { opacity: 1; } 32% { opacity: 1; top: 100%; }
+  38%, 100% { opacity: 0; top: 100%; } }
+@keyframes ch-stop { 0% { opacity: 0; top: 0; } 10% { opacity: .6; } 28% { opacity: .5; top: 42%; }
+  36%, 100% { opacity: 0; top: 42%; } }
+.on .ch-pulse, .is-on .ch-pulse { animation: ch-run 7s cubic-bezier(.5, 0, .5, 1) infinite; }
+.is-on .ch-join:last-of-type .ch-pulse { animation-delay: 1s; }
+.on .ch-join.is-broken .ch-pulse { animation-name: ch-stop; }
+
+/* ---------- phones ---------- */
+@media (max-width: 899px) {
+  .fg { max-width: none; }
+  .ch-join { height: 38px; }
+  .pg-h { font-size: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg *, .fg { animation: none !important; }
+  .ch-pulse { opacity: 0; }
+}

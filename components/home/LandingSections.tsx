@@ -29,10 +29,11 @@ import "@/app/landing.css";
 
 /* ---------- shared ---------- */
 
-function SectionHead({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
+/** The section head: the heading and whatever follows it. No preheader — the sections are read in order and the
+ *  heading says what each one is, so a label above it only repeated the heading in smaller type. */
+function SectionHead({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <header className="lf-head">
-      <p className="eyebrow">{eyebrow}</p>
       <h2 className="h2 lp-h">{title}</h2>
       {children}
     </header>
@@ -59,7 +60,7 @@ export function Proof() {
   return (
     <section id="proof" className="section hs lf lf-proof">
       <Testimonials split heading={
-        <SectionHead eyebrow="Client testimonials" title="Don’t just take our word for it.">
+        <SectionHead title="Don’t just take our word for it.">
           <p className="lp-lead">
             Good work should make a difference to the businesses behind it. Hear from the people we’ve worked with and
             learn what it’s like to have Talkerstein as a partner.

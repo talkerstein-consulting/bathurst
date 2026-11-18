@@ -38,7 +38,6 @@ export default function LeadHub() {
         <span className="lh-in" aria-hidden="true" />
 
         <header className="hs-head lh-head">
-          <p className="eyebrow">One place for all of it</p>
           <h2 className="h2 hs-h">Every Lead Lands in the Same Place</h2>
           <p className="hs-lead">One hub holds every inquiry the website takes, whatever it is. From there each one is sorted, given an owner and given a next step — so the week ends with nothing sitting unanswered.</p>
         </header>

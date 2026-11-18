@@ -1323,13 +1323,17 @@ export function createBathurstEngine(area?: string) {
     if(view.type==='place'){ view={type:query?'results':'list'}; selected=null; render(); refresh(); } }, {signal});
 
   const winEl=$('win'); let WIN={t:0,r:0,b:0,l:0,drop:0}; const SKY_R=.4;   /* where the skyline starts, as a share of the window's height */
+  /* ...and how far down it may ever be pushed to clear the hero text. Without this floor a tall text block (a phone, or a
+     short laptop window) drove the horizon past the bottom of the screen and the world was never seen at all. The land
+     keeps the last quarter to third of the hero either way. */
+  const skyMax = () => W < 760 ? .76 : .72;   /* a phone's column is the tallest, so the land takes a little less of it */
   function measureWin(){ const r=winEl.getBoundingClientRect(), s=stick.getBoundingClientRect(); WIN={t:0, l:0, r:0, b:0};   /* full bleed: the map fills the screen from the first frame (was the #win box, inset and rounded) */ void r; stick._win=null;
     // front page: the chips sit under the standfirst, on its left edge (measured untransformed, before the scroll moves it)
     const body=$('svhero').querySelector('p'), hb=body.getBoundingClientRect(), ty=new DOMMatrix(getComputedStyle($('svhero')).transform).m42;
     stick.style.setProperty('--hc-top', (hb.bottom - s.top - ty + 24).toFixed(0)+'px'); stick.style.setProperty('--hc-left', (hb.left - s.left).toFixed(0)+'px');
     /* the hero text sits on the sky inside the window: lower the skyline (the rendered image) until it clears the text block */
     { const term=document.querySelector('#terminal:not(.is-full) .term-main'), tty=term ? parseFloat(getComputedStyle(term.closest('#terminal')).translate.split(' ')[1]||'0')||0 : 0;
-      const tb=(term ? term.getBoundingClientRect().bottom - tty : $('svhero').getBoundingClientRect().bottom - ty) - s.top, wh=H-WIN.t-WIN.b; WIN.tb=tb; WIN.drop=Math.max(0, tb + (W<760 ? 110 : 100) - (WIN.t + SKY_R*wh)); } }   /* clear sky under the ratings row, so the far-off pins gathering at the horizon never touch it */   /* phones: the text box's own padding is the gap, so the skyline and the dot sit close under the text */
+      const tb=(term ? term.getBoundingClientRect().bottom - tty : $('svhero').getBoundingClientRect().bottom - ty) - s.top, wh=H-WIN.t-WIN.b; WIN.tb=tb; const base=WIN.t + SKY_R*wh; WIN.drop=Math.max(0, Math.min(tb + (W<760 ? 110 : 100), WIN.t + skyMax()*wh) - base); } }   /* clear sky under the ratings row, so the far-off pins gathering at the horizon never touch it */   /* phones: the text box's own padding is the gap, so the skyline and the dot sit close under the text */
   function resize(){ W=stick.clientWidth; H=stick.clientHeight; renderer.setSize(W,H); for(const l of fatLines) l.material.resolution.set(W,H); sizeHero(); measureWin(); camera.aspect=W/H; camera.fov = W<H ? 64 : 48; camera.updateProjectionMatrix(); buildCurves(); if(!mapDirty) setGoal(defaultView(), true); onScroll(); }
   addEventListener('resize', resize, {signal}); resize();
   document.fonts?.ready.then(()=>{ if(!dead) measureWin(); });

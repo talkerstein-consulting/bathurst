@@ -100,7 +100,6 @@ export default function LeadSystem() {
           } as CSSProperties}
         >
           <header className="ls-head">
-            <p className="eyebrow">What happens next</p>
             <span className="ls-h-swap">
               <h2 className="h2 ls-h a">That Was One Visitor.</h2>
               <h2 className="h2 ls-h b">The Job Needs a System.</h2>

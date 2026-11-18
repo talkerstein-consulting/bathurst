@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CAPABILITY_FIGURES } from "./Interfaces";
 import "@/app/landing.css";
 
 /**
@@ -18,7 +19,9 @@ import "@/app/landing.css";
  * sheet (.cover) is a transformed box the map engine moves from its own scroll handler, so `position: sticky` has no
  * viewport to hold against and a rect read taken while handling `scroll` can be a frame behind.
  *
- * LOW FIDELITY — the middle column is a grey placeholder. Replace .cp-fig with the real image.
+ * The middle column is a drawn interface, one per capability (components/home/Interfaces.tsx): the search result
+ * the business now comes first in, the page people act on, the board the work runs through. They are the same
+ * furniture as §03's figures, which show those three interfaces not working — so this section answers that one.
  */
 
 /* The services are set as bullets rather than run together in a sentence: it is a list of things offered, and
@@ -44,10 +47,11 @@ const CAPABILITIES = [
   },
 ];
 
-/** The placeholder picture, one per capability. */
-const Figure = ({ i }: { i: number }) => (
-  <div className="cp-fig" aria-hidden="true"><span>{i + 1}</span></div>
-);
+/** The drawn interface for a capability (components/home/Interfaces.tsx). */
+const Figure = ({ i }: { i: number }) => {
+  const Fig = CAPABILITY_FIGURES[i];
+  return <div className="cp-fig" aria-hidden="true"><Fig /></div>;
+};
 
 export default function CapabilityPanels() {
   const track = useRef<HTMLDivElement>(null);
@@ -84,9 +88,12 @@ export default function CapabilityPanels() {
     return () => cancelAnimationFrame(raf);
   }, [flat]);
 
+  // The head is NOT inside the pinned stage: it is read once, at the top of the section, and then scrolls away like
+  // any other heading. Holding it on screen for the whole pin kept a heading and a paragraph in view through three
+  // changes that had nothing to do with them, and left the columns no room — the picture ended up jammed under the
+  // text instead of sitting in the middle of the screen.
   const head = (
     <header className="cp-head">
-      <p className="eyebrow cp-eyebrow">What we do</p>
       <h2 className="h2 lp-h cp-h">
         <span className="cp-h-lead">One partner.</span>
         <span className="cp-h-trail">More ways to move your business forward.</span>
@@ -108,7 +115,6 @@ export default function CapabilityPanels() {
             <ol className="cp-rows">
               {CAPABILITIES.map((c, i) => (
                 <li key={c.name} className="cp-row">
-                  <p className="cp-n">{c.name}</p>
                   <h3 className="cp-t">{c.title.split("\n").map((l, k) => <span key={k}>{l}</span>)}</h3>
                   <Figure i={i} />
                   <p className="cp-b">{c.body}</p>
@@ -123,15 +129,14 @@ export default function CapabilityPanels() {
 
   return (
     <section id="capabilities" className="section hs cp" aria-label="One partner, more ways to move your business forward">
+      {head}
       <div className="cp-track" ref={track}>
         <div className="cp-stage" ref={stage}>
-          {head}
           <div className="cp-cols">
             {/* left: every title, fixed in place, the one being read in full strength */}
             <ol className="cp-names">
               {CAPABILITIES.map((c, i) => (
                 <li key={c.name} className={i === at ? "is-on" : undefined} aria-current={i === at || undefined}>
-                  <p className="cp-n">{c.name}</p>
                   <h3 className="cp-t">{c.title.split("\n").map((l, k) => <span key={k}>{l}</span>)}</h3>
                 </li>
               ))}

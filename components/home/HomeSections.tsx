@@ -153,8 +153,8 @@ export function Engagement() {
         <SectionHead eyebrow="Working relationship" title="A Partner Beyond the Project"
           lead="We don’t just deliver a website and walk away. We work with your business to understand what’s needed, build the right solution, and help improve it over time." />
         <ol className="hs-steps">
-          {STEPS.map((s, i) => (
-            <li key={s.t}><span className="hs-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span><h3 className="hc-title">{s.t}</h3><p className="hc-copy">{s.d}</p></li>
+          {STEPS.map((s) => (
+            <li key={s.t}><h3 className="hc-title">{s.t}</h3><p className="hc-copy">{s.d}</p></li>
           ))}
         </ol>
       </div>
