@@ -11,9 +11,12 @@ import { CONTENT } from "./client-content";
 import LOGOS from "./logos.json";
 import { brandSelect } from "./brand-select";
 import { loadCity, buildBuildings, buildFlatLayers, penLines } from "./osm-layer";
+import { GLOBE, uniforms as globeU, bendObject, haloMaterial, setGlobe, kAt, rAt, limbAt, bendPoint, facing, groundHit } from "./globe";
 
 export function createBathurstEngine(area?: string) {
   const ac = new AbortController(); const signal = ac.signal;
+  // dev only: ?globe=<metres> tries another planet radius (lib/bathurst/globe.ts)
+  if(process.env.NODE_ENV !== 'production'){ const g=new URLSearchParams(location.search).get('globe'); if(g==='off') GLOBE.on=false; else if(Number(g)>0) GLOBE.slope=Number(g); }
   // match the approved prototype (three r149): hex colours are used as-is (no sRGB→linear conversion)
   THREE.ColorManagement.enabled = false;
 
@@ -96,8 +99,17 @@ export function createBathurstEngine(area?: string) {
   // so layers a few centimetres apart never fight for depth when seen from high up.
   let flatOrder = 1;
   const flatMat = (color, opacity=1) => new THREE.MeshBasicMaterial({color, side:THREE.DoubleSide, transparent:true, opacity, depthWrite:false});
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60000,60000), flatMat(GROUND));
-  ground.rotation.x = -Math.PI/2; ground.position.z = -4000; ground.renderOrder = flatOrder++; scene.add(ground);
+  // the land: one flat colour on a disc that rides under the camera (frame loop). Its rings grow outward geometrically, so it
+  // is dense where the small street-level planet curls tightly and still reaches past the limb of the largest one
+  // (lib/bathurst/globe.ts curls every vertex over the sphere; the far side is cut in the fragment shader)
+  const ground = (() => {
+    const rings = 72, segs = 96, r0 = 40, r1 = 3 * GLOBE.maxR, pos = [0, 0, 0], idx = [];
+    for (let i = 0; i <= rings; i++) { const r = r0 * Math.pow(r1 / r0, i / rings); for (let j = 0; j < segs; j++) { const a = j / segs * Math.PI * 2; pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); } }
+    for (let j = 0; j < segs; j++) idx.push(0, 1 + j, 1 + (j + 1) % segs);
+    for (let i = 0; i < rings; i++) { const a = 1 + i * segs, b = a + segs; for (let j = 0; j < segs; j++) { const j1 = (j + 1) % segs; idx.push(a + j, b + j, b + j1, a + j, b + j1, a + j1); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+    const m = new THREE.Mesh(g, flatMat(GROUND)); m.renderOrder = flatOrder++; m.frustumCulled = false; scene.add(m); return m;
+  })();
 
   // the sky (light hero): pale at the horizon (the haze, so the land fades straight into it), deepening to a dusty blue
   // overhead, like a gouache poster sky. It rides with the camera, is painted first, and only shows in the light style.
@@ -105,13 +117,16 @@ export function createBathurstEngine(area?: string) {
     const R = 60000, g = new THREE.SphereGeometry(R, 48, 24), p = g.getAttribute('position');
     g.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(p.count * 3), 3));
     const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.BackSide, depthWrite: false, depthTest: false }));
+    haloMaterial(m.material);   // the dome is never bent; it carries the atmosphere's halo just outside the planet's limb
     m.renderOrder = -100; m.frustumCulled = false; scene.add(m);
-    // paint the dome for a palette's sky [horizon, low, overhead] (applyStyle)
-    m.userData.paint = ([a, b, c]) => {
-      const hz = new THREE.Color(a), mid = new THREE.Color(b), top = new THREE.Color(c), t = new THREE.Color(), col = g.getAttribute('color');
+    // paint the dome for a palette's sky [horizon, low, overhead, below the horizon] (applyStyle). Below the horizon is
+    // what shows past the planet's limb once the map has curled into a globe (lib/bathurst/globe.ts).
+    m.userData.paint = ([a, b, c, d]) => {
+      const hz = new THREE.Color(a), mid = new THREE.Color(b), top = new THREE.Color(c), below = new THREE.Color(d ?? c), t = new THREE.Color(), col = g.getAttribute('color');
       for (let i = 0; i < p.count; i++) {
         const e = p.getY(i) / R;   // sine of the elevation
-        if (e <= 0) t.copy(hz); else if (e < .07) t.copy(hz).lerp(mid, e / .07); else t.copy(mid).lerp(top, Math.min(1, (e - .07) / .33));
+        if (e <= 0) { const u = Math.min(1, Math.max(0, (-e - .03) / .47)); t.copy(hz).lerp(below, u * u * (3 - 2 * u)); }
+        else if (e < .07) t.copy(hz).lerp(mid, e / .07); else t.copy(mid).lerp(top, Math.min(1, (e - .07) / .33));
         col.setXYZ(i, t.r, t.g, t.b);
       }
       col.needsUpdate = true;
@@ -133,6 +148,7 @@ export function createBathurstEngine(area?: string) {
       [960,275],[1150,275],[1150,200],[1350,200],[1350,230],[1560,230],[1560,140],[1800,140],[1800,95],[2100,95],[2100,60],[2500,60],[2500,0]]);
     const g = new THREE.Group(); g.renderOrder = -50;
     const fill = new THREE.MeshBasicMaterial({ color: 0xEDE5CB, fog: false, depthWrite: false });   // a cream silhouette on the blue sky, no outline
+    fill.userData.noBend = true;   // a backdrop on the horizon, not part of the ground: it stays where the sky is
     const block = (pts) => {
       const sh = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y * k)));
       const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), fill); m.renderOrder = -50; g.add(m);
@@ -183,7 +199,12 @@ export function createBathurstEngine(area?: string) {
     for(const lat of [43.712,43.742,43.772]){ if(maxLat && lat>maxLat) continue; const z=zOf(lat), bl=O.lon+xAt(z)/80300; roadLabels.push({name, pos:at(lat, bl+dl), cls:'ns', min:900}); } });
   [["Lawrence Manor",43.7262,-79.4385],["Bedford Park",43.7290,-79.4120],["Englemount",43.7165,-79.4360],["Clanton Park",43.7440,-79.4450],["Armour Heights",43.7445,-79.4230],
    ["Bathurst Manor",43.7625,-79.4535],["Westminster–Branson",43.7780,-79.4470],["Newtonbrook",43.7850,-79.4200],["Yorkdale–Glen Park",43.7160,-79.4575],["Thornhill",43.8060,-79.4420],["Downsview",43.7330,-79.4800]]
-    .forEach(([name,lat,lon])=>roadLabels.push({name, pos:at(lat,lon), cls:'hood', min:1400}));
+    .forEach(([name,lat,lon])=>roadLabels.push({name, pos:at(lat,lon), cls:'hood', min:1400, max:14000}));
+  // the far views: the cities and districts of the region (and the lake) in wide caps, once the camera is high enough for the
+  // neighbourhoods to have thinned out; the pins' own cities first, so the map says where the work is
+  [["Toronto",43.653,-79.383],["North York",43.757,-79.405],["Vaughan",43.837,-79.508],["Concord",43.800,-79.488],["Maple",43.856,-79.509],["Richmond Hill",43.883,-79.440],
+   ["Markham",43.857,-79.337],["Mississauga",43.589,-79.644],["Scarborough",43.773,-79.258],["Etobicoke",43.654,-79.567],["Brampton",43.731,-79.763],["Lake Ontario",43.600,-79.420]]
+    .forEach(([name,lat,lon])=>roadLabels.push({name, pos:at(lat,lon), cls:'area'+(name==='Lake Ontario' ? ' water' : ''), min:6000}));
 
   // Real city from OpenStreetMap (public/map/bathurst-osm.tcgm.gz, plus the lighter region-osm.tcgm.gz around it), drawn flat like a 1940s road map.
   // Flat city layers take paint orders 2-39; the Bathurst route is painted above them.
@@ -221,7 +242,9 @@ export function createBathurstEngine(area?: string) {
       park: CR.clone().lerp(INK, .1), water: CR.clone().lerp(SKYB, .28), footprint: CR.clone().lerp(INK, .07),   // light fills, so the shapes still read in map view without outlines
       shadow: CR.clone().lerp(INK, .17),   // contact shadows
       inkK: 1.2, fogK: .75, skyDark: true, lotLines: true,   // the haze starts sooner, so far lines soften into shapes
-      sky: [SKYB.clone().lerp(CR, .55).getHex(), SKYB.clone().lerp(CR, .12).getHex(), SKYB.clone().lerp(INK, .55).getHex()],   // horizon, low, overhead: pale blue at the horizon deepening overhead
+      // horizon, low, overhead: pale blue at the horizon deepening overhead; past the planet's limb a flat printed blue
+      sky: [SKYB.clone().lerp(CR, .55).getHex(), SKYB.clone().lerp(CR, .12).getHex(), SKYB.clone().lerp(INK, .55).getHex(), SKYB.clone().lerp(CR, .3).getHex()],
+      rim: 0xFFFDF4,   // the atmosphere at the limb: a warm white, the paper lit from behind
     },
     // Mono: the railway poster in one colour. Everything is a shade of the poster blue: the same dusk sky,
     // pale blue roofs, mid-blue sunlit walls, deep blue shade, navy land with blue-tint streets. No outlines.
@@ -262,16 +285,14 @@ export function createBathurstEngine(area?: string) {
   // thick pen lines measure their width in screen pixels, so each one needs the canvas size (kept current in resize())
   const fatLines = [];
   function fat(l){ const s=renderer.getSize(new THREE.Vector2()); l.material.resolution.set(s.x||innerWidth, s.y||innerHeight); fatLines.push(l); return l; }
-  // Print style: blue pen over the flat layers. Lots, building bases and parks get their outline (water does not), and
-  // every road is drawn as a centre line, so the road grid divides the land into polygons across the whole map.
-  function penOutlines(flats, roads){
+  // Print style: blue pen over the flat layers. Parks get their outline; the land does not. The lot outlines and the
+  // centre line down every road used to be drawn too, which tiled the whole map into polygons under the city — a road
+  // reads as its own painted path, and the land as paper. Water never had an outline (rivers, ponds).
+  function penOutlines(flats){
     const thin = () => new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.7, depthWrite:false});
-    for(const m of flats){ const k=m.userData.kind; if(k!=='blocks' && k!=='park') continue;   // no outline on water (rivers, ponds)
-      const l=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 1), thin());   // hundreds of thousands of edges: plain 1px lines (smooth at full sharpness), the thick pen is for the buildings
+    for(const m of flats){ const k=m.userData.kind; if(k!=='park') continue;
+      const l=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 1), thin());
       l.position.y=.3; l.renderOrder=40; l.userData.kind=k; l.userData.outline=true; scene.add(l); city.meshes.push(l); city.pen.push(l); }
-    if(roads?.length){ const v=[];
-      for(const r of roads) for(let i=0;i<r.pts.length-1;i++){ const [ax,az]=r.pts[i], [bx,bz]=r.pts[i+1]; v.push(ax,.25,az,bx,.25,bz); }
-      const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v,3)); const l=new THREE.LineSegments(g, thin()); l.renderOrder=40; l.userData.kind='roadink'; l.userData.outline=true; scene.add(l); city.meshes.push(l); city.pen.push(l); }
   }
   // the city's data waits until the page itself has loaded (text, fonts, images first), then is
   // decoded + triangulated in a worker (osm-layer.ts), so the page keeps scrolling while the city builds
@@ -285,7 +306,7 @@ export function createBathurstEngine(area?: string) {
     let o=12; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(39, o++));   // 2-11 stay free for the region backdrop
     for(const m of flats){ scene.add(m); city.meshes.push(m); }
     // pen outlines around every lot, building base and park (the boundary edges of each flat layer; Print only)
-    penOutlines(flats, baked.roads);
+    penOutlines(flats);
     if(baked.buildings){ const {mesh, lines, shadow, recolor} = buildBuildings(baked.buildings, PALETTE);
       for(const m of [mesh, lines, shadow]){ scene.add(m); city.meshes.push(m); }
       fat(lines); city.recolor=recolor; city.ink=lines; city.bmesh=mesh; city.shadow=shadow; }
@@ -299,7 +320,7 @@ export function createBathurstEngine(area?: string) {
   const loadRegion = () => loadCity('/map/region-osm.tcgm.gz', {lite:true, signal}).then(baked=>{
     if(dead) return;
     let o=2; const flats=buildFlatLayers(baked, PALETTE, flatMat, ()=>Math.min(11, o++)); for(const m of flats){ scene.add(m); city.meshes.push(m); }
-    penOutlines(flats, baked.roads);   // the whole region drawn in pen too, so the ground reads as polygons to the edges of the page
+    penOutlines(flats);   // the region's parks outlined; the land itself stays paper
     applyStyle(); applyShow(); poke();
   }).catch(err=>{ if(err?.name!=='AbortError') console.warn('Region map data failed to load', err); });
   flatOrder = 40;
@@ -610,6 +631,8 @@ export function createBathurstEngine(area?: string) {
     }
     city.recolor?.(pal);
     if(pal.sky) sky.userData.paint(pal.sky);
+    // the globe's atmosphere: the rim inside the limb and the halo outside it take the palette's rim, else a lit haze
+    globeU.uRim.value.set(pal.rim ?? mix(haze, 0xffffff, .6)); globeU.uGlow.value.copy(globeU.uRim.value);
     // paper is the light-land style (printed grain, dark-ink labels); the others have dark land and take the paper labels
     document.getElementById('stick').classList.toggle('paper-map', mapView.style==='paper');
     document.getElementById('stick')._skyDark=undefined;   // sky-dark itself is set per frame (frame loop), with the sky   // railway: the hero text turns Sea Breeze on the blue sky
@@ -956,12 +979,14 @@ export function createBathurstEngine(area?: string) {
     const xs=list.map(p=>p.x), zs=list.map(p=>p.z);
     const v={cx:(Math.min(...xs)+Math.max(...xs))/2, cz:(Math.min(...zs)+Math.max(...zs))/2, dist:20000, bearing, pitch};
     const top=topPx ?? (W<760?150:84), bot=botPx ?? (W<760?60:56), side=sidePx ?? (W<760?16:48);   // px kept clear for the chrome
-    const P=new THREE.Vector3(), T=new THREE.Vector3(), q=new THREE.Vector3(), R=new THREE.Vector3(), U=new THREE.Vector3();
+    const P=new THREE.Vector3(), T=new THREE.Vector3(), q=new THREE.Vector3(), R=new THREE.Vector3(), U=new THREE.Vector3(), G=new THREE.Vector3();
     fitCam.fov=camera.fov; fitCam.aspect=W/H; fitCam.near=10; fitCam.far=1e6; fitCam.updateProjectionMatrix();
     for(let it=0; it<12; it++){
-      poseFrom(v,P,T); fitCam.position.copy(P); fitCam.up.set(0,1,0); fitCam.lookAt(T); fitCam.updateMatrixWorld();
+      // the points are measured where the globe puts them for a camera at this height (lib/bathurst/globe.ts), so the fit
+      // made on the street still holds once the map has curled
+      poseFrom(v,P,T); const gk=kAt(), gr=rAt(P.y); fitCam.position.copy(P); fitCam.up.set(0,1,0); fitCam.lookAt(bendPoint(G,T,P,gk,gr)); fitCam.updateMatrixWorld();
       let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
-      for(const p of list){ q.set(p.x,0,p.z).project(fitCam); const sx=(q.x+1)/2*W, sy=(1-q.y)/2*H; x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
+      for(const p of list){ bendPoint(q,p,P,gk,gr).project(fitCam); const sx=(q.x+1)/2*W, sy=(1-q.y)/2*H; x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
       // move the centre so the box sits in the middle of the safe area, then scale the distance to fill it
       const wantX=W/2, wantY=(top+H-bot)/2, dx=(x0+x1)/2-wantX, dy=(y0+y1)/2-wantY, m=mpp(v.dist), k=1/Math.max(.45,Math.cos(pitch));
       // screen right / screen up on the ground, so the correction works at any bearing
@@ -1030,7 +1055,7 @@ export function createBathurstEngine(area?: string) {
   // (components/terminal/BusinessTerminal.tsx). Every scroll position below counts from the end of it.
   const LEAD = parseFloat(hero.dataset.lead || '0') || 0;
   const heroTop = () => hero.offsetTop + LEAD*H;
-  const PH_A=.5, PH_LEAD=1,   /* PH_A: the hero → map move, half a screen of scroll (was 1) */ SLOT=.8, DIR_SLOTS=0, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
+  const PH_A=.32, PH_LEAD=1,   /* PH_A: the hero → map move, a third of a screen of scroll (was .5, 1 before that): the map with its pins is the point of the page, so it arrives fast */ SLOT=.8, DIR_SLOTS=0, PH_C=1, HOLD=.35;   // after the clients: parked on the pin, one slot per direction step, the "Find your way forward" step, then the reviews sheet
   const phB = () => 0;   // the project-by-project scroll is retired: the map holds, then the reviews sheet
   const DSLOT = () => W<760 ? 1.25 : SLOT;   // route steps: a longer slot on phones, where one swipe covers more of the page
   let coverH=0;
@@ -1201,13 +1226,15 @@ export function createBathurstEngine(area?: string) {
   const mapReady = () => target>=1 && prog>.97;
   // dev-only: jump the camera to a progress value without waiting for the eased scroll (stripped in production)
   if(process.env.NODE_ENV !== 'production') window.__tcgJump = v => { target=prog=Math.min(1,Math.max(0,v)); };
+  if(process.env.NODE_ENV !== 'production') window.__tcgGlobe = () => ({ R: globeU.uRe.value, K: globeU.uK.value, limbDeg: Math.round(globeU.uLimb.value*180/Math.PI), alt: Math.round(camera.position.y), pitch: +view3.pitch.toFixed(2), dist: Math.round(view3.dist), slope: GLOBE.slope });   // dev-only: the globe as drawn
   if(process.env.NODE_ENV !== 'production') window.__tcgDot = m => { if(m) LEAD_PHONE=m; const q=project(runner.position); return {y:Math.round(q.y), x:Math.round(q.x), lead:LEAD_PHONE}; };   // dev-only: where the hero dot lands
   function goStreet(p){ INTRO.el = (p && INTRO.stopT[p.id]!==undefined) ? INTRO.stopT[p.id] : 0; streetAnchor = (p && p.pos) ? {x:xAt(p.pos.z+420), z:p.pos.z+420} : {x:X0,z:900}; buildCurves(); if(!mapDirty) resetView(); scrollToProg(0); }
   if($('pegman')) $('pegman').onclick=()=>goStreet(selected ? ALL.find(p=>p.id===selected) : null);
 
   // ---------- map gestures (embedded-maps conventions) ----------
   const ray=new THREE.Raycaster(), plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), hit=new THREE.Vector3(), ndc=new THREE.Vector2();
-  function groundAt(px,py){ const r=stick.getBoundingClientRect(); ndc.set(((px-r.left)/W)*2-1, -((py-r.top)/H)*2+1); ray.setFromCamera(ndc,camera); return ray.ray.intersectPlane(plane, hit) ? hit.clone() : new THREE.Vector3(goal.cx,0,goal.cz); }
+  function groundAt(px,py){ const r=stick.getBoundingClientRect(); ndc.set(((px-r.left)/W)*2-1, -((py-r.top)/H)*2+1); ray.setFromCamera(ndc,camera); return groundHit(ray.ray, camera.position, hit) ? hit.clone() : new THREE.Vector3(goal.cx,0,goal.cz); }   // on the globe, through its curve (lib/bathurst/globe.ts)
+  void plane;
   function zoomAt(px,py,f){
     if(!mapReady()){ scrollToProg(1); return; }
     mapDirty=true; const all=zoomAllView();
@@ -1314,10 +1341,12 @@ export function createBathurstEngine(area?: string) {
   // ---------- frame ----------
   const chipBar=$('chipbar');
   const svEl=$('sv'), svHero=$('svhero'), ctrls=document.querySelector('.ctrls');
-  const v=new THREE.Vector3(), vA=new THREE.Vector3(), vB=new THREE.Vector3(), mPos=new THREE.Vector3(), mTgt=new THREE.Vector3();
+  const v=new THREE.Vector3(), vA=new THREE.Vector3(), vB=new THREE.Vector3(), vG=new THREE.Vector3(), mPos=new THREE.Vector3(), mTgt=new THREE.Vector3();
+  let bentN=-1;   // scene children already given the globe bend (frame loop: new objects are patched before their first draw)
   const needle=$('needle'), scaleTxt=$('scaletxt'), neatline=$('neatline'), coordsEl=$('coords');
   const smooth = (e0,e1,x) => { const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t); };
-  function project(world){ v.copy(world).project(camera); return {x:(v.x+1)/2*W, y:(1-v.y)/2*H, ok:v.z<1}; }
+  // screen position of a flat world point, where the globe puts it; ok is false past the camera or round the back of the planet
+  function project(world){ bendPoint(v, world, camera.position).project(camera); return {x:(v.x+1)/2*W, y:(1-v.y)/2*H, ok:v.z<1 && facing(world, camera.position)>=0}; }
   const setStyle = (el, key, val) => { if(el['_'+key]!==val){ el.style[key]=val; el['_'+key]=val; } };   // skip no-op writes
   let wasReady=false;
 
@@ -1339,7 +1368,7 @@ export function createBathurstEngine(area?: string) {
     const dt=Math.min(.05,(ts-lastTs)/1000||0); lastTs=ts;
     // exponential easing: frame-rate independent, so uneven phone scroll events land as one smooth glide
     const ease = r => reduce ? 1 : 1-Math.exp(-dt*r);
-    const k = ease(lite ? 6 : 5), kg = ease(6);
+    const k = ease(lite ? 8 : 7), kg = ease(7.5);   // the hero → map ease, and the map camera's: quick enough that the pins are there as soon as the scroll stops
     prog += (target-prog)*k; if(Math.abs(target-prog)<1e-4) prog=target;
     // ease the map camera toward its goal (shortest way round for bearing)
     const db=((goal.bearing-view3.bearing+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
@@ -1358,12 +1387,24 @@ export function createBathurstEngine(area?: string) {
     if(blend>0){ poseFrom(view3, mPos, mTgt); pos.lerp(mPos, blend); tgt.lerp(mTgt, blend); }
     const hh = (1-smooth(0,.2,prog)) * (reduce?0:1);
     pos.x += Math.sin(ts*.0006)*0.25*hh; pos.y += Math.sin(ts*.0009)*0.12*hh;
-    camera.position.copy(pos); camera.up.set(0,1,0); camera.lookAt(tgt);
-    sky.position.copy(pos); sky.visible = mapView.style !== 'poster' && !(PALETTES[mapView.style].lotLines && pos.y > 1500);   // print: from above, the land runs to the page edge (no sky at the corners)
+    // the globe: flat on the street, curled into a planet from the crane up; the camera looks at the target where the curve puts it
+    const gk = setGlobe(pos.y);
+    camera.position.copy(pos); camera.up.set(0,1,0); camera.lookAt(bendPoint(vG, tgt, pos));
+    ground.position.set(pos.x, 0, pos.z);   // the land rides under the camera, so its limb is always a full circle
+    sky.position.copy(pos); sky.visible = mapView.style !== 'poster' && (gk > 0 || !(PALETTES[mapView.style].lotLines && pos.y > 1500));   // print, flat: from above, the land runs to the page edge; as a globe the sky shows past the limb
     { const dark = !!PALETTES[mapView.style].skyDark && city.ready && (!PALETTES[mapView.style].lotLines || pos.y < 1500);   /* city.ready: the canvas (and its blue sky) only fades in once the city is there */ if(stick._skyDark!==dark){ stick._skyDark=dark; stick.classList.toggle('sky-dark', dark); } }   // light text only over the blue sky
-    { const look = tgt.clone().sub(pos).setY(0).normalize(); skyline.position.set(pos.x + look.x*skyline.userData.D, 0, pos.z + look.z*skyline.userData.D); skyline.lookAt(pos.x, 0, pos.z); skyline.visible = mapView.style === 'print' && pos.y < 1200; }
+    { const look = tgt.clone().sub(pos).setY(0).normalize();
+      // on the globe the backdrop stands on the limb itself (scaled down with it), so downtown rises just past the curve
+      let D = skyline.userData.D, y = 0;
+      if(gk > 0){ const R = globeU.uRe.value, th = limbAt(pos.y) / R; D = R*Math.sin(th); y = -R*(1-Math.cos(th)); }
+      skyline.position.set(pos.x + look.x*D, y, pos.z + look.z*D); skyline.lookAt(pos.x, y, pos.z); skyline.scale.setScalar(D / skyline.userData.D);
+      skyline.visible = mapView.style === 'print' && pos.y < 1200; }
     const alt = pos.y;
-    { const nn=Math.max(.5, Math.min(250, alt*.04)); if(Math.abs(camera.near-nn) > nn*.02){ camera.near=nn; camera.updateProjectionMatrix(); } }
+    // depth range: a half-metre near plane against a 200 km far plane leaves so little precision past a block that walls
+    // stop hiding the pen lines behind them (the city reads see-through). Both planes follow the altitude instead, kept
+    // wide enough for the sky sphere (R 60000) and the planet's limb.
+    { const nn=Math.max(3, Math.min(400, alt*.2)), ff=Math.max(70000, Math.min(200000, alt*60));
+      if(Math.abs(camera.near-nn) > nn*.02 || Math.abs(camera.far-ff) > ff*.02){ camera.near=nn; camera.far=ff; camera.updateProjectionMatrix(); } }
     { const fk = PALETTES[mapView.style].fogK ?? 1; scene.fog.near = Math.max(260, alt*1.1)*fk; scene.fog.far = Math.max(2800, alt*3.6)*fk; }   // at street height the haze starts a few blocks out, so the near city keeps its full shading
 
     { const s=Math.max(0, scrollY - heroTop())/H, on = prog>.6 && s < PH_A+PH_LEAD+phB() && dirIdx<0 && (W>=760 ? mapUI.classList.contains('pc') : (nodeIdx<0 && !selected));   // slides out as soon as the sidebar comes in (phones: at the first project), and leaves for the directions
@@ -1584,6 +1625,7 @@ export function createBathurstEngine(area?: string) {
     if(winPx){ renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true);
       renderer.setScissor(winPx.l, winPx.b, Math.max(0, W-winPx.l-winPx.r), Math.max(0, H-winPx.t-winPx.b)); }
     else renderer.setScissorTest(false);
+    if(scene.children.length!==bentN){ bentN=scene.children.length; bendObject(scene); }   // anything new (city layers, the route) joins the globe before it is first drawn
     renderer.render(scene,camera);
     // adaptive quality: if frames keep running long (a slow GPU), step the resolution down once or twice
     perf.t += dt; perf.n++; if(dt > 1/40) perf.slow++;

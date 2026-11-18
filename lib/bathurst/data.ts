@@ -20,6 +20,8 @@ export type Client = {
   stop?: number;
   /** Pin icon when the industry's own doesn't fit (a key of the engine's ICON set, e.g. "wheel"). */
   icon?: string;
+  /** This address sits far outside the cluster: pin it on the edge of the map, in its true direction (see `onEdge`). */
+  edge?: true;
   hidden?: string;
   /** Thumbnail for the map callout and sheet row, e.g. "/clients/bubbys.jpg". TODO(content): add storefront photos. */
   thumb?: string;
@@ -53,10 +55,37 @@ export const INDUSTRIES: Record<Industry, { name: string; chip: string; icon: st
   industrial: { name: "Industrial & trades", chip: "Industrial", color: "#6E4E33", icon: '<path d="M3 20V10l5 3V10l5 3V6h6v14z"/>' },
 };
 
+/**
+ * Clients whose address sits far outside the cluster are pinned on the EDGE of it, in the true direction of their city,
+ * instead of at their own coordinates: one business in Montreal or Mississauga would otherwise stretch the overview until
+ * North York is a dot. `edge: true` marks them; `addr` still carries the real address, so the card tells the truth.
+ * The ring sits just outside the furthest client that is not on the edge, measured in metres (the engine's own scale:
+ * 111 km per degree of latitude, 80.3 km per degree of longitude at this latitude).
+ */
+const M_LAT = 111000, M_LON = 80300;
+function onEdge(list: Client[]): Client[] {
+  const core = list.filter((c) => !c.edge && c.lat != null && c.lon != null);
+  const mid = {
+    lat: core.reduce((s, c) => s + c.lat!, 0) / core.length,
+    lon: core.reduce((s, c) => s + c.lon!, 0) / core.length,
+  };
+  const away = (c: Client) => Math.hypot((c.lon! - mid.lon) * M_LON, (c.lat! - mid.lat) * M_LAT);
+  const reach = Math.max(...core.map(away)) * 1.08;
+  return list.map((c) => {
+    if (!c.edge || c.lat == null || c.lon == null) return c;
+    const d = away(c) || 1;
+    return {
+      ...c,
+      lat: mid.lat + (((c.lat - mid.lat) * M_LAT) / d) * reach / M_LAT,
+      lon: mid.lon + (((c.lon - mid.lon) * M_LON) / d) * reach / M_LON,
+    };
+  });
+}
+
 // Projects list (Sept 2026). Coordinates are approximate geocodes of the published address.
 // TODO(content): services for the new projects; confirm addresses flagged in `note`.
-export const CLIENTS: Client[] = [
-  { id: "yjc", name: "Yorkville Jewish Centre", addr: "94 Avenue Rd, Toronto", lat: 43.6725, lon: -79.396, ind: "community", services: [], stop: 1 },
+export const CLIENTS: Client[] = onEdge([
+  { id: "yjc", name: "Yorkville Jewish Centre", addr: "94 Avenue Rd, Toronto", lat: 43.6725, lon: -79.396, ind: "community", services: [], stop: 1, edge: true },
   { id: "fringe", name: "Fringe Boutique", addr: "87 Lynnhaven Rd", lat: 43.72322, lon: -79.43973, ind: "retail", services: ["Branding", "Shopify", "POS"], result: "3.1× online conversion", stop: 2 },
   { id: "hilys", name: "Hily's Sparkly Spa", addr: "207 Edgeley Blvd #5, Concord", lat: 43.7978, lon: -79.5325, ind: "beauty", services: [], stop: 3 },
   { id: "mes", name: "Maple Electric Supply", addr: "8520 Jane St Unit 5, Concord", lat: 43.8132, lon: -79.5294, ind: "retail", services: [], stop: 4 },
@@ -64,12 +93,12 @@ export const CLIENTS: Client[] = [
   { id: "kapara", name: "Kapara", addr: "7700 Bathurst St Unit 12, Thornhill", lat: 43.8052, lon: -79.4482, ind: "food", services: [], stop: 6 },
   { id: "hoh", name: "House of Hair Extensionz", addr: "7181 Yonge St #218, Thornhill", lat: 43.8032, lon: -79.4194, ind: "beauty", services: ["Branding", "Shopify", "AI photoshoot"], result: "2.3× sales growth", stop: 7 },
   // always pinned, off the scroll route
-  { id: "uzbek", name: "Uzbek Delight", addr: "382 Enford Rd, Richmond Hill", lat: 43.89, lon: -79.4384, ind: "food", services: ["Website", "Branding", "Food truck", "POS"] },
+  { id: "uzbek", name: "Uzbek Delight", addr: "382 Enford Rd, Richmond Hill", lat: 43.89, lon: -79.4384, ind: "food", services: ["Website", "Branding", "Food truck", "POS"], edge: true },
   { id: "ar26", name: "AR26 / A&R Motors", addr: "1100 Finch Ave W Unit 6A, North York", lat: 43.7685, lon: -79.4733, ind: "professional", icon: "wheel", services: [] },
   { id: "familytree", name: "Family Tree Dispute Resolution", addr: "Toronto, ON", lat: 43.7280, lon: -79.4200, ind: "professional", services: [], note: "Address not publicly verified; placeholder. Confirm." },
   { id: "umc", name: "Unionville Music Competition", addr: "74 Starwood Rd, Thornhill", lat: 43.8451, lon: -79.4669, ind: "community", services: [] },
-  { id: "morgan", name: "Morgan Property Law", addr: "1454 Dundas St E, Unit 112, Mississauga", lat: 43.6100, lon: -79.5814, ind: "professional", services: [] },
-  { id: "amritsari", name: "Amritsari Chatore", addr: "5484 Tomken Rd Unit 1, Mississauga", lat: 43.6359, lon: -79.6451, ind: "food", services: ["Branding", "Print", "WordPress"], result: "3.4× local discovery" },
+  { id: "morgan", name: "Morgan Property Law", addr: "1454 Dundas St E, Unit 112, Mississauga", lat: 43.6100, lon: -79.5814, ind: "professional", services: [], edge: true },
+  { id: "amritsari", name: "Amritsari Chatore", addr: "5484 Tomken Rd Unit 1, Mississauga", lat: 43.6359, lon: -79.6451, ind: "food", services: ["Branding", "Print", "WordPress"], result: "3.4× local discovery", edge: true },
   // Added Oct 2026 (geocoded from the street address with OpenStreetMap Nominatim). TODO(content): services, photos and case studies.
   { id: "elis", name: "Eli's Barbershop", addr: "4128 Bathurst St, North York", lat: 43.74678, lon: -79.43666, ind: "professional", icon: "services", services: [], site: "https://elisbarbershop.com/" },
   { id: "bubbys", name: "Bubby's Bagels", addr: "3030 Bathurst St, Toronto", lat: 43.71817, lon: -79.42982, ind: "food", services: ["Website", "Branding"], site: "https://www.bubbysbagels.com/" },
@@ -80,7 +109,7 @@ export const CLIENTS: Client[] = [
   { id: "bazwell", name: "Wheel Walkers", addr: "3995 Chesswood Dr, North York", lat: 43.75840, lon: -79.47557, ind: "health", services: [], site: "https://www.wheelwalkers.ca/" },
   { id: "paloma", name: "Paloma Blanca", addr: "77 Sheffield St, North York", lat: 43.70721, lon: -79.47088, ind: "retail", services: [] },
   { id: "beker", name: "Beker Fashions", addr: "87 Colville Rd, North York", lat: 43.70760, lon: -79.47073, ind: "retail", services: [] },
-  { id: "iceacademy", name: "Canadian Ice Academy", addr: "3111 Universal Dr, Mississauga", lat: 43.62472, lon: -79.57229, ind: "professional", services: [] },
+  { id: "iceacademy", name: "Canadian Ice Academy", addr: "3111 Universal Dr, Mississauga", lat: 43.62472, lon: -79.57229, ind: "professional", services: [], edge: true },
   { id: "carmel", name: "Carmel Transport", addr: "25 North Rivermede Rd Unit 18, Concord", lat: 43.82140, lon: -79.48440, ind: "industrial", services: [] },
   { id: "brickstone", name: "Brickstone Construction", addr: "358 Flint Rd, North York", lat: 43.77013, lon: -79.48004, ind: "industrial", services: ["Website"] },
   { id: "luminari", name: "Luminari Cleaning", addr: "4100 Chesswood Dr Unit 200, North York", lat: 43.75841, lon: -79.47818, ind: "professional", services: [], site: "https://luminari-nine.vercel.app/" },
@@ -94,10 +123,13 @@ export const CLIENTS: Client[] = [
   { id: "chailifeline", name: "Chai Lifeline Canada", addr: "300 Wilson Ave, North York", lat: 43.73725, lon: -79.43559, ind: "community", services: ["Short film ad"], youtube: "tH_e1TS7n4g" },
   { id: "shaarezedek", name: "Canadian Shaare Zedek Hospital Foundation", addr: "620 Wilson Ave Unit 101, North York", lat: 43.73238, lon: -79.46017, ind: "community", services: ["Short film ad"], youtube: "xWTlPwweVpU" },
   { id: "wokandbowl", name: "Wok & Bowl", addr: "3022 Bathurst St, North York", lat: 43.71804, lon: -79.42967, ind: "food", services: ["Short film ad"], youtube: "8_04lNcGLfY" },
-  { id: "pestcontrolplus", name: "Pest Control Plus", addr: "380 Four Valley Dr, Concord", lat: 43.81917, lon: -79.53543, ind: "professional", services: ["Short film ad"], youtube: "r-ia5CyqSMU" },
+  { id: "pestcontrolplus", name: "Pest Control Plus", addr: "380 Four Valley Dr, Concord", lat: 43.81917, lon: -79.53543, ind: "professional", services: ["Short film ad"], youtube: "r-ia5CyqSMU", edge: true },
   // Chillie's picks up and drops off; Google shows a service-area pin with no street address
   { id: "chillies", name: "Chillie's Dry Cleaning", addr: "North York (pickup & drop-off)", lat: 43.76987, lon: -79.44200, ind: "professional", services: ["Short film ad"], youtube: "UdmW8WqYLns" },
-];
+  // Away from the cluster: pinned on the edge of the map in their own direction (onEdge above), city coordinates only
+  { id: "kidicare", name: "KidiCare / Inspera", addr: "Montreal, QC", lat: 45.5019, lon: -73.5674, ind: "retail", services: [], site: "https://kidicare.ca/", edge: true },
+  { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", lat: 40.7282, lon: -73.7949, ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"], edge: true },
+]);
 
 /** Published projects with no mapped address. */
 export const ELSEWHERE: Client[] = [
@@ -105,11 +137,11 @@ export const ELSEWHERE: Client[] = [
   { id: "hetz", name: "Hetz Electrical", addr: "Greater Toronto Area", ind: "industrial", services: [], site: "https://www.hetzelectrical.com/" },
   { id: "zmedicair", name: "ZMedicAir", addr: "Canada", ind: "health", services: [], site: "https://zmedicair.ca/" },
   { id: "cleverpays", name: "CleverPays", addr: "Laval, QC", ind: "finance", services: [], site: "https://cleverpays.ca/" },
-  { id: "kidicare", name: "KidiCare / Inspera", addr: "Montreal, QC", ind: "retail", services: [], site: "https://kidicare.ca/" },
-  { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"] },
   { id: "premierkosher", name: "Premier Kosher", addr: "1607 Abingdon Rd, West Lincoln, ON", ind: "food", services: ["Short film ad"], youtube: "hDyAwOqVCPw" },
   { id: "ralphwigs", name: "Ralph Wigs", addr: "Aventura, FL", ind: "beauty", services: ["Short film ad"], youtube: "whkye_cU5j8", short: true },
   // TODO(content): no public address found (or more than one business by that name); confirm, then remove `hidden`
+  { id: "papergoodsplus", name: "Papergoods Plus", addr: "To confirm", ind: "retail", services: [], hidden: "No listing found under this name; address or website needed before it can be pinned" },
+  { id: "arianoir", name: "Aria Noir", addr: "To confirm", ind: "retail", services: [], hidden: "No listing found under this name; address or website needed before it can be pinned" },
   { id: "mondialpay", name: "MondialPay", addr: "Canada", ind: "finance", services: [], hidden: "Location and website to confirm" },
   { id: "ohr", name: "Ohr", addr: "Toronto", ind: "community", services: [], hidden: "Which Ohr organization (Ohr Somayach, Ohr HaEmet…)? Address to confirm" },
   { id: "beautique", name: "Beautique", addr: "Toronto", ind: "beauty", services: [], hidden: "Possibly Beautique Bar, 3430 Yonge St; confirm" },
@@ -117,7 +149,7 @@ export const ELSEWHERE: Client[] = [
 ];
 
 /** Where the route begins and where it ends (the TCG office). */
-export const ROUTE_START = { name: "Start", lat: 43.6725, lon: -79.3960 };   // Yorkville: the first stop (YJC)
+export const ROUTE_START = (() => { const first = CLIENTS.find((c) => c.stop === 1); return { name: "Start", lat: first?.lat ?? 43.6725, lon: first?.lon ?? -79.3960 }; })();   // the first stop (YJC), wherever its pin lands
 export const OFFICE = { name: "Talkerstein Consulting Group", addr: "5050 Dufferin St, North York", lat: 43.7668, lon: -79.4706 };
 
 export const GROUPS = {

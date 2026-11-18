@@ -99,11 +99,14 @@ function bakeBuildings(list: MapData["buildings"]): BakedBuildings {
       pos.push(a.x, 0, a.y, c.x, 0, c.y, c.x, h, c.y, a.x, h, a.y);
       for (let j = 0; j < 4; j++) tone.push(lit ? 1 : 2);
       idx.push(w, w + 1, w + 2, w, w + 2, w + 3);
-      // ink: roof edge, base edge (where the wall meets the ground, lifted a hair so it never sinks into the land), and the
-      // corners of anything taller than a house (on houses they only add noise)
+      // ink: roof edge, base edge (where the wall meets the ground, lifted a hair so it never sinks into the land), and a
+      // vertical at the corners where the outline really turns, so a building reads as a box with sides and not as an
+      // outlined roof lying on the paper. Every vertex would stripe the facades: an OSM outline is full of small jogs.
       ink.push(a.x, h, a.y, c.x, h, c.y);
       ink.push(a.x, .2, a.y, c.x, .2, c.y);
-      if (h > 9) ink.push(a.x, 0, a.y, a.x, h, a.y);
+      { const pv = contour[(i + n - 1) % n], px = a.x - pv.x, pz = a.y - pv.y, pl = Math.hypot(px, pz) || 1;
+        const turn = Math.abs(Math.atan2((px / pl) * (dz / len) - (pz / pl) * (dx / len), (px / pl) * (dx / len) + (pz / pl) * (dz / len)));
+        if (h > 3 && len > 4 && pl > 4 && turn > .5) ink.push(a.x, .2, a.y, a.x, h, a.y); }
     }
   }
   return { pos: Float32Array.from(pos), idx: Uint32Array.from(idx), tone: Uint8Array.from(tone), ink: Float32Array.from(ink), shadowPos: Float32Array.from(spos), shadowIdx: Uint32Array.from(sidx) };

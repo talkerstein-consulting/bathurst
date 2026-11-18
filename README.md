@@ -17,8 +17,10 @@ npm run build
 | `app/bathurst-map.css` | Styles for the hero + maps-app chrome driven by the engine |
 | `components/bathurst/BathurstHero.tsx` | Hero markup (Street View → crane → live map); mounts the engine |
 | `lib/bathurst/engine.ts` | three.js scene, fly-through, map camera, gestures, industry scroll steps |
+| `lib/bathurst/globe.ts` | The paper planet: a vertex-shader bend that curls the whole map over a sphere (the curvature of the earth), with the matching maths for pins, fits and raycasts |
 | `lib/bathurst/data.ts` | Clients, cross streets, services, steps, review. Single source for map and sections |
 | `components/bathurst/*.tsx` | Sections: Bathurst line, Directions, Services, Saved places, Reviews, Contact, Footer |
+| `components/bathurst/SignatureLine.tsx` | "Built for what's next." written by the React Bits Signature pen; the paths are the Slowly Signature letterforms traced by `scripts/trace-signature.mjs` into `lib/bathurst/signature-strokes.json` (re-run it if the words change) |
 | `components/react-bits/` | React Bits Pro components (Staggered Text, Blur Highlight) |
 | `reference/prototype-v15.html` | The approved single-file prototype the engine was ported from |
 

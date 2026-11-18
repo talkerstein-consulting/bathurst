@@ -7,7 +7,7 @@ import { CtaLink } from "@/components/style/Cta";
  * Phones only (CSS): a "Book a call" pinned at thumb height, bottom centre. It shows only while no other booking or
  * assessment button is on screen, and steps aside while a client's sheet is open or the menu is up.
  */
-const OTHERS = 'a[href^="/book"]:not(.thumb-cta), .al-go, .hs-cta';
+const OTHERS = 'a[href^="/book"]:not(.thumb-cta), .al-go, .hs-cta, .as-strip.on';   // .as-strip: the pinned assessment strip takes the bottom of the screen
 
 const onScreen = (el: Element) => {
   const r = el.getBoundingClientRect();

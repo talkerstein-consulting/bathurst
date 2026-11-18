@@ -1,0 +1,358 @@
+/* ============================================================================
+   Landing sections 03–08. LOW FIDELITY except 05: the copy and the order are real, the grey schematics are not.
+
+   Type and spacing come from the system (app/globals.css), never from a value invented here:
+     headings   .h2 48/38px · .h3 32/26px · a card's own heading 22px/1.1 · .eyebrow 13px uppercase
+     text       body 17px/1.6 · inside a card 16px/1.55 · a control 16px
+     spacing    --s1 8 · --s2 16 · --s3 24 · --s4 32 · --s5 48 · --s6 64 · --s7 96 · --section-gap
+     gutter     24px, the same as .wrap
+     radius     --frame-radius 18 · --btn-radius 10 · --radius-sm
+   The only bare lengths below are hairlines, icon sizes and the heights of the placeholder bars, which are drawing,
+   not layout.
+   ============================================================================ */
+
+/* ---------- one rhythm for every heading and lead on the landing ----------
+   The sheet's older .hs-h / .hs-lead carry margins built for the layout that used to live here — a NEGATIVE top
+   margin on the lead and 19px type, neither of which belongs on this page. Every section below uses these instead,
+   so the step from eyebrow to heading to lead is the same everywhere and nothing has to be fought per section. */
+/* `.hs p { margin: 0 }` in app/home.css beats a single class, so each rule names itself twice — once plainly and
+   once under .hs — rather than reaching for !important. */
+/* ---------- the space between sections ----------
+   These are large set pieces, so they stand further apart than the sheet's default --section-gap (64). The two
+   pinned sections used to carry `padding: 0 !important`, which left §03 and §06 butted straight against what came
+   before them — they take the same gap as the rest now. Top padding is safe on a pinned section because the pin
+   measures its own track, not the section box, so this only offsets the track. */
+.cover-body .section { padding-top: var(--s7); }
+.rp, .cp, .tp { padding-top: var(--s7); }
+@media (max-width: 899px) { .cover-body .section, .rp, .cp, .tp { padding-top: var(--s6); } }
+
+/* ---------- ONE rule for every preheader -> heading -> body -> action group on this page ----------
+     preheader -> heading   --s2 (16)   the label belongs to the heading, so it stays with it
+     heading -> body        --s3 (24)   a clear break between the claim and the explanation
+     body -> action         --s5 (48)   further again, so the button reads as its own thing
+   This covers the section heads AND every block inside them - the cards, the panel, the items, the names. They
+   each used to carry their own numbers (16/16, 8, 16, 24/24, 16/32), which is exactly what made the page look
+   unrelated to itself. A group's first element always sits at 0 and the rhythm is built from top margins only, so
+   nothing has to be subtracted anywhere. No exceptions: a new block with a label, a heading and a body joins this
+   list rather than inventing a fourth number. */
+.cp-n, .pt-label,
+.cp-eyebrow, .pt-eyebrow, .tp-eyebrow, .rp-eyebrow, .lf-head .eyebrow { margin: 0; }
+/* the heading, one step under its label */
+.lp-h, .hs .lp-h, .cp-t, .pt-t { margin: var(--s2) 0 0; }
+.rp-t, .tp-t { margin: 0; }                      /* these open their group: no label above them */
+/* the body, one step further under the heading */
+/* every one of these is a <p> inside .hs, and `.hs p { margin: 0 }` in app/home.css outranks a single class,
+   so each body names itself under .hs as well — the same reason .lp-lead does */
+.lp-lead, .rp-b, .tp-b, .pt-b,
+.hs .lp-lead, .hs .rp-b, .hs .tp-b, .hs .pt-b { margin: var(--s3) 0 0; }
+.lp-lead, .hs .lp-lead { max-width: 38em; font-size: 17px; line-height: 1.6; color: var(--steel-70); }
+/* and the action, further again */
+.lp-cta, .hs .lp-cta, .hs-final .hs-cta.lp-cta { margin-top: var(--s5); }
+
+/* ---------- shared: section heads and the card rails (06, 07) ---------- */
+.lf-head { max-width: 40em; }
+.lf-head .eyebrow { margin: 0; color: var(--orange); }
+.lf .hs-lead { max-width: 44em; }
+
+/* ---------- 05 · the real testimonials (components/bathurst/Testimonials.tsx) ---------- */
+/* The one finished section: it takes this section's head in place of its own title, so the head has to sit in the
+   component's header row beside the ‹ › pair, and the component's wider side padding has to come back to the 24px
+   every other section's heading uses, or the cards would start further in than the words above them. */
+.lf-proof .rv { padding-inline: 24px; padding-top: 0; }
+.lf-proof .rv-reels-h { align-items: flex-end; }
+.lf-proof .lf-head { flex: 1 1 30em; }
+.lf-proof .lf-head .hs-lead { margin-bottom: 0; }
+.cover-body .lf-proof .rv-swipe { --gut: calc((100cqi - min(100cqi, 1200px)) / 2 + 24px); }
+@media (max-width: 900px) { .cover-body .lf-proof .rv-swipe { --gut: 24px; } }
+
+/* ============================================================================
+   03 · The Reality (components/home/RealityPanels.tsx): heading pinned on the left, the three items moving past
+   under it, the diagram pinned on the right. Pinned by hand — the sheet is transformed, so `sticky` has nothing to
+   hold against (same reason as .ls-stage in app/home.css).
+   ============================================================================ */
+
+.rp-track { position: relative; height: 320vh; }
+.rp-stage { position: relative; height: calc(100svh - var(--navh, 72px)); align-content: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s5); align-items: center;
+  max-width: 1200px; margin: 0 auto; padding: var(--s4) 24px;
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+.rp-left { display: grid; gap: var(--s4); align-content: center; min-height: 0; }
+.rp-head { display: grid; }
+.rp .lp-h { max-width: 14em; }
+.rp .lp-lead { max-width: 34em; }
+.rp-eyebrow { margin: 0; color: var(--orange); }
+
+/* the items move as one column; only the one being read is at full strength */
+.rp-viewport { overflow: hidden; }
+.rp-list { list-style: none; margin: 0; padding: 0;
+  position: relative;   /* the slide is measured with offsetTop, which needs the list itself as the offset parent */
+  transform: translate3d(0, calc(var(--slide, 0px) * -1), 0);
+  transition: transform .55s cubic-bezier(.22, 1, .36, 1); }
+.rp-item { padding: var(--s3) 0; border-top: 1.5px solid var(--steel-15);
+  opacity: .32; transition: opacity .45s ease; }
+.rp-item.is-on { opacity: 1; }
+.rp-t { display: flex; align-items: center; gap: var(--s1);
+  font-family: var(--head); font-size: 22px; line-height: 1.1; font-weight: 400; }   /* a card's heading */
+.rp-i { width: 20px; height: 20px; flex: none; color: var(--orange); }
+.rp-b { font-size: 16px; line-height: 1.55; color: var(--steel-70); max-width: 36em; }
+
+/* ---------- the diagram (LOW FIDELITY placeholders) ---------- */
+.rp-right { min-width: 0; }
+.rp-fig { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--frame-radius);
+  background: color-mix(in srgb, var(--steel) 6%, transparent); }
+.rp-fig-in { position: absolute; inset: 0; display: grid; align-content: center; gap: var(--s1); padding: var(--s4);
+  opacity: 0; transition: opacity .4s ease, translate .5s cubic-bezier(.22, 1, .36, 1); translate: 0 10px; }
+.rp-fig-in.on { opacity: 1; translate: none; }
+.rp-bar, .rp-row, .rp-blk, .rp-cta, .rp-note, .rp-drop, .rp-win-bar {
+  display: block; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--steel) 14%, transparent); }
+.rp-bar-q { height: 34px; border-radius: 999px; margin-bottom: var(--s2); }
+.rp-row { height: 26px; }
+.rp-row.is-you { height: 34px; margin-top: var(--s2); background: color-mix(in srgb, var(--orange) 24%, transparent);
+  display: flex; align-items: center; padding: 0 var(--s1); }
+.rp-row.is-you i { display: block; width: 38%; height: 8px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--orange) 55%, transparent); }
+.rp-win { display: grid; gap: var(--s1); padding: var(--s2); border-radius: var(--btn-radius);
+  background: color-mix(in srgb, var(--steel) 5%, transparent); }
+.rp-win-bar { height: 10px; width: 40%; }
+.rp-blk { height: 14px; }
+.rp-blk-lg { height: 30px; width: 86%; }
+.rp-blk-sm { width: 58%; }
+.rp-cta { height: 30px; width: 42%; margin-top: var(--s1); }
+.rp-cta.is-weak { background: color-mix(in srgb, var(--steel) 8%, transparent); }
+.rp-flow { display: grid; gap: var(--s1); justify-items: stretch; }
+.rp-note { height: 30px; opacity: calc(1 - var(--i) * .22); }
+.rp-gap { display: block; height: 22px; margin-left: var(--s2); border-left: 2px dashed var(--steel-15); }
+.rp-drop { height: 38px; background: repeating-linear-gradient(45deg,
+  color-mix(in srgb, var(--steel) 10%, transparent) 0 8px, transparent 8px 16px); }
+
+/* ---------- narrow: no track, no pin, every item in full above its own diagram ---------- */
+@media (max-width: 899px) {
+  .rp-track, .rp-track.is-flat { height: auto; }
+  .rp-stage { position: static; height: auto; transform: none; grid-template-columns: 1fr;
+    gap: var(--s4); padding: var(--section-gap) 24px 0; }
+  .rp-viewport { overflow: visible; }
+  .rp-list { transform: none; transition: none; }
+  .rp-item { opacity: 1; padding: var(--s4) 0; }
+  .rp-fig-flat { margin-top: var(--s3); }
+  .rp-fig-flat .rp-fig-in { position: static; opacity: 1; translate: none; }
+  .rp-fig-flat .rp-fig-in:not(.on) { display: none; }
+  .rp .lp-h { max-width: none; }
+}
+
+/* ============================================================================
+   04 · The Transformation (components/home/TransformPanels.tsx): the heading offset into the right-hand column, then
+   a short list of steps held still on the left while their blocks scroll past on the right. Pinned by hand for the
+   same reason as .rp-stage — the sheet is transformed, so `sticky` has nothing to hold against.
+   ============================================================================ */
+
+.tp-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* the heading starts at the half, leaving the left column empty beside it */
+.tp-head { display: grid; margin-left: 50%; max-width: 32em; }
+.tp-eyebrow { margin: 0; color: var(--orange); }
+.tp .lp-lead { max-width: 34em; }
+
+.tp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s5);
+  align-items: start; margin-top: var(--s7); }
+
+/* the list: a control-sized label, with the rule under it filling as that step is read */
+.tp-rail { align-self: start; transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+.tp-rail ul { list-style: none; margin: 0; padding: 0; max-width: 22em; }
+.tp-nav { position: relative; display: block; width: 100%; text-align: left; background: none; border: 0;
+  cursor: pointer; padding: var(--s2) 0; font: 500 16px var(--body);
+  color: var(--steel-50); transition: color .3s ease; }
+.tp-nav::before, .tp-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px; }
+.tp-nav::before { background: var(--steel-15); }
+/* the progress the reader has made through this step: the rule fills from the left as its block scrolls past */
+.tp-nav::after { background: var(--steel); transform-origin: left center;
+  transform: scaleX(var(--p, 0)); transition: transform .12s linear; }
+.tp-nav:hover { color: var(--steel-70); }
+.tp-nav.is-on { color: var(--steel); }
+.tp-nav:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .tp-nav::after { transition: none; } }
+
+.tp-blocks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s7); }
+.tp-block { display: grid; }
+.tp-t { font-family: var(--head); font-size: 32px; line-height: 1.05; font-weight: 400; }   /* .h3 */
+.tp-b { font-size: 17px; line-height: 1.6; color: var(--steel-70); max-width: 36em; }
+
+/* ---------- the placeholder screen (LOW FIDELITY) ---------- */
+.tp-fig { margin-top: var(--s4); overflow: hidden; border-radius: var(--frame-radius);
+  background: color-mix(in srgb, var(--steel) 7%, transparent); }
+.tp-fig-bar { display: flex; gap: var(--s1); padding: var(--s2); }
+.tp-fig-bar i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--steel) 18%, transparent); }
+.tp-fig-body { display: grid; gap: var(--s1); padding: 0 var(--s4) var(--s4); }
+.tp-ph { display: block; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--steel) 13%, transparent); }
+.tp-ph-field { height: 34px; border-radius: 999px; margin-bottom: var(--s1); }
+.tp-ph-row { height: 24px; }
+.tp-ph-row.is-top { height: 32px; background: color-mix(in srgb, var(--orange) 24%, transparent);
+  display: flex; align-items: center; padding: 0 var(--s1); }
+.tp-ph-row.is-top em { display: block; width: 40%; height: 8px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--orange) 55%, transparent); }
+.tp-ph-hero { height: 76px; }
+.tp-ph-line { height: 14px; }
+.tp-ph-line.is-short { width: 56%; }
+.tp-ph-cta { height: 32px; width: 40%; margin-top: var(--s1); background: color-mix(in srgb, var(--orange) 40%, transparent); }
+.tp-ph-lead { height: 34px; display: flex; align-items: center; gap: var(--s1); padding: 0 var(--s1);
+  opacity: calc(1 - var(--i) * .16); }
+.tp-ph-lead i { width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: color-mix(in srgb, var(--steel) 24%, transparent); }
+.tp-ph-lead em { display: block; flex: 1; height: 8px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--steel) 22%, transparent); }
+.tp-ph-auto { height: 30px; width: 62%; margin-top: var(--s1); background: color-mix(in srgb, var(--orange) 28%, transparent); }
+
+
+/* ---------- narrow: one column, no pin, the list drops away ---------- */
+@media (max-width: 899px) {
+  .tp-head { margin-left: 0; max-width: none; }
+  .tp-body { grid-template-columns: 1fr; gap: var(--s5); margin-top: var(--s5); }
+  .tp-rail { display: none; }   /* the blocks are all in view on a phone; the list would only repeat them */
+  .tp-blocks { gap: var(--s6); }
+  .tp-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ============================================================================
+   06 · What We Do (components/home/CapabilityPanels.tsx): the heading holds still and the three capabilities cross
+   over in place underneath it. Pinned by hand for the same reason as .rp-stage — the sheet is transformed, so
+   `sticky` has nothing to hold against.
+   ============================================================================ */
+
+.cp-track { position: relative; height: 320vh; }
+.cp-stage { position: relative; height: calc(100svh - var(--navh, 72px)); align-content: center;
+  display: grid; gap: var(--s6); max-width: 1200px; margin: 0 auto; padding: var(--s4) 24px;
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+.cp-head { text-align: center; display: grid; justify-items: center; }
+.cp-eyebrow { margin: 0; color: var(--orange); }
+.cp .lp-h { max-width: 16em; }
+.cp .lp-lead { max-width: 40em; }
+/* the claim, then the qualifier behind it: one ink, two strengths — no new colour */
+.cp-h-lead { color: var(--steel); }
+.cp-h-trail { color: var(--steel-50); }
+.cp-h-lead::after { content: " "; }
+
+/* three columns that hold still: every title on the left where it is, the picture and the explanation changing
+   beside them. Only the middle and right cross over, so the change reads as this section turning over rather than
+   as three sections going past. */
+.cp-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: var(--s5); align-items: center; }
+
+/* left: all three, spread down the column, the one being read in full strength */
+.cp-names { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s7); align-content: center; }
+.cp-names > li { opacity: .3; transition: opacity .45s ease; }
+.cp-names > li.is-on { opacity: 1; }
+.cp-n { font: 600 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--orange); }
+.cp-t { display: grid; font-family: var(--head); font-size: 32px; line-height: 1.05; font-weight: 400; }   /* .h3 */
+
+/* middle and right: one cell each, the active one showing */
+.cp-figs, .cp-bodies { display: grid; }
+.cp-slot { grid-area: 1 / 1; opacity: 0; translate: 0 10px; pointer-events: none;
+  transition: opacity .4s ease, translate .5s cubic-bezier(.22, 1, .36, 1); }
+.cp-slot.is-on { opacity: 1; translate: none; pointer-events: auto; }
+.cp-b { font-size: 17px; line-height: 1.6; color: var(--steel-70); }
+.hs .cp-bodies .cp-b { margin: 0; }   /* it stands alone in its column, with no heading above it to step from */
+
+/* ---------- narrow: no track, no pin, the three simply stacked ---------- */
+@media (max-width: 899px) {
+  .cp-track, .cp-track.is-flat { height: auto; }
+  .cp-stage { position: static; height: auto; transform: none; gap: var(--s5);
+    padding: var(--section-gap) 24px 0; }
+  .cp-head { text-align: left; justify-items: start; }
+  .cp .lp-h, .cp .lp-lead { max-width: none; }
+  .cp-viewport { overflow: visible; }
+  .cp-list, .cp-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s6); transform: none; transition: none; }
+  .cp-list .cp-row { opacity: 1; }
+  /* the name, then the picture, then the explanation, in that reading order */
+  .cp-row { grid-template-columns: 1fr; gap: var(--s3); }
+  .cp-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ============================================================================
+   07 · Our Process (components/home/ProcessTabs.tsx): a tab strip of icons, the marked one pointing down into the
+   panel it opens. Type and spacing from the system (see the note at the top of this file).
+   ============================================================================ */
+.pt-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.pt-head { text-align: center; display: grid; justify-items: center; }
+.pt-eyebrow { margin: 0; color: var(--orange); }
+.pt .lp-lead { max-width: 40em; margin-inline: auto; }
+
+/* the strip */
+.pt-strip { display: flex; align-items: center; justify-content: center; gap: var(--s2); margin-top: var(--s5); }
+.pt-tabs { display: flex; align-items: center; gap: var(--s2); }
+.pt-tab { position: relative; width: var(--icon-btn); height: var(--icon-btn); display: grid; place-items: center;
+  padding: 0; border: 1.5px solid var(--steel-15); border-radius: var(--btn-radius); background: var(--sea);
+  color: var(--steel-50); cursor: pointer; transition: color .25s ease, border-color .25s ease; }
+.pt-tab-i { width: 22px; height: 22px; }
+.pt-tab:hover { color: var(--steel-70); border-color: var(--steel-50); }
+.pt-tab.is-on { color: var(--orange); border-color: var(--orange); }
+/* the marked step points down into its panel */
+.pt-tab.is-on::after { content: ""; position: absolute; top: 100%; left: 50%; translate: -50% 0;
+  border: 8px solid transparent; border-top-color: var(--sea); }
+.pt-tab:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.pt-step-arrow { width: var(--icon-btn); height: var(--icon-btn); display: grid; place-items: center; padding: 0;
+  border: 0; background: none; color: var(--steel-50); cursor: pointer; transition: color .25s ease; }
+.pt-step-arrow:hover { color: var(--steel); }
+.pt-step-arrow:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.pt-step-arrow .glyph { width: 22px; height: 22px; }
+
+/* the panel */
+.pt-panel { margin-top: var(--s3); padding: var(--s6); border-radius: var(--frame-radius); background: var(--sea);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--s5); align-items: center; }
+.pt-panel-l { display: grid; justify-items: start; }
+.pt-label { display: flex; align-items: center; gap: var(--s1);
+  font: 600 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--orange); }
+.pt-label-i { width: 18px; height: 18px; }
+.pt-t { font-family: var(--head); font-size: 32px; line-height: 1.05; font-weight: 400; }   /* .h3 */
+.pt-b { font-size: 17px; line-height: 1.6; color: var(--steel-70); max-width: 34em; }
+
+/* the picture (LOW FIDELITY placeholder) */
+.pt-fig { aspect-ratio: 16 / 11; display: grid; place-items: center; border-radius: var(--btn-radius);
+  background: color-mix(in srgb, var(--steel) 7%, transparent); }
+.pt-fig-card { width: 72%; display: grid; gap: var(--s2); padding: var(--s3);
+  border-radius: var(--btn-radius); background: var(--sea); }
+.pt-ph { display: block; height: 14px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--steel) 13%, transparent); }
+.pt-ph-h { height: 24px; width: 64%; }
+.pt-ph.is-short { width: 48%; }
+.pt-ph-blk { height: 56px; margin-top: var(--s1); }
+
+@media (max-width: 899px) {
+  .pt-head { text-align: left; justify-items: start; }
+  .pt .lp-h, .pt .lp-lead { max-width: none; margin-inline: 0; }
+  .pt-strip { justify-content: flex-start; margin-top: var(--s4); }
+  .pt-step-arrow { display: none; }   /* phones tap the icons directly */
+  .pt-panel { grid-template-columns: 1fr; gap: var(--s4); padding: var(--s4); margin-top: var(--s2); }
+  .pt-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ---------- 05 · split layout: heading and ratings on the left, cards off the right edge ---------- */
+.rv.rv-split { max-width: 1200px; padding-inline: 24px;
+  display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--s5); align-items: start; }
+.rv-split-l { display: grid; align-content: start; gap: var(--s5); }
+/* The two ratings go one above the other, not side by side: the general .rv-phone rule puts them in two columns,
+   which inside this rail squeezed each box to 162px — the stars broke out past the frame and "12 ratings on Clutch"
+   wrapped onto a second line. Full width each, and both fit on one line. The same holds on a phone. */
+.rv.rv-split .rv-rates { display: grid; grid-template-columns: 1fr; gap: var(--s2); }
+.rv.rv-split .rv-score { padding: var(--s3); }
+.rv.rv-split .rv-score > span { min-width: 0; }
+.rv.rv-split .rv-score small { white-space: nowrap; }
+.rv-split-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+/* the row runs off the right edge of the sheet and is scrolled, so the last card is never squeezed to fit */
+/* The row starts at its own grid column and runs off the right edge of the sheet. The base rule pads BOTH sides by
+   the sheet's gutter (~380px here), which was pushing the first card far to the right of the column it belongs to —
+   so the left padding and margin are cleared and only the right-hand bleed is kept. */
+.cover-body .rv-split .rv-swipe {
+  margin-inline-start: 0; padding-inline-start: 0; scroll-padding-inline-start: 0;
+  margin-right: calc(50% - 50cqi); padding-right: calc(50cqi - 50%); }
+
+.row-dots { display: flex; align-items: center; gap: var(--s1); }
+.row-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--steel-15); transition: width .3s ease, background .3s ease; }
+.row-dot.is-on { width: 22px; background: var(--steel); }
+.row-dot:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+@media (max-width: 899px) {
+  .rv.rv-split { grid-template-columns: 1fr; gap: var(--s4); padding-inline: 24px; }
+  .rv-split-l { gap: var(--s4); }
+}

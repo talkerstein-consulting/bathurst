@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
 import RowArrows from "./RowArrows";
+import RowDots from "./RowDots";
 import { useCoverNear } from "./useCoverNear";
 
 type Item = (typeof TESTIMONIALS)[number];
@@ -22,7 +23,7 @@ const Close = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true
  * name and position, and the outline play button. On hover the quote shows, truncated, over the poster's foot.
  * Play opens a dialog with the video and the whole testimonial. Only real quotes are shown.
  */
-export default function Testimonials() {
+export default function Testimonials({ heading, split = false }: { heading?: ReactNode; split?: boolean } = {}) {
   const [cols, setCols] = useState(3);
   const [at, setAt] = useState<number | null>(null);
   const open: Item | null = at === null ? null : TESTIMONIALS[at];
@@ -122,11 +123,31 @@ export default function Testimonials() {
     </>
   );
 
+  // split: the heading and the ratings hold the left column, the cards run off the right edge of the sheet, and the
+  // dots under the ratings say where in the row you are (the landing's section 05)
+  if (split) return (
+    <div className={`rv rv-phone rv-split${cols === 1 ? "" : " rv-desk"}`}>
+      <div className="rv-split-l">
+        {heading}
+        <div className="rv-rates">{clutch.node}{google.node}</div>
+        <div className="rv-split-foot">
+          <RowDots row={swipe} count={TESTIMONIALS.length} what="testimonial" />
+          <RowArrows row={swipe} what="testimonials" />
+        </div>
+      </div>
+      <div ref={swipe} className="rv-swipe" aria-label="Video testimonials">
+        {cards.map((t) => <div key={t.key} className="rv-slot">{t.node}</div>)}
+      </div>
+      {modal}
+    </div>
+  );
+
   // one side-swiping row of video cards at every width (desktop pages it with the ‹ › pair, phones swipe with the next card peeking in)
   return (
     <div className={`rv rv-phone${cols === 1 ? "" : " rv-desk"}`}>
       <div className="rv-reels-h">
-        <h2 className="h2 rv-title">Word on the Street</h2>
+        {/* the landing's section 05 supplies its own head (components/home/LandingSections.tsx); area pages keep this one */}
+        {heading ?? <h2 className="h2 rv-title">Word on the Street</h2>}
         <RowArrows row={swipe} what="testimonials" />
       </div>
       <div className="rv-rates">{clutch.node}{google.node}</div>

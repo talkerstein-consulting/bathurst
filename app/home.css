@@ -2,13 +2,34 @@
    Brand tokens only: Sea Breeze, Steel Blue, Muted Orange. */
 
 /* ---------- 01 hero ---------- */
-.assess-lead .term-h { max-width: 15em; font-size: clamp(48px, 5.6vw, var(--h1-size)); line-height: 1.02; }   /* the h1 scale (same clamp as the map hero's h1) */
+.assess-lead .term-h { max-width: 10.2em; font-size: clamp(48px, 5.6vw, calc(880px / 10.1)); line-height: 1.02; }
+/* The headline carries its own line break (components/home/AssessLead.tsx), so the measure only has to be wide enough
+   for the longer line, "Turn More Leads". The cap keeps it inside the hero column (.term-main, 880px) on a wide
+   monitor: 880 / 10.1em of type. The phone size below keeps it inside the screen. */
+/* the eyebrow over the headline; it flips to Sea Breeze over the dark sky with the rest of the hero text */
+.al-eyebrow { margin: 0; color: var(--orange); }
+#stick.sky-dark .term:not(.is-full) .al-eyebrow { color: var(--sea); }
+/* the second lead line is the ask, not the claim: a step down from .term-sub */
+.al-sub3 { font-size: 17px; color: var(--steel-70); }
+#stick.sky-dark .term:not(.is-full) .al-sub3 { color: var(--sea); }
 .assess-lead .term-main { align-items: center; }
 .al-form { display: flex; gap: var(--s1); width: min(640px, 100%); padding: 6px; background: var(--sea);
   border: 1px solid var(--steel-15); border-radius: var(--radius); box-shadow: 0 10px 30px rgb(25 37 74 / .18); }
-.al-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 var(--s2); font: 500 17px var(--body); color: var(--steel); outline: none; }
+/* the field holds the input and, behind it, the rest of the domain in grey (components/home/AssessLead.tsx).
+   The two have to be set identically — same font, same padding, same box — or the suggestion would not sit where
+   the typing ends. The typed part of the ghost is hidden rather than removed, so it still takes up its width. */
+.al-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.al-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 var(--s2); font: 500 17px var(--body); color: var(--steel); outline: none; position: relative; z-index: 1; }
+.al-ghost { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; padding: 0 var(--s2);
+  font: 500 17px var(--body); color: var(--steel-50); white-space: pre; overflow: hidden; pointer-events: none; }
+.al-ghost i { font-style: normal; visibility: hidden; }
 .al-input::placeholder { color: var(--steel-50); }
-.al-form:focus-within { outline: 2px solid var(--orange); outline-offset: 2px; }
+/* focus: the box takes the Muted Orange edge while anything in it is active (mouse or keyboard), and the keyboard ring
+   itself is the site's own (2px orange at 3px offset, app/globals.css) and only around the field being typed in, so
+   tabbing on to Assess My Website leaves one ring on the button instead of two. */
+.al-form:focus-within { border-color: var(--orange); }
+.al-form:has(.al-input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 3px; }
+.al-input:focus-visible { outline: none; }
 .al-go { white-space: nowrap; }
 .al-fine { margin: 0; text-align: center; font-size: 14px; font-weight: 500; color: var(--steel-70); }
 #stick.sky-dark .term:not(.is-full) .al-fine { color: var(--sea); }
@@ -61,19 +82,23 @@
 html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); }
 
 @media (max-width: 899px) { .hs-t { font-size: 26px; } }
-@media (max-width: 760px) { .assess-lead .term-h { font-size: 40px; } }   /* the h1 token (48px) runs this long question to five lines on a phone */
+@media (max-width: 760px) { .assess-lead .term-h { font-size: min(40px, 8vw); } }   /* phones: the size that keeps the 10.2em measure (and so the two lines) inside the screen */
 
 /* the map overview heading: one line on the h2 scale (wraps naturally on phones) */
 #hero #stick .workhead.wh-one { font-size: 48px; line-height: 1.02; white-space: nowrap; width: max-content; max-width: calc(100vw - 32px); }   /* its own width, not half the screen (it is placed from the centre) */
 #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 64px) !important; }   /* right under the one-line heading */
 @media (max-width: 759px) { #hero #stick .workhead.wh-one { font-size: 38px; white-space: normal; max-width: calc(100vw - 32px); } }
 
-/* navbar: a solid Sea Breeze bar behind the menu, logo, flag line and CTA, so they read over the sky and the map */
+/* navbar: over the hero and the client map the bar is clear, so the sky and the paper run to the top edge and the menu, logo,
+   flag line and CTA float on them (the wordmark and flag line turn Sea Breeze over the blue sky: the engine's .sky-dark).
+   The solid Sea Breeze bar fades in with the sheet (sections 03 on, #stick.sheeted), where it reads over the content. */
 #hero #stick::before { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--navh); z-index: 10; pointer-events: none;
-  background: var(--sea); border-bottom: 1px solid var(--steel-15); transition: translate .35s cubic-bezier(.22,1,.36,1); }
+  background: var(--sea); border-bottom: 1px solid var(--steel-15); opacity: 0; transition: translate .35s cubic-bezier(.22,1,.36,1), opacity .3s ease; }
+#hero #stick.sheeted::before { opacity: 1; }
 #hero #stick.nav-hidden::before { translate: 0 -100%; }
-#hero #stick .brandpin .bp-word { filter: none !important; }   /* the wordmark stays Steel Blue on the bar */
-#hero #stick .proudca { color: var(--steel) !important; text-shadow: none !important; }
+#hero #stick.sheeted .brandpin .bp-word { filter: none !important; }   /* the wordmark stays Steel Blue on the bar */
+#hero #stick.sheeted .proudca { color: var(--steel) !important; text-shadow: none !important; }
+#hero #stick.sky-dark:not(.sheeted) .proudca { color: var(--sea); text-shadow: 0 1px 6px rgb(25 37 74 / .35); }
 
 /* the client map keeps its navbar, even if the scroll that arrived here had tucked it away (BathurstHero sets .nav-hidden
    before the engine marks the map as up) */
@@ -145,13 +170,17 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
 /* section 2 category chips: wrap onto a second line, centred, instead of running off the edge (the arrows are not needed) */
 #hero #stick.work #chipbar { left: 50% !important; right: auto !important; translate: -50% 0; width: max-content; max-width: calc(100% - 2 * var(--s2)) !important; }
 #hero #stick.work #chipbar > .btn { display: none !important; }
+/* desktop: the tabs wrap onto a second centred row at the map's own chip size (36px, 14px, with the industry glyph) */
 #hero #stick.work #chips { flex-wrap: wrap; justify-content: center; overflow: visible; row-gap: var(--s1); }
+#hero #stick.work #chips .chip { height: 36px; padding: 0 14px; font-size: 14px; gap: 6px; }
 @media (max-width: 759px) {
-  #hero #stick.work #chips { gap: 6px; row-gap: 6px; }
-  #hero #stick.work #chips .chip { height: 30px; padding: 0 10px; font-size: 12px; }
-  #hero #stick.work #chips .chip .glyph { display: none; }   /* labels only, so the chips fit two rows */
+  /* phones: one row that slides sideways (D06), the full-size chips kept, snapping to each tab */
+  #hero #stick.work #chipbar { left: 0 !important; right: 0 !important; translate: none; width: auto; max-width: none !important; }
+  #hero #stick.work #chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scroll-snap-type: x proximity;
+    gap: var(--s1); padding: 2px var(--s2); scroll-padding-inline: var(--s2); scrollbar-width: none; }
+  #hero #stick.work #chips::-webkit-scrollbar { display: none; }
+  #hero #stick.work #chips .chip { scroll-snap-align: center; height: 36px; padding: 0 14px; font-size: 14px; }
   #hero #stick .workhead.wh-one { font-size: 30px; }   /* two lines on a phone */
-  #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 72px) !important; }
 }
 
 /* ---------- section heads + uniform feature cards (components/home/HomeSections.tsx) ---------- */
@@ -160,19 +189,32 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
 .hs-head .hs-lead { margin: 0; }
 .hs-lead { font-size: 19px; line-height: 1.5; color: var(--steel-70); }
 
-/* every card the same size in every section: one column width, equal heights, the diagram panel a fixed ratio */
-.hc-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
-.hc { display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--frame-radius); background: var(--sea); }
-.hc-art { aspect-ratio: 4 / 3; background: var(--steel-08); display: grid; place-items: center; border-bottom: 1px solid var(--steel-15); }
-.hc-ph { display: grid; justify-items: center; gap: var(--s1); color: var(--steel-50); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
-.hc-ph .hc-icon { width: 40px; height: 40px; }
-.hc-body { flex: 1; display: flex; flex-direction: column; padding: var(--s4); }
-.hc-body > .hc-icon { width: 32px; height: 32px; color: var(--steel); margin-bottom: var(--s3); }
-.hc-label { margin: 0 0 var(--s2); font: 500 13px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--steel); }
-.hc-title { margin: 0 0 var(--s2); font-size: 26px; line-height: 1.08; }
+/* Feature cards (one format everywhere): a header row — the icon in its tile, then the numbered label — over a hairline
+   rule, then the heading and the copy. Equal columns, equal heights, the card's own .frame double line from globals.css. */
+/* what the sample report and the "how we work" steps still borrow from the old card: the line glyph, the small label and
+   the heading/copy scale. The cards themselves are the site's card format now (components/style/Card.tsx, app/globals.css). */
+.hc-icon { width: 24px; height: 24px; }
+.card-ui .hc-icon { width: 36px; height: 36px; }
+.hc-label { margin: 0; font: 500 12px/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--steel-70); }
+.hc-title { margin: 0 0 var(--s2); font-size: 24px; line-height: 1.1; }
 .hc-copy { margin: 0; font-size: 16px; line-height: 1.55; color: var(--steel-70); }
-@media (max-width: 1100px) { .hc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .hc-grid { grid-template-columns: 1fr; } .hc-body { padding: var(--s3); } }
+
+
+/* ---------- the pinned assessment strip (components/home/AssessStrip.tsx) ---------- */
+.as-strip { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60;
+  display: flex; gap: var(--s1); align-items: center; width: min(520px, calc(100vw - 2 * var(--s3))); padding: 6px;
+  background: var(--sea); border: 1px solid var(--steel-15); border-radius: var(--frame-radius); box-shadow: 0 10px 30px rgb(25 37 74 / .18);
+  translate: -50% 140%; opacity: 0; pointer-events: none; transition: translate .35s cubic-bezier(.22,1,.36,1), opacity .25s ease; }
+.as-strip.on { translate: -50% 0; opacity: 1; pointer-events: auto; }
+.as-strip-input { flex: 1; min-width: 0; height: 40px; border: 0; background: transparent; padding: 0 var(--s2);
+  font: 500 15px var(--body); color: var(--steel); outline: none; }
+.as-strip-input::placeholder { color: var(--steel-50); }
+.as-strip:focus-within { border-color: var(--orange); }
+.as-strip:has(.as-strip-input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 3px; }
+html body .as-strip-go.btn { flex: none; height: 40px; padding: 0 18px; --ink: var(--steel); background: var(--orange) padding-box; color: var(--sea); white-space: nowrap;
+  border-radius: var(--btn-radius); }
+@media (max-width: 480px) { html body .as-strip-go.btn { padding: 0 14px; font-size: 14px; } }
+@media (prefers-reduced-motion: reduce) { .as-strip { transition: opacity .2s ease; } }
 
 /* the sample report */
 .hs-report { padding: var(--s4); }
@@ -196,16 +238,515 @@ html body .al-go.btn, html body .al-go.btn:hover { --ink: var(--steel); backgrou
 .hs-final .wrap { text-align: center; justify-items: center; }
 .hs-final .hs-lead { max-width: 40em; margin: var(--s2) auto 0; }
 
-/* section 2: the line under "Businesses We Work With" (shows with the heading) */
-.worksub { display: none; }
-#hero #stick.work .worksub { display: block; opacity: 0; transition: opacity .45s ease; position: absolute; left: 50%; translate: -50% 0; top: calc(var(--navh) + var(--s3) + 56px); z-index: 4; width: min(640px, calc(100% - 32px));
-  margin: 0; text-align: center; font-size: 16px; line-height: 1.45; color: var(--steel); text-shadow: 0 0 6px var(--sea), 0 0 2px var(--sea); pointer-events: none; }
-#hero #stick.work .workhead.on + .worksub { opacity: 1; }   /* in step with the heading (hidden while a client is open) */
-#hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 112px) !important; }
-@media (max-width: 759px) {
-  #hero #stick.work .worksub { top: calc(var(--navh) + var(--s3) + 70px); font-size: 13px; }
-  #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 132px) !important; }
+/* section 2: the category tabs sit straight under "Businesses We Work With" (the subline under it is gone) */
+#hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 64px) !important; z-index: 6; }
+@media (max-width: 759px) { #hero #stick.work #chipbar { top: calc(var(--navh) + var(--s3) + 78px) !important; } }
+
+
+
+/* ---------- 03 · the website assessment sequence (components/home/JourneyPanels.tsx) ----------
+   One phone on the right, the heading, the progress and the fine print in one column on the left. The sequence runs
+   once when it scrolls into view and then waits on the replay button in the phone's top corner. The step it is at
+   arrives as .is-0 ... .is-11 on the figure, and .act-old / .act-new say which site is on the glass.
+
+   Act one (.is-0 ... .is-5) is the site that was assembled: a desktop page delivered to a phone, a booking that
+   fails, a cross over the whole screen. It is set in the Times/Verdana pairing of the decade it was built in.
+   Act two (.is-6 ... .is-11) is the same business rebuilt. It carries the CLIENT's brand, not ours (--nw-*), and
+   ends in two surfaces that are not anyone's brand to style: the phone's own payment sheet (.ios-*) and the
+   calendar app the booking writes to (.gc-*). Both are drawn in their own system idioms on purpose. */
+.jp-layout {
+  --jp-bad: #A23A33;
+  --bd-head: "Times New Roman", Times, serif;
+  --bd-body: Verdana, Geneva, Tahoma, sans-serif;
+  /* the mock client's own brand */
+  --nw-font: ui-sans-serif, system-ui, "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, sans-serif;
+  --nw-ink: #10161F;
+  --nw-mute: #5A6572;
+  --nw-line: #E3E7EC;
+  --nw-accent: #0E8F80;
+  --nw-accent-soft: #E6F4F2;
+  /* the two system surfaces */
+  --ios-font: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --ios-blue: #007AFF;
+  --gc-font: "Google Sans", Roboto, Arial, system-ui, sans-serif;
+  --gc-blue: #1A73E8;
+  --gc-green: #0B8043;
+  --gc-ink: #3C4043;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s5);
+  align-items: center; justify-items: start;
 }
-/* the heading block reads over the pins: subline and chips sit above them, on a soft Sea Breeze wash */
-#hero #stick.work .worksub { z-index: 6; padding: 4px 12px; border-radius: 12px; background: rgb(243 247 243 / .85); text-shadow: none; }
-#hero #stick.work #chipbar { z-index: 6; }
+.jp-aside { display: grid; gap: var(--s3); max-width: 34em; }
+.jp-aside .hs-head { margin: 0; text-align: left; }
+.jp-aside .hs-lead { margin-inline: 0; }
+
+/* where the sequence has got to */
+.jp-prog { display: grid; gap: 7px; width: 100%; max-width: 26em; color: var(--steel); }
+.jp-layout:has(.act-old) .jp-prog { color: var(--jp-bad); }
+.jp-layout:has(.act-new) .jp-prog { color: var(--nw-accent); }
+.jp-prog-track { display: block; height: 4px; border-radius: 999px; background: var(--steel-15); overflow: hidden; }
+.jp-prog-track i { display: block; height: 100%; width: var(--p, 0%); border-radius: 999px; background: currentColor;
+  transition: width .14s linear, background-color .5s ease; }
+.jp-prog-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s1); }
+.jp-prog-row em { font: 500 13px/1.4 var(--body); font-style: normal; color: var(--steel-70); }
+.jp-prog-row b { font: 600 13px/1.4 var(--body); font-variant-numeric: tabular-nums; color: currentColor; }
+
+/* ---------- the phone: an iPhone bezel drawn as the brand's double line (globals.css §3) ----------
+   Inner hairline on the bezel edge, a 4px gap, then the 1.5px outer line — the same 1.5 / 4 / 0.5 rhythm as .frame,
+   built from box-shadow rings here because this box has no LineSystem SVG of its own. */
+.jp { margin: 0; display: grid; justify-items: center; width: 320px; max-width: 100%; }
+.jp-frame { position: relative; width: 100%; padding: 11px; border-radius: 44px; background: var(--sea);
+  box-shadow:
+    0 0 0 var(--inner-stroke) var(--steel-50),
+    0 0 0 calc(var(--inner-stroke) + var(--gap)) transparent,
+    0 0 0 calc(var(--inner-stroke) + var(--gap) + var(--outer-stroke)) var(--steel),
+    0 18px 44px rgb(25 37 74 / .16);
+  transition: box-shadow .5s ease; }
+.jp.is-4 .jp-frame, .jp.is-5 .jp-frame { box-shadow:
+  0 0 0 var(--inner-stroke) var(--jp-bad),
+  0 0 0 calc(var(--inner-stroke) + var(--gap)) transparent,
+  0 0 0 calc(var(--inner-stroke) + var(--gap) + var(--outer-stroke)) var(--jp-bad),
+  0 18px 44px rgb(162 58 51 / .22); }
+.jp.is-9 .jp-frame, .jp.is-10 .jp-frame, .jp.is-11 .jp-frame { box-shadow:
+  0 0 0 var(--inner-stroke) var(--nw-accent),
+  0 0 0 calc(var(--inner-stroke) + var(--gap)) transparent,
+  0 0 0 calc(var(--inner-stroke) + var(--gap) + var(--outer-stroke)) var(--nw-accent),
+  0 0 36px 4px rgb(14 143 128 / .4); }
+/* the island and the home indicator: what makes the bezel read as a phone and not a card */
+.jp-island { position: absolute; top: 3px; left: 50%; translate: -50% 0; width: 52px; height: 5px; border-radius: 999px;
+  background: var(--steel); opacity: .5; }
+.jp-home { position: absolute; bottom: 4px; left: 50%; translate: -50% 0; width: 92px; height: 3px; border-radius: 999px;
+  background: var(--steel); opacity: .35; }
+/* back to the start: icon only, sitting in the window's own chrome row to the right of the address, where a
+   browser's reload would be. 11px is the bezel, 44px the window's toolbar, so 20px centres it on that row. */
+.jp-replay { position: absolute; top: 20px; right: 19px; z-index: 3; display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0; border: 1px solid var(--steel-15); border-radius: 50%;
+  background: #fff; color: var(--steel-70); cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, rotate .4s cubic-bezier(.22,1,.36,1); }
+.jp-replay:hover { border-color: var(--steel-50); background: var(--steel); color: var(--sea); rotate: -40deg; }
+.jp-replay:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.jp-replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+
+.jp-win { width: 100%; }
+/* the window's own traffic lights: not wanted on a phone */
+.jp-win > div:first-of-type > div[aria-hidden="true"]:first-child { display: none !important; }
+.jp-view { position: relative; height: 100%; overflow: hidden; background: #fff; }
+.jp-scene { position: absolute; inset: 0; opacity: 0; transition: opacity .4s ease, transform .8s cubic-bezier(.22,1,.36,1); }
+
+/* the two acts share the glass: one dissolves into the other, so the rebuild reads as the same screen changing */
+.jp-act { position: absolute; inset: 0; opacity: 0; transform: scale(.97); filter: blur(7px);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1), filter .7s ease; pointer-events: none; }
+.jp.is-1 .act-1, .jp.is-2 .act-1, .jp.is-3 .act-1, .jp.is-4 .act-1, .jp.is-5 .act-1,
+.jp.is-6 .act-2, .jp.is-7 .act-2, .jp.is-8 .act-2, .jp.is-9 .act-2, .jp.is-10 .act-2, .jp.is-11 .act-2 {
+  opacity: 1; transform: none; filter: none; }
+
+/* 0 · the search both acts start from */
+.jp-search { padding: 14px 14px 0; display: grid; align-content: start; gap: 14px; background: #fff; }
+.jp.is-0 .jp-search { opacity: 1; }
+.jp-q { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--steel-15); border-radius: 999px;
+  font: 400 12px/1.3 var(--body); color: var(--steel-70); }
+.jp-q svg { width: 13px; height: 13px; flex: none; fill: none; stroke: var(--steel-50); stroke-width: 2; }
+.jp-hit { display: grid; gap: 3px; }
+.jp-hit b { font: 600 14px/1.3 var(--body); color: #1a0dab; }
+.jp-hit span { font: 400 11px/1.3 var(--body); color: var(--steel-50); }
+.jp-hit em { font: 400 11.5px/1.35 var(--body); font-style: normal; color: var(--steel-70); }
+.jp-hit.dim b, .jp-hit.dim span, .jp-hit.dim em { display: block; height: 9px; border-radius: 3px; background: var(--steel-08); }
+.jp-hit.dim b { width: 52%; height: 11px; } .jp-hit.dim span { width: 34%; } .jp-hit.dim em { width: 76%; }
+
+/* the page inside each act, and how far down it the visitor has got */
+.jp-site { opacity: 1; }
+.jp.is-2 .jp-site { transform: translateY(-30%); }
+.jp.is-3 .jp-site, .jp.is-4 .jp-site, .jp.is-5 .jp-site { transform: translateY(-62%); }
+.jp.is-7 .jp-site { transform: translateY(-30%); }
+.jp.is-8 .jp-site, .jp.is-9 .jp-site, .jp.is-10 .jp-site, .jp.is-11 .jp-site { transform: translateY(-58%); }
+
+/* ---------- act one: a desktop page delivered to a phone ----------
+   It is laid out at 250% of the glass, so it runs off the right edge exactly as a non-responsive site does, and its
+   type is desktop-sized, because nothing about it was ever changed for this screen. */
+.jp-bad { width: 250%; font-family: var(--bd-body); background: #fff; }
+/* the banner that carries the whole point of this panel: the site is current, not a relic */
+.bd-built { display: flex; align-items: baseline; gap: 10px; padding: 9px 16px; background: var(--jp-bad); color: #fff; }
+.bd-built b { font: 700 13px/1.2 var(--bd-body); letter-spacing: .06em; text-transform: uppercase; }
+.bd-built span { font: 400 11.5px/1.3 var(--bd-body); color: rgb(255 255 255 / .82); }
+.bd-nav { display: flex; align-items: baseline; gap: 14px; padding: 11px 16px; background: #2c3e6b; color: #fff; }
+.bd-nav b { font: 700 15px/1.2 var(--bd-head); letter-spacing: .02em; }
+.bd-nav span { font-size: 11px; opacity: .85; }
+.bd-h { margin: 16px 16px 7px; font: 700 26px/1.18 var(--bd-head); color: #2c3e6b; }
+.bd-p { margin: 0 16px 11px; font-size: 12px; line-height: 1.55; color: #555; }
+.bd-p.sm { font-size: 11px; color: #777; }
+.bd-photo { height: 140px; margin: 0 16px 12px; overflow: hidden; background: #cfd6e2; }
+.bd-photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.72) contrast(.92); }
+.bd-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 16px 12px; }
+.bd-btns span { padding: 7px 13px; border-radius: 3px; background: #c9972f; color: #fff; font-size: 11px; font-weight: 700; }
+.bd-btns span:nth-child(2) { background: #2c3e6b; }
+.bd-btns span:nth-child(3) { background: #8a8f98; }
+.bd-strip { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 12px; padding: 8px 16px;
+  background: #f1d9a4; color: #7a5b16; }
+.bd-strip b { font: 700 10px/1.2 var(--bd-body); letter-spacing: .03em; }
+.bd-h2 { margin: 16px 16px 8px; font: 700 16px/1.2 var(--bd-head); color: #2c3e6b; text-transform: uppercase; letter-spacing: .03em; }
+.bd-gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 0 16px 11px; }
+.bd-gal span { aspect-ratio: 1; overflow: hidden; background: #e4e7ec; }
+.bd-gal img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.7) contrast(.9); }
+.bd-hours { width: calc(100% - 32px); margin: 0 16px 11px; border-collapse: collapse; }
+.bd-hours td { padding: 5px 9px; border: 1px solid #e2e5ea; font: 400 11px/1.3 var(--bd-body); color: #555; }
+.bd-hours td:last-child { text-align: right; color: #2c3e6b; font-weight: 700; }
+.bd-form { display: grid; gap: 7px; margin: 0 16px 11px; }
+.bd-field { padding: 8px 10px; border: 1px solid #b9bfc9; background: #fff;
+  font: 400 11px/1.2 var(--bd-body); color: #9aa1ad; }
+.bd-field.tall { padding-bottom: 28px; }
+.bd-field.f1, .bd-field.f2 { color: #333; }
+.bd-captcha { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #d8dce3; background: #f7f8fa;
+  font: 400 11px/1.2 var(--bd-body); color: #666; }
+.bd-captcha i { width: 14px; height: 14px; border: 1px solid #b9bfc9; background: #fff; }
+.bd-submit { justify-self: start; padding: 8px 20px; border: 1px solid #1f2d4f; border-radius: 2px; background: #2c3e6b;
+  color: #fff; font: 700 11px/1.2 var(--bd-body); letter-spacing: .04em; }
+.bd-foot { margin: 12px 16px 0; padding-top: 9px; border-top: 1px solid #e2e5ea; font: 400 10px/1.6 var(--bd-body); color: #8a8f98; }
+
+/* the bar a page that never fitted this screen leaves behind */
+.bd-hbar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgb(0 0 0 / .08); opacity: 0;
+  transition: opacity .3s ease; }
+.bd-hbar i { display: block; width: 40%; height: 100%; background: rgb(0 0 0 / .28); }
+.jp.is-1 .bd-hbar, .jp.is-2 .bd-hbar, .jp.is-3 .bd-hbar { opacity: 1; }
+.bd-err { position: absolute; left: 14px; right: 14px; bottom: 14px; display: grid; gap: 3px; padding: 11px 13px; border-radius: 5px;
+  border: 1px solid var(--jp-bad); background: #fdf3f2; opacity: 0; transform: translateY(20%);
+  transition: opacity .3s ease, transform .35s cubic-bezier(.22,1,.36,1); }
+.bd-err b { font: 700 13px/1.3 var(--bd-head); color: var(--jp-bad); }
+.bd-err span { font: 400 11px/1.45 var(--bd-body); color: #7c4b47; }
+.jp.is-4 .bd-err, .jp.is-5 .bd-err { opacity: 1; transform: none; }
+
+/* 5 · what came of it */
+.bd-cross { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: var(--s3);
+  padding: var(--s4); background: rgb(255 255 255 / .93); opacity: 0; transition: opacity .35s ease; }
+.bd-cross svg { width: 58%; max-width: 170px; fill: none; stroke: var(--jp-bad); stroke-width: 10; stroke-linecap: round;
+  stroke-dasharray: 108; stroke-dashoffset: 108; }
+.bd-cross p { margin: 0; text-align: center; font: 600 13px/1.5 var(--body); color: var(--jp-bad); }
+.jp.is-5 .bd-cross { opacity: 1; }
+.jp.is-5 .bd-cross svg path { animation: jp-slash .34s cubic-bezier(.22,1,.36,1) forwards; }
+.jp.is-5 .bd-cross svg path:last-child { animation-delay: .2s; }
+@keyframes jp-slash { to { stroke-dashoffset: 0; } }
+
+/* ---------- act two: the same business, rebuilt in its own brand ---------- */
+.jp-good { font-family: var(--nw-font); background: #fff; color: var(--nw-ink); -webkit-font-smoothing: antialiased; }
+.nw-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px; }
+.nw-nav b { display: flex; align-items: baseline; gap: 3px; font: 600 15px/1 var(--nw-font); letter-spacing: -.02em; color: var(--nw-ink); }
+.nw-nav b i { width: 5px; height: 5px; border-radius: 50%; background: var(--nw-accent); }
+.nw-burger { display: grid; gap: 4px; }
+.nw-burger i { display: block; width: 16px; height: 1.5px; border-radius: 2px; background: var(--nw-ink); }
+.nw-burger i:last-child { width: 10px; margin-left: auto; }
+.nw-eyebrow { margin: 6px 14px 5px; font: 500 9.5px/1.2 var(--nw-font); letter-spacing: .1em; text-transform: uppercase; color: var(--nw-accent); }
+.nw-h { margin: 0 14px 7px; font: 600 23px/1.14 var(--nw-font); letter-spacing: -.03em; color: var(--nw-ink); }
+.nw-p { margin: 0 14px 14px; font: 400 13px/1.55 var(--nw-font); color: var(--nw-mute); }
+.nw-photo { position: relative; height: 170px; margin: 0 14px; border-radius: 14px; overflow: hidden; background: var(--nw-line); }
+.nw-photo-tag { position: absolute; left: 9px; bottom: 9px; right: 9px; display: grid; gap: 1px; padding: 8px 10px;
+  border-radius: 9px; background: rgb(255 255 255 / .93); backdrop-filter: blur(6px); }
+.nw-photo-tag b { font: 600 11.5px/1.2 var(--nw-font); color: var(--nw-ink); }
+.nw-photo-tag em { font: 400 10px/1.2 var(--nw-font); font-style: normal; color: var(--nw-accent); }
+.nw-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nw-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 14px 0; }
+.nw-stats span { display: grid; gap: 3px; padding: 11px 9px; border-radius: 11px; background: var(--nw-accent-soft); }
+.nw-stats b { font: 600 18px/1 var(--nw-font); letter-spacing: -.03em; color: var(--nw-ink); }
+.nw-stats em { font: 400 10px/1.3 var(--nw-font); font-style: normal; color: var(--nw-mute); }
+.nw-trust { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 14px 0; }
+.nw-trust i { padding: 5px 10px; border: 1px solid var(--nw-line); border-radius: 999px;
+  font: 500 10.5px/1.2 var(--nw-font); font-style: normal; color: var(--nw-mute); }
+.nw-h2 { margin: 22px 14px 10px; font: 600 15px/1.2 var(--nw-font); letter-spacing: -.02em; color: var(--nw-ink); }
+.nw-steps { display: grid; gap: 10px; margin: 0 14px; padding: 0; list-style: none; }
+.nw-steps li { display: grid; grid-template-columns: auto 1fr; column-gap: 11px; align-items: baseline;
+  padding-bottom: 10px; border-bottom: 1px solid var(--nw-line); }
+.nw-steps li:last-child { border-bottom: 0; padding-bottom: 0; }
+.nw-steps span { grid-row: 1 / 3; font: 600 11px/1.2 var(--nw-font); color: var(--nw-accent); }
+.nw-steps b { font: 600 12.5px/1.35 var(--nw-font); color: var(--nw-ink); }
+.nw-steps em { font: 400 11.5px/1.45 var(--nw-font); font-style: normal; color: var(--nw-mute); }
+.nw-work { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 14px; }
+.nw-work .lead { grid-column: 1 / -1; }
+.nw-work .lead img { aspect-ratio: 16 / 9; }
+.nw-work figure { margin: 0; display: grid; gap: 5px; min-width: 0; }
+.nw-work img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; display: block; }
+.nw-work b { font: 600 12.5px/1.3 var(--nw-font); color: var(--nw-ink); }
+.nw-work em { font: 400 10px/1.3 var(--nw-font); font-style: normal; color: var(--nw-mute); }
+.nw-quote { margin: 20px 14px 0; padding: 14px; border-radius: 14px; background: var(--nw-ink); }
+.nw-quote p { margin: 0; font: 400 12.5px/1.55 var(--nw-font); color: #fff; }
+.nw-quote cite { display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  font: 500 11px/1.3 var(--nw-font); font-style: normal; color: rgb(255 255 255 / .62); }
+.nw-quote cite i { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / .18); }
+.nw-foot { display: grid; gap: 10px; margin: 20px 0 64px; padding: 16px 14px; border-top: 1px solid var(--nw-line); }
+.nw-foot span { display: grid; gap: 3px; min-width: 0; }
+.nw-foot b { font: 600 12px/1.35 var(--nw-font); color: var(--nw-ink); overflow-wrap: anywhere; }
+.nw-foot em { font: 400 11px/1.35 var(--nw-font); font-style: normal; color: var(--nw-mute); }
+
+/* the one thing to do, within a thumb's reach the whole way down */
+.nw-bar { position: absolute; left: 0; right: 0; bottom: 0; display: grid; place-items: center; height: 50px;
+  padding: 0 14px; background: rgb(255 255 255 / .94); border-top: 1px solid var(--nw-line);
+  opacity: 0; transform: translateY(100%); transition: opacity .3s ease, transform .35s cubic-bezier(.22,1,.36,1); }
+.nw-bar b { display: grid; place-items: center; width: 100%; height: 36px; border-radius: 10px;
+  background: var(--nw-accent); color: #fff; font: 600 13px/1 var(--nw-font); }
+.jp.is-6 .nw-bar, .jp.is-7 .nw-bar { opacity: 1; transform: none; }
+
+/* 8 · the request */
+.nw-form { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; gap: 8px; padding: 14px;
+  border-radius: 16px; background: #fff; box-shadow: 0 10px 32px rgb(16 22 31 / .16); opacity: 0; transform: translateY(16%);
+  transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); }
+.jp.is-8 .nw-form { opacity: 1; transform: none; }
+.jp.is-9 .nw-form, .jp.is-10 .nw-form, .jp.is-11 .nw-form { opacity: 0; transform: scale(.94); }
+.nw-form-h { margin: 0 0 2px; font: 600 14px/1.2 var(--nw-font); letter-spacing: -.02em; color: var(--nw-ink); }
+.nw-f { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--nw-line); border-radius: 9px; }
+.nw-f i { font: 500 9px/1 var(--nw-font); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--nw-mute); }
+.nw-f b { font: 500 12px/1.35 var(--nw-font); color: var(--nw-ink); opacity: 0; transition: opacity .25s ease; }
+.jp.is-8 .nw-f.f1 b { opacity: 1; transition-delay: .2s; }
+.jp.is-8 .nw-f.f2 b { opacity: 1; transition-delay: .45s; }
+.jp.is-8 .nw-f.f3 b { opacity: 1; transition-delay: .7s; }
+.nw-send { display: grid; place-items: center; height: 36px; border-radius: 10px; background: var(--nw-accent); color: #fff;
+  font: 600 13px/1 var(--nw-font); opacity: 0; transition: opacity .25s ease; }
+.jp.is-8 .nw-send { opacity: 1; transition-delay: .9s; }
+
+/* 9 · the request becomes a booking, in the same place the form stood */
+.nw-booked { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; justify-items: center; gap: 7px;
+  padding: 20px 16px; border-radius: 16px; background: #fff; box-shadow: 0 10px 32px rgb(16 22 31 / .16);
+  opacity: 0; transform: scale(.94); transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
+.jp.is-9 .nw-booked { opacity: 1; transform: none; }
+.jp.is-10 .nw-booked, .jp.is-11 .nw-booked { opacity: 0; transform: translateY(-10%); }
+.nw-tick { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--nw-accent); }
+.nw-tick svg { width: 21px; height: 21px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.nw-booked b { font: 600 15px/1.2 var(--nw-font); letter-spacing: -.02em; color: var(--nw-ink); }
+.nw-booked em { font: 400 11.5px/1.4 var(--nw-font); font-style: normal; text-align: center; color: var(--nw-mute); }
+
+/* ---------- 10 · the deposit, in the phone's own payment sheet ----------
+   An iOS sheet, not a web modal: it rises from the bottom edge, keeps the grabber and the home indicator, and is set
+   in the system face at system sizes. Nothing here is Talkerstein's or the client's to brand. */
+.ios-sheet { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 10px; padding: 8px 16px 14px;
+  border-radius: 14px 14px 0 0; background: #F2F2F7; font-family: var(--ios-font); color: #000;
+  box-shadow: 0 -10px 40px rgb(0 0 0 / .22); opacity: 0; transform: translateY(100%);
+  transition: opacity .3s ease, transform .5s cubic-bezier(.22,1,.36,1); }
+.jp.is-10 .ios-sheet { opacity: 1; transform: none; }
+.jp.is-11 .ios-sheet { opacity: 0; transform: translateY(100%); }
+.ios-grab { justify-self: center; width: 36px; height: 5px; border-radius: 999px; background: rgb(60 60 67 / .3); }
+.ios-head { display: flex; align-items: baseline; justify-content: space-between; }
+.ios-head b { font: 600 17px/1.2 var(--ios-font); letter-spacing: -.02em; }
+.ios-head span { font: 400 13px/1.2 var(--ios-font); color: rgb(60 60 67 / .6); }
+.ios-row { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 11px; background: #fff;
+  font: 400 14px/1.2 var(--ios-font); }
+.ios-row em { margin-left: auto; font: 400 12px/1.2 var(--ios-font); font-style: normal; color: rgb(60 60 67 / .5); }
+.ios-card { width: 26px; height: 17px; border-radius: 3px; background: linear-gradient(135deg, #1A1F71, #3C4BA6); }
+.ios-total b { margin-left: auto; font: 600 20px/1 var(--ios-font); letter-spacing: -.03em; }
+.ios-total span { font: 400 14px/1.2 var(--ios-font); color: rgb(60 60 67 / .6); }
+.ios-done { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 13px;
+  background: #000; color: #fff; font: 600 16px/1 var(--ios-font); }
+.ios-ok { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #30D158; }
+.ios-ok svg { width: 12px; height: 12px; fill: none; stroke: #000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ios-bar { justify-self: center; width: 110px; height: 4px; border-radius: 999px; background: #000; opacity: .85; }
+
+/* ---------- 11 · and the calendar app the booking writes to ----------
+   Google Calendar's month view in its own idiom: the product face, the 1A73E8 event chips, the circled today. */
+.gc-app { position: absolute; inset: 0; display: grid; align-content: start; gap: 8px; padding: 12px 10px;
+  background: #fff; font-family: var(--gc-font); color: var(--gc-ink);
+  opacity: 0; transform: translateY(12%); transition: opacity .35s ease, transform .5s cubic-bezier(.22,1,.36,1); }
+.jp.is-11 .gc-app { opacity: 1; transform: none; }
+.gc-top { display: flex; align-items: center; gap: 11px; padding: 2px 2px 6px; }
+.gc-menu { display: grid; gap: 3px; }
+.gc-menu i { display: block; width: 15px; height: 2px; border-radius: 2px; background: #5F6368; }
+.gc-top b { font: 400 17px/1 var(--gc-font); color: #3C4043; }
+.gc-avatar { margin-left: auto; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--gc-blue); color: #fff; font: 500 11px/1 var(--gc-font); }
+.gc-wk, .gc-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.gc-wk i { font: 500 10px/1 var(--gc-font); font-style: normal; text-align: center; color: #70757A; letter-spacing: .04em; padding-bottom: 4px; }
+.gc-grid { gap: 1px 0; }
+.gc-grid span { display: grid; justify-items: center; gap: 3px; padding-top: 5px; min-height: 50px;
+  border-top: 1px solid #E8EAED; }
+.gc-grid span i { display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%;
+  font: 400 11.5px/1 var(--gc-font); font-style: normal; font-variant-numeric: tabular-nums; color: #3C4043; }
+.gc-grid .today i { background: var(--gc-blue); color: #fff; font-weight: 500; }
+.gc-grid .ev { width: calc(100% - 4px); padding: 2px 3px; border-radius: 3px; font: 500 7.5px/1.4 var(--gc-font);
+  font-style: normal; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-grid .ev.blue { background: var(--gc-blue); }
+.gc-grid .ev.green { background: var(--gc-green); }
+.gc-grid .ev.dot { width: 5px; height: 5px; padding: 0; border-radius: 50%; background: #9AA0A6; }
+.gc-agenda { display: grid; gap: 0; margin: 6px 0 0; padding: 0; list-style: none; }
+.gc-agenda li { display: flex; align-items: center; gap: 9px; padding: 12px 4px; border-top: 1px solid #E8EAED; }
+.gc-agenda i { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+.gc-agenda i.blue { background: var(--gc-blue); }
+.gc-agenda i.green { background: var(--gc-green); }
+.gc-agenda i.grey { background: #9AA0A6; }
+.gc-agenda b { flex: none; font: 500 10.5px/1.3 var(--gc-font); color: #3C4043; }
+.gc-agenda em { font: 400 10.5px/1.3 var(--gc-font); font-style: normal; color: #70757A;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the visitor's thumb, and the tap it leaves behind */
+.jp-cursor { position: absolute; z-index: 4; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  background: var(--steel); box-shadow: 0 0 0 4px rgb(25 37 74 / .14); opacity: 1;
+  transition: left .6s cubic-bezier(.22,1,.36,1), top .6s cubic-bezier(.22,1,.36,1), opacity .3s ease; }
+.jp.is-5 .jp-cursor, .jp.is-11 .jp-cursor { opacity: 0; }
+.jp-tap { position: absolute; z-index: 3; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+  border: 2px solid var(--steel); pointer-events: none; animation: jp-tap .62s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes jp-tap {
+  0%   { transform: scale(.2); opacity: .55; }
+  70%  { opacity: .22; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* one column: the copy first, then the phone */
+@media (max-width: 900px) {
+  .jp-layout { grid-template-columns: 1fr; gap: var(--s4); justify-items: stretch; }
+  .jp { justify-self: center; }
+}
+@media (max-width: 360px) { .jp { width: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .jp-scene, .jp-act, .jp-site, .nw-form, .nw-f b, .nw-send, .nw-booked, .nw-bar, .ios-sheet, .gc-app, .bd-err,
+  .bd-hbar, .bd-cross, .jp-cursor, .jp-frame, .jp-replay, .jp-prog-track i { transition: none; }
+  .jp.is-5 .bd-cross svg path { animation: none; stroke-dashoffset: 0; }
+  .jp-tap { display: none; }
+}
+
+/* the proof row under the lead-in's fine print (components/bathurst/Awards.tsx): over a dark sky it takes the same
+   Sea Breeze ink the fine print already switches to, so every label keeps its contrast. */
+.al-awards { margin-top: var(--s3); }
+#stick.sky-dark .term:not(.is-full) .al-awards :is(b, small, a) { color: var(--sea); }
+#stick.sky-dark .term:not(.is-full) .al-awards .stars.rated { color: rgb(238 244 247 / .35); }
+#stick.sky-dark .term:not(.is-full) .al-awards li + li { border-left-color: rgb(238 244 247 / .3); }
+@media (max-width: 760px) { .al-awards { margin-top: var(--s2); } }
+
+/* ---------- 03b · one visitor becomes a system (components/home/LeadSystem.tsx) ----------
+   A pinned stage driven by one scroll progress. --shrink brings the phone down to visitor size, --crowd brings the
+   other four in, --flow runs the pipeline, --leave sends the line on to the hub section below. The row is scaled from
+   its FIRST slot's centre (10% of five), so slot one stays put on screen while everything around it comes into being
+   — that is what makes the phone read as shrinking into the row rather than being replaced by it. */
+.ls { --ls-accent: #0E8F80; padding: 0 !important; }
+.ls-track { position: relative; height: 300vh; }
+/* pinned by hand (see components/home/LeadSystem.tsx): this page's sheet is transformed and clipped, so `sticky`
+   and `fixed` have nothing to hold against — the stage is translated by however far the track has scrolled past. */
+.ls-stage { position: relative; display: grid; gap: var(--s4);
+  height: calc(100svh - var(--navh, 72px)); align-content: center; padding: var(--s4) 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center;
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+/* the heading turns over with the drawing */
+.ls-head { display: grid; gap: var(--s2); max-width: 30em; }
+.ls-h-swap, .ls-lead-swap { display: grid; }
+.ls-h-swap > *, .ls-lead-swap > * { grid-area: 1 / 1; margin: 0; transition: opacity .45s ease, translate .5s cubic-bezier(.22,1,.36,1); }
+.ls-h-swap .b, .ls-lead-swap .b { opacity: 0; translate: 0 10px; }
+.ls-stage.is-system .ls-h-swap .a, .ls-stage.is-system .ls-lead-swap .a { opacity: 0; translate: 0 -10px; }
+.ls-stage.is-system .ls-h-swap .b, .ls-stage.is-system .ls-lead-swap .b { opacity: 1; translate: none; }
+.ls-h { color: var(--steel); }
+.ls-stage.is-system .ls-h.b { color: var(--ls-accent); }
+
+/* the canvas: the five arrivals, then the pipeline, then the line out of the bottom */
+.ls-canvas { position: relative; display: grid; gap: var(--s3); align-content: center; min-width: 0; height: 100%;
+  /* the row is scaled well past its box at the start, on purpose: the phone fills the column it will
+     end up occupying one fifth of. The clip keeps that out of the heading's column. */
+  overflow: hidden; }
+
+.ls-row { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  margin: 0; padding: 0; list-style: none;
+  transform: scale(var(--row-scale, 1)); transform-origin: 10% 50%; }
+.ls-v { min-width: 0; opacity: calc(var(--crowd, 0) * 1.6 - var(--i) * 0.12);
+  translate: 0 calc((1 - var(--crowd, 0)) * 14px); }
+.ls-v.is-phone { opacity: 1; translate: none; }
+.ls-card { position: relative; display: block; aspect-ratio: 1 / 1.6; border-radius: 10px;
+  border: 1px solid var(--steel-15); background: #fff; overflow: hidden; }
+.ls-v.is-phone .ls-card { border-color: var(--ls-accent); box-shadow: 0 0 0 1px var(--ls-accent); }
+
+/* slot one still holds the screen the phone ended on; it fades out as the row comes down to size */
+.ls-screen { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 3px;
+  padding: 6px; text-align: center; background: #fff;
+  opacity: calc(1 - var(--shrink, 0) * 1.35); }
+.ls-screen-tick { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--ls-accent); }
+.ls-screen-tick svg { width: 8px; height: 8px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ls-screen b { font: 600 5px/1.2 var(--body); color: var(--steel); }
+.ls-screen em { font: 400 4px/1.2 var(--body); font-style: normal; color: var(--steel-50); }
+
+/* and underneath it, the label every one of the five wears */
+.ls-label { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 2px;
+  padding: 6px 4px; text-align: center; opacity: var(--shrink, 0); }
+.ls-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--steel-08); border: 1px solid var(--steel-15); }
+.ls-label b { font: 600 9px/1.2 var(--body); color: var(--steel); }
+.ls-label em { font: 400 8px/1.2 var(--body); font-style: normal; color: var(--steel-70); }
+.ls-label small { font: 500 7px/1.2 var(--body); color: var(--ls-accent); }
+.ls-v:not(.is-phone) .ls-label small { color: var(--steel-50); }
+
+/* the pipeline only earns its space once the five are there */
+.ls-pipe { opacity: var(--flow, 0); translate: 0 calc((1 - var(--flow, 0)) * 18px);
+  transition: opacity .2s linear; min-width: 0; }
+.ls-pipeline { width: 100%; }
+
+/* the line leaving the stage for the hub section */
+.ls-tail { position: absolute; left: 50%; bottom: calc(-1 * var(--s4)); width: 2px; border-radius: 2px;
+  height: calc(var(--leave, 0) * 90px); background: linear-gradient(var(--ls-accent), rgb(14 143 128 / 0)); }
+
+/* Narrow screens: the sheet over the map is transformed, so there is no scrollport for the stage to pin against.
+   Rather than leave a tall empty track, the section collapses to its own height and shows the end state — the five
+   arrivals and the pipeline — as a static diagram. The component sets progress to 1 to match. */
+@media (max-width: 900px) {
+  .ls-track { height: auto; }
+  .ls-stage { position: static; height: auto; transform: none; grid-template-columns: 1fr; gap: var(--s3);
+    align-content: start; padding: var(--s4) 0; }
+  .ls-head { max-width: none; }
+  .ls-canvas { overflow: visible; }
+  .ls-row { transform: none; }
+  .ls-v { opacity: 1; translate: none; }
+  .ls-screen { display: none; }
+  .ls-label { opacity: 1; }
+  .ls-pipe { opacity: 1; translate: none; }
+  .ls-tail { display: none; }
+  .ls-label b { font-size: 10px; } .ls-label em { font-size: 9px; } .ls-label small { font-size: 8px; }
+}
+/* phones: five columns is unreadable, so the arrivals stack two up at their real type size */
+@media (max-width: 560px) {
+  .ls-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ls-card { aspect-ratio: auto; min-height: 76px; }
+  .ls-label { gap: 3px; padding: 10px 8px; }
+  .ls-dot { width: 18px; height: 18px; }
+  .ls-label b { font-size: 13px; } .ls-label em { font-size: 12px; } .ls-label small { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-track { height: auto; }
+  .ls-stage { position: static; height: auto; transform: none; }
+  .ls-row { transform: none; }
+  .ls-v, .ls-screen, .ls-pipe { opacity: 1; translate: none; }
+  .ls-screen { display: none; }
+  .ls-label { opacity: 1; }
+  .ls-h-swap > *, .ls-lead-swap > * { transition: none; }
+}
+
+/* ---------- 03c · where the line lands (components/home/LeadHub.tsx) ---------- */
+.lh { --ls-accent: #0E8F80; position: relative; }
+.lh .wrap { position: relative; }
+/* the tail from the stage above, arriving */
+.lh-in { position: absolute; left: 50%; top: calc(-1 * var(--s5)); width: 2px; height: var(--s5);
+  background: linear-gradient(rgb(14 143 128 / 0), var(--ls-accent)); }
+.lh-head { text-align: center; margin-inline: auto; }
+.lh-head .hs-lead { margin-inline: auto; }
+
+.lh-dia { display: grid; gap: var(--s3); justify-items: center; margin-top: var(--s4); }
+.lh-hub { display: grid; justify-items: center; gap: 2px; padding: var(--s2) var(--s4); border-radius: var(--frame-radius);
+  background: var(--ls-accent); color: #fff; }
+.lh-hub b { font: 700 18px/1.2 var(--head); }
+.lh-hub em { font: 400 13px/1.2 var(--body); font-style: normal; color: rgb(255 255 255 / .75); }
+
+.lh-lanes { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); width: 100%;
+  margin: 0; padding: 0; list-style: none; }
+.lh-lane { position: relative; display: grid; gap: var(--s2); padding-top: 34px; }
+/* each wire draws itself in turn, so the hub reads as feeding them */
+.lh-wire { position: absolute; left: 50%; top: 0; width: 2px; height: 34px; background: var(--steel-15);
+  transform-origin: 50% 0; scale: 1 0; transition: scale .45s cubic-bezier(.22,1,.36,1); transition-delay: calc(var(--i) * .1s); }
+.lh.on .lh-wire { scale: 1 1; }
+.lh-card { display: grid; gap: 4px; padding: var(--s3); border-radius: var(--frame-radius);
+  border: 1px solid var(--steel-15); background: var(--sea);
+  opacity: 0; translate: 0 10px; transition: opacity .4s ease, translate .45s cubic-bezier(.22,1,.36,1);
+  transition-delay: calc(var(--i) * .1s + .2s); }
+.lh.on .lh-card { opacity: 1; translate: none; }
+.lh-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
+.lh-top b { font: 700 17px/1.2 var(--head); color: var(--steel); }
+.lh-top i { font: 600 13px/1 var(--body); font-style: normal; padding: 3px 8px; border-radius: 999px;
+  background: var(--steel-08); color: var(--steel-70); }
+.lh-lane.tone-a .lh-top i { background: var(--orange-15); color: var(--orange); }
+.lh-lane.tone-b .lh-top i { background: rgb(14 143 128 / .14); color: var(--ls-accent); }
+.lh-card em { font: 400 14px/1.45 var(--body); font-style: normal; color: var(--steel-70); }
+.lh-fine { margin: var(--s4) 0 0; text-align: left; font: italic 400 14px/1.5 var(--head); color: var(--steel-70); }
+
+@media (max-width: 760px) {
+  .lh-lanes { grid-template-columns: 1fr 1fr; }
+  .lh-fine { font-size: 13px; }
+}
+@media (max-width: 420px) { .lh-lanes { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+  .lh-wire, .lh-card { transition: none; }
+  .lh-wire { scale: 1 1; } .lh-card { opacity: 1; translate: none; }
+}

@@ -1,13 +1,15 @@
 import type { CSSProperties, ReactNode } from "react";
 import { CtaLink } from "@/components/style/Cta";
+import Card, { CardGrid } from "@/components/style/Card";
+import JourneyPanels from "./JourneyPanels";
 import SignatureLine from "@/components/bathurst/SignatureLine";
-import { assessHref } from "./AssessLead";
+import type { CardAction } from "@/components/style/Card";
 
 /**
  * The homepage sheet that rises over the client map (sections 03–08): what we assess, an example report, the business
  * opportunities, our services, how we work, and the closing call to action.
- * Cards follow one pattern: a diagram panel on top (placeholder until the diagrams arrive), then an icon, a numbered
- * label, the heading and the copy. Brand: Sea Breeze ground, Steel Blue ink, Muted Orange for one action per section.
+ * Cards are the site's card format (components/style/Card.tsx): the UI area on top, header, tags, body, one action.
+ * Brand: Sea Breeze ground, Steel Blue ink, Muted Orange for the one accent action per section.
  */
 
 /* ---------- placeholder iconography (line glyphs, 24px grid, currentColor) ---------- */
@@ -28,30 +30,22 @@ const Icon = ({ name }: { name: string }) => (
   <svg className="hc-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICONS[name]}</svg>
 );
 
-type Card = { icon: string; label: string; title: string; body: string };
+type Feature = { icon: string; label: string; title: string; body: string };
 
-/** One feature card: diagram panel (placeholder), icon, "01 LABEL", heading, copy. */
-function FeatureCard({ c, n }: { c: Card; n: number }) {
+/** One feature card on the site's card format (components/style/Card.tsx): the icon in the UI area, then the heading,
+ *  its tag, the copy and the card's one action. */
+function FeatureCard({ c, action }: { c: Feature; action: CardAction }) {
   return (
-    <li className="hc frame">
-      <div className="hc-art" aria-hidden="true">
-        {/* TODO(content): replace with the card's diagram */}
-        <div className="hc-ph"><Icon name={c.icon} /><span>Diagram</span></div>
-      </div>
-      <div className="hc-body">
-        <Icon name={c.icon} />
-        <p className="hc-label">{String(n).padStart(2, "0")} {c.label}</p>
-        <h3 className="hc-title">{c.title}</h3>
-        <p className="hc-copy">{c.body}</p>
-      </div>
-    </li>
+    <Card ui={<Icon name={c.icon} />} ratio="5 / 2" title={c.title} tags={[c.label]} action={action}>
+      {c.body}
+    </Card>
   );
 }
 
-function SectionHead({ eyebrow, title, lead }: { eyebrow: string; title: string; lead?: string }) {
+function SectionHead({ eyebrow, title, lead, mid }: { eyebrow?: string; title: string; lead?: string; mid?: boolean }) {
   return (
-    <header className="hs-head">
-      <p className="eyebrow">{eyebrow}</p>
+    <header className={mid ? "hs-head hs-mid" : "hs-head"}>
+      {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h2 className="h2 hs-h">{title}</h2>
       {lead && <p className="hs-lead">{lead}</p>}
     </header>
@@ -59,20 +53,15 @@ function SectionHead({ eyebrow, title, lead }: { eyebrow: string; title: string;
 }
 
 /* ---------- 03 · Website assessment ---------- */
-const ASSESS: Card[] = [
-  { icon: "speed", label: "Speed", title: "Website Speed", body: "Customers shouldn’t have to wait around. We check how quickly your website loads, especially on mobile devices." },
-  { icon: "inquiry", label: "Inquiries", title: "Customer Inquiries", body: "Can visitors easily request a quote, ask a question, or book your services? We check how easy it is to get in touch." },
-  { icon: "followup", label: "Follow-up", title: "Lead Follow-Up", body: "A new inquiry is an opportunity. We look for signs that your website is connected to tools that help your business manage and follow up with potential customers." },
-];
-
 export function Assessment() {
   return (
     <section id="assess" className="section hs">
       <div className="wrap">
-        <SectionHead eyebrow="Website assessment" title="Your Website Has a Job to Do"
-          lead="A website is often the first place a potential customer learns about your business. We look at three things that influence whether that visit turns into an inquiry." />
-        <ol className="hc-grid hc-3">{ASSESS.map((c, i) => <FeatureCard key={c.title} c={c} n={i + 1} />)}</ol>
-        <CtaLink href={assessHref()} label="Assess my website" accent className="hs-cta">Assess My Website</CtaLink>
+        {/* the heading sits in one column beside the phone the sequence plays on */}
+        <JourneyPanels
+          title="Your Website Has a Job to Do"
+          lead="A website is often the first place a potential customer learns about your business. The same visitor, the same search, two websites — and two different outcomes."
+        />
       </div>
     </section>
   );
@@ -111,7 +100,7 @@ export function Results() {
 }
 
 /* ---------- 05 · Business opportunities ---------- */
-const OPPS: Card[] = [
+const OPPS: Feature[] = [
   { icon: "quote", label: "Quotes", title: "Get More Quote Requests", body: "Give potential customers a simple way to explain what they need and request a quote without having to call." },
   { icon: "booking", label: "Booking", title: "Make Booking Easier", body: "Let customers check availability and schedule appointments directly through your website." },
   { icon: "inbox", label: "Inquiries", title: "Stay on Top of Inquiries", body: "Keep customer requests organized so your team knows who needs a response and what needs to happen next." },
@@ -124,14 +113,14 @@ export function Opportunities() {
       <div className="wrap">
         <SectionHead eyebrow="Business opportunities" title="More Than a Better Website"
           lead="Small improvements to how your website works can make a difference in how customers interact with your business." />
-        <ol className="hc-grid hc-4">{OPPS.map((c, i) => <FeatureCard key={c.title} c={c} n={i + 1} />)}</ol>
+        <CardGrid as="ol" cols={4}>{OPPS.map((c) => <FeatureCard key={c.title} c={c} action={{ label: "Talk it through", href: "/book" }} />)}</CardGrid>
       </div>
     </section>
   );
 }
 
 /* ---------- 06 · Services ---------- */
-const SERVICES: Card[] = [
+const SERVICES: Feature[] = [
   { icon: "website", label: "Websites", title: "Websites That Work for Your Business", body: "Professional websites designed to explain your services, build trust, and turn visitors into customers." },
   { icon: "chat", label: "Communication", title: "Better Customer Communication", body: "Bring customer messages and inquiries together so your team can respond and keep conversations moving." },
   { icon: "gears", label: "Automation", title: "Systems That Save Time", body: "Reduce repetitive work with tools that handle follow-ups, bookings, customer updates, and everyday tasks." },
@@ -144,7 +133,7 @@ export function Solution() {
       <div className="wrap">
         <SectionHead eyebrow="Talkerstein services" title="We Can Help You Put It Into Action"
           lead="Whether you need a better website, a more organized sales process, or help attracting customers, we build solutions around the way your business operates." />
-        <ol className="hc-grid hc-4">{SERVICES.map((c, i) => <FeatureCard key={c.title} c={c} n={i + 1} />)}</ol>
+        <CardGrid as="ol" cols={4}>{SERVICES.map((c) => <FeatureCard key={c.title} c={c} action={{ label: "Book a consult", href: "/book" }} />)}</CardGrid>
       </div>
     </section>
   );

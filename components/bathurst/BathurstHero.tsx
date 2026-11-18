@@ -4,8 +4,7 @@ import { useEffect } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
-import { assessHref } from "@/components/home/AssessLead";
-import { Assessment, Results, Opportunities, Solution, Engagement, FinalCta } from "@/components/home/HomeSections";
+import { Reality, Transformation, Proof, Capabilities, Process, FinalCta } from "@/components/home/LandingSections";
 import Testimonials from "@/components/bathurst/Testimonials";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
@@ -14,6 +13,7 @@ import Showcase from "@/components/bathurst/Showcase";
 import SiteFooter from "@/components/bathurst/SiteFooter";
 import SignatureLine from "@/components/bathurst/SignatureLine";
 import SiteMenu, { MenuButton } from "@/components/bathurst/SiteMenu";
+import Awards from "@/components/bathurst/Awards";
 import { COMPASS_ROSE } from "@/lib/bathurst/icons";
 import "@/app/bathurst-map.css";
 
@@ -37,12 +37,6 @@ const G = {
   play: <path d="M8 5.5v13l10.5-6.5z" />,
   panel: <><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><path d="M9.5 4.5v15" /></>,
 };
-/** Stars filled to the actual rating, so the picture matches the number. */
-const Stars = ({ r }: { r: number }) => (
-  <span className="stars rated" role="img" aria-label={`${r} out of 5`} style={{ "--pct": `${(r / 5) * 100}%` } as CSSProperties}>
-    <span aria-hidden="true">★★★★★</span><span className="fill" aria-hidden="true">★★★★★</span>
-  </span>
-);
 const Glyph = ({ g }: { g: keyof typeof G }) => (
   <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true">{G[g]}</svg>
 );
@@ -57,9 +51,20 @@ function Toggle({ show, label }: { show: string; label: string }) {
   );
 }
 
+/**
+ * The links that take the Canadian badge's place at the top of the page once it has been scrolled.
+ * Solutions is this page's own What We Do section; About Us matches the footer's About.
+ * TODO(content): Resources has no page yet — it points at the site root until one exists.
+ */
+const SITE_NAV: { href: string; label: string; external?: boolean }[] = [
+  { href: "#capabilities", label: "Solutions" },
+  { href: "https://talkerstein.com", label: "Resources", external: true },
+  { href: "https://talkerstein.com", label: "About Us", external: true },
+];
+
 /** How many screens of scroll the home page's lead-in (the question box sliding up) takes before the front page starts.
  *  lib/bathurst/engine.ts offsets every scroll position by it; components/terminal/BusinessTerminal.tsx follows it. */
-export const LEAD_SCREENS = 0.35;
+export const LEAD_SCREENS = 0.2;
 
 /**
  * Hero: Street View fly-through up Bathurst, crane move, then a live maps-app view of the clients.
@@ -87,7 +92,23 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
     const stick = document.getElementById("stick");
     if (!stick) return;
     let last = scrollY;
+    // Once the front page has gone, the badge gives its slot over to the site's links. The trigger is the state the
+    // engine itself sets — it clamps scrollY while the map is in play (it sits at 600 however far you scroll), so a
+    // raw scroll threshold would never fire there. A plain scroll distance stays as the fallback for any page whose
+    // map never starts.
+    const GONE = ["mapped", "work", "sheeted", "covered"];
+    const links = () => {
+      const want = GONE.some((c) => stick.classList.contains(c)) || scrollY > innerHeight * 0.6;
+      // only write when it actually changes: the observer below watches this same attribute, and a needless write
+      // would hand it a record and start it calling itself
+      if (want !== stick.classList.contains("nav-links")) stick.classList.toggle("nav-links", want);
+    };
+    links();
+    // the engine changes those classes without a scroll, so watch them rather than only polling on scroll
+    const watch = new MutationObserver(links);
+    watch.observe(stick, { attributes: true, attributeFilter: ["class"] });
     const onScroll = () => {
+      links();
       const y = scrollY, d = y - last;
       if (Math.abs(d) < 6) return;   // ignore jitter (and phone toolbar nudges)
       last = y;
@@ -96,7 +117,7 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
       void d; void menuOpen; void onMap; stick.classList.remove("nav-hidden");   // the navbar never hides
     };
     addEventListener("scroll", onScroll, { passive: true });
-    return () => { removeEventListener("scroll", onScroll); stick.classList.remove("nav-hidden"); };
+    return () => { watch.disconnect(); removeEventListener("scroll", onScroll); stick.classList.remove("nav-hidden", "nav-links"); };
   }, []);
 
   return (
@@ -116,18 +137,17 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
             {lead}
             <div className="sv-hero" id="svhero">
               <p className="eyebrow hero-where rise-after">{A ? A.eyebrow : <>Toronto · North York · <span className="gta-long">Greater Toronto Area</span><abbr className="gta-short" title="Greater Toronto Area">GTA</abbr></>}</p>
-              <RiseHeading as={headingLevel} className="h1" text={A ? "Find your way to the right customers." : "Businesses We Work With"} delay={120} />
-              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "From growing businesses to established companies, we work with teams that want to make better use of technology and build for what’s next."}</p>
-              {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading" */}
-              <CtaLink href={A ? "/book" : assessHref()} label={A ? "Book Free Consult" : "Assess My Website"} accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
-              {/* proof: the ratings and the certifications on one compact row, on the sky with the text */}
-              {/* proof: each rating and each certification in its own cell, split by hairline dividers, every one labelled */}
-              <ul className="hero-awards rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties} aria-label="Ratings and certifications">
-                <li><a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a></li>
-                <li><a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>{GOOGLE.count ? `${GOOGLE.count} reviews on Google` : "Rating on Google"}</small></span></a></li>
-                <li className="aw-badge"><img src="/badges/shopify.avif" alt="" width={512} height={85} className="cert-shopify" /><small>Shopify Partner</small></li>
-                <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>HighLevel Certified Admin</small></li>
-              </ul>
+              <RiseHeading as={headingLevel} className="h1" text={A ? "Find your way to the right customers." : "Good businesses.\nBetter opportunities."} delay={120} />
+              <p className="rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties}>{A ? A.blurb : "We work with businesses across different industries and locations, helping them make better use of their digital presence. Explore some of the businesses we’ve partnered with."}</p>
+              {/* the page's one action, in its most visible spot; the scroll cue below handles "keep reading".
+                  On the landing this section's action is the map itself, so the CTA carries on into it. */}
+              {A
+                ? <CtaLink href="/book" label="Book Free Consult" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble />
+                : <CtaButton label="Explore Our Clients" accent className="hero-cta rise-after" style={{ "--rise-delay": "640ms" } as CSSProperties} data-no-tumble
+                    onClick={() => scrollBy({ top: innerHeight * 1.1, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })} />}
+              {/* proof: the ratings and the certifications on one compact row, on the sky with the text
+                  (components/bathurst/Awards.tsx — the same row the home lead-in carries under its fine print) */}
+              <Awards className="rise-after" style={{ "--rise-delay": "760ms" } as CSSProperties} />
             </div>
             <div id="win" aria-hidden="true" />
           </div>
@@ -231,9 +251,11 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         <div className="cover frame" id="cover" aria-label="Partner stories, services, interviews and contact">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
           <div className="cover-body" id="coverbody">
-            {/* 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer */}
+            {/* area page: 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA.
+                landing: 03 the reality · 04 the transformation · 05 testimonials · 06 what we do · 07 our process ·
+                08 closing CTA. Then the footer. */}
             {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /></>
-              : <><Assessment /><Results /><Opportunities /><Solution /><Engagement /><FinalCta /></>}<SiteFooter />
+              : <><Reality /><Transformation /><Proof /><Capabilities /><Process /><FinalCta /></>}<SiteFooter />
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}
@@ -244,8 +266,7 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         {/* Find Your Way Forward only: an outline cue in the lower-right corner to keep going (on to the reviews) */}
         <button type="button" className="sprout btn dc-more" id="dcmore" aria-label="Scroll down"><span>Scroll down</span><Glyph g="chevD" /></button>
         {/* between the hero and the project stops: slides in over the route overview, out when the first project opens */}
-        <h2 className={A ? "workhead" : "workhead h2 wh-one"} id="workhead">{A ? <><span>Rooted in business.</span> <span>Connected across {A.name}.</span></> : "Businesses We Work With"}</h2>
-        {!A && <p className="worksub">From growing businesses to established companies, we work with teams that want to make better use of technology and build for what’s next.</p>}
+        <h2 className={A ? "workhead" : "workhead h2 wh-one"} id="workhead">{A ? <><span>Rooted in business.</span> <span>Connected across {A.name}.</span></> : "Explore Our Clients"}</h2>
         <div className="ghint frame" id="ghint" aria-hidden="true"><span id="ghintTxt" /></div>
         <div className="toast frame" id="toast" role="status" aria-live="polite"><span /></div>
         {/* the menu, where Google Maps keeps its own: the top-left corner (components/bathurst/SiteMenu.tsx) */}
@@ -256,7 +277,16 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
           <img className="bp-mark" src="/brand/tcg-icon.svg" alt="" /><img className="bp-word" src="/brand/tcg-text.svg" alt="" />
         </button>
         {/* centred in the bar: the small flag and the line it stands for */}
-        <p className="proudca"><svg className="pc-flag" viewBox="0 0 1000 500" aria-hidden="true"><path fill="#fff" d="M250 0h500v500H250z"/><path fill="#D52B1E" d="M0 0h250v500H0zM750 0h250v500H750zM499 52l-34 64c-4 7-11 6-18 2l-25-13 19 99c4 18-9 18-15 10l-43-49-7 25c-1 3-4 7-9 6l-55-12 15 53c3 12 6 16-3 19l-20 9 95 77c4 3 6 8 4 15l-8 27c33-4 63-10 96-13 3 0 8 4 8 8l-4 104h16l-3-104c0-4 4-8 7-8 33 3 63 9 96 13l-8-27c-2-7 0-12 4-15l95-77-20-9c-9-3-6-7-3-19l15-53-55 12c-5 1-8-3-9-6l-7-25-43 49c-6 8-19 8-15-10l19-99-25 13c-7 4-14 5-18-2z"/></svg>Proudly Canadian company</p>
+        {/* top centre: the Canadian badge on the front page, the site's own links once the page has been scrolled
+            (CSS crossfades them on #stick.nav-links; phones hide the whole slot and use the ☰ instead) */}
+        <div className="proudca">
+          <span className="pc-badge"><svg className="pc-flag" viewBox="0 0 1000 500" aria-hidden="true"><path fill="#fff" d="M250 0h500v500H250z"/><path fill="#D52B1E" d="M0 0h250v500H0zM750 0h250v500H750zM499 52l-34 64c-4 7-11 6-18 2l-25-13 19 99c4 18-9 18-15 10l-43-49-7 25c-1 3-4 7-9 6l-55-12 15 53c3 12 6 16-3 19l-20 9 95 77c4 3 6 8 4 15l-8 27c33-4 63-10 96-13 3 0 8 4 8 8l-4 104h16l-3-104c0-4 4-8 7-8 33 3 63 9 96 13l-8-27c-2-7 0-12 4-15l95-77-20-9c-9-3-6-7-3-19l15-53-55 12c-5 1-8-3-9-6l-7-25-43 49c-6 8-19 8-15-10l19-99-25 13c-7 4-14 5-18-2z"/></svg>Proudly Canadian company</span>
+          <nav className="pc-nav" aria-label="Site">
+            {SITE_NAV.map((l) => (
+              <a key={l.label} href={l.href} {...(l.external ? { target: "_blank", rel: "noopener" } : {})}>{l.label}</a>
+            ))}
+          </nav>
+        </div>
         <SiteMenu />
       </div>
     </section>

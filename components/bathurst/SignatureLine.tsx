@@ -1,67 +1,56 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Signature, { type SignatureHandle, type SignatureStroke } from "@/components/signature";
 import { CtaLink } from "@/components/style/Cta";
+import FLAT from "@/lib/bathurst/signature-strokes.json";
 
 /**
- * "Built for what's next." in Slowly Signature, written like ink on paper: each letter's outline is traced
- * (a stroke drawing along the glyph), one letter after another, and its ink fills in behind the pen.
- * Letters are laid out by measuring the loaded font, so every one can be traced on its own. Plays when it scrolls in.
+ * "Built for what's next." written by the React Bits Signature pen (components/signature.tsx), which animates a nib along
+ * point paths rather than setting type. The paths are the letters themselves: scripts/trace-signature.mjs
+ * thins the Slowly Signature letterforms (app/fonts/SlowlySignature.woff2) to their centrelines in lib/bathurst/signature-strokes.json,
+ * so the pen writes down the middle of each letter, as a hand would, instead of drawing round its edges. Re-run that script if the words change.
+ * It writes itself when it scrolls into view, and again each time it comes back.
  */
 const TEXT = "Built for what’s next.";
+/** the traced file is flat ([x, y, x, y, …] per stroke) to keep it small; the pen wants points */
+const STROKES: SignatureStroke[] = (FLAT as number[][]).map((s) => {
+  const out = [];
+  for (let i = 0; i < s.length; i += 2) out.push({ x: s[i], y: s[i + 1] });
+  return out;
+});
 
 export default function SignatureLine({ bare = false }: { bare?: boolean } = {}) {
   const box = useRef<HTMLDivElement>(null);
-  const [glyphs, setGlyphs] = useState<{ ch: string; x: number }[]>([]);
-  const [size, setSize] = useState({ w: 1000, h: 200, fs: 160, family: "cursive" });
-  const [play, setPlay] = useState(false);
+  const pen = useRef<SignatureHandle>(null);
+  const [ink, setInk] = useState<string>();
 
-  // lay the letters out with the real font metrics (after the face has loaded)
+  // the pen paints on a canvas, which cannot read a CSS variable: hand it the brand's Steel Blue as a value
   useEffect(() => {
-    let dead = false;
-    const layout = async () => {
-      const el = box.current; if (!el) return;
-      const family = getComputedStyle(el).fontFamily;
-      const fs = Math.max(64, Math.min(200, el.clientWidth * 0.13));
-      await document.fonts.load(`${fs}px ${family}`, TEXT).catch(() => {});
-      if (dead) return;
-      const ctx = document.createElement("canvas").getContext("2d")!;
-      ctx.font = `${fs}px ${family}`;
-      let x = 0; const out: { ch: string; x: number }[] = [];
-      for (const ch of TEXT) { out.push({ ch, x }); x += ctx.measureText(ch).width; }
-      setGlyphs(out); setSize({ w: Math.ceil(x + fs * 0.4), h: Math.ceil(fs * 1.5), fs, family });
-    };
-    layout();
-    const ro = new ResizeObserver(layout); if (box.current) ro.observe(box.current);
-    return () => { dead = true; ro.disconnect(); };
+    const v = getComputedStyle(document.documentElement).getPropertyValue("--steel").trim();
+    if (v) setInk(v);
   }, []);
+
   // write it when it comes into view (again each time it re-enters)
   useEffect(() => {
     const el = box.current; if (!el) return;
-    const io = new IntersectionObserver(([e]) => setPlay(e.isIntersecting), { threshold: 0.4 });
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) pen.current?.play(); }, { threshold: 0.2, rootMargin: "0px 0px -8% 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  let n = 0;   // index among the visible (non-space) letters, for the stagger
+  const strokes = useMemo(() => STROKES, []);
   const line = (
-    <div ref={box} className={`sig-line${play ? " on" : ""}${bare ? " sig-bare" : ""}`} role={bare ? "img" : undefined} aria-label={bare ? TEXT : undefined}>
-      <svg viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true" style={{ fontFamily: size.family }}>
-        {glyphs.map((g, i) => {
-          if (g.ch === " ") return null;
-          const d = n++;
-          return (
-            <text key={i} x={g.x + size.fs * 0.2} y={size.fs * 1.08} fontSize={size.fs}
-              style={{ ["--d" as string]: `${d * 0.16}s` }}>{g.ch}</text>
-          );
-        })}
-      </svg>
+    <div ref={box} className={`sig-line${bare ? " sig-bare" : ""}`} role="img" aria-label={TEXT}>
+      <Signature ref={pen} mode="play" strokes={strokes} inkColor={ink} theme="light"
+        pen="fountain" thickness={0.48} speed={5} aspect={5} frame={false} line={false} intro={false}
+        style={{ maxWidth: "none", aspectRatio: "9 / 1" }}   /* the written line's own shape: the component caps `aspect` at 5, which would leave half the box empty */ />
     </div>
   );
   if (bare) return line;   // just the written line, for use inside another section
   return (
     <section className="sig" aria-labelledby="sig-h">
-      <h2 id="sig-h" className="sr-only">Built for what’s next.</h2>
+      <h2 id="sig-h" className="sr-only">{TEXT}</h2>
       {line}
       <p className="sig-body">Tell us where the business is going. We’ll help you work out what needs to happen next.</p>
       <div className="sig-ctas">

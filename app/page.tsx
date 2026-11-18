@@ -3,6 +3,7 @@ import BathurstHero from "@/components/bathurst/BathurstHero";
 import CornerOffer from "@/components/bathurst/CornerOffer";
 import AssessLead from "@/components/home/AssessLead";
 import ThumbCta from "@/components/home/ThumbCta";
+import AssessStrip from "@/components/home/AssessStrip";
 
 export default function Home() {
   // the map's street data (lib/bathurst/osm-layer.ts) is the heaviest download: start it with the page, behind the scripts,
@@ -16,6 +17,7 @@ export default function Home() {
       <BathurstHero headingLevel="h2" lead={<AssessLead />} />
       <CornerOffer />
       <ThumbCta />
+      <AssessStrip />
     </>
   );
 }

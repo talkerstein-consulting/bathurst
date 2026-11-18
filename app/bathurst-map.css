@@ -52,6 +52,9 @@
 .road.poi { font-family: var(--body); font-weight: 600; font-size: 11px; letter-spacing: .02em; text-transform: none; color: var(--steel); display: flex; align-items: center; gap: 4px; }
 .road.poi::before { content: ""; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--steel); background: var(--sea); flex: none; }
 .road.hood { font-size: 13px; letter-spacing: .28em; color: var(--steel-50); }
+/* the far views: the region's cities in wider, larger caps; the lake in italics */
+.road.area { font-size: 16px; letter-spacing: .36em; color: var(--steel-50); }
+.road.area.water { font-style: italic; letter-spacing: .3em; }
 #stick.dark-map:not(.paper-map) .road { color: rgb(243 247 243 / .82); text-shadow: 0 0 3px var(--steel), 0 0 4px var(--steel); }
 
 /* off-screen group (Thornhill): pulled to the map edge */
@@ -1754,6 +1757,7 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
    (engine: --lt = where the skyline starts in the window) */
 #stick.hero-fade #labels { -webkit-mask: linear-gradient(to bottom, rgb(0 0 0 / .14) 0, rgb(0 0 0 / .14) calc(var(--lt) - 10px), #000 calc(var(--lt) + 60px));
   mask: linear-gradient(to bottom, rgb(0 0 0 / .14) 0, rgb(0 0 0 / .14) calc(var(--lt) - 10px), #000 calc(var(--lt) + 60px)); }
+
 /* the TCG mark, pinned beside the ☰ once the reviews sheet has covered the map (engine: #stick.covered) */
 .brandpin { position: absolute; left: calc(var(--inset) + var(--icon-btn) + var(--s2)); top: var(--inset); z-index: 10; height: var(--icon-btn);
   padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; visibility: hidden; translate: -8px 0;
@@ -1909,9 +1913,16 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .hero-awards { list-style: none; margin: var(--s4) 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; row-gap: var(--s2); pointer-events: auto; }
 .hero-awards li { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 4px var(--s4); text-align: center; }
 .hero-awards li + li { border-left: 1.5px solid var(--steel-15); }
-.hero-awards a { display: flex; align-items: center; gap: 8px; color: var(--steel); text-decoration: none; }
-.hero-awards a > span { display: grid; gap: 2px; justify-items: start; text-align: left; }
-.hero-awards b { font: 700 30px/1 var(--head); }
+/* The rating reads as one block: the number's own ink lines up with the stars above and the reviews line below, so
+   both sides are trimmed to their optical edges (cap height and baseline) rather than to their line boxes — a line
+   box carries leading the eye never sees, which is what made the number look like it floated between the two rows. */
+.hero-awards a { display: flex; align-items: stretch; gap: 8px; color: var(--steel); text-decoration: none; }
+.hero-awards a > span { display: flex; flex-direction: column; justify-content: space-between; gap: 2px;
+  align-items: start; text-align: left; }
+.hero-awards b { font: 700 36px/1 var(--head); align-self: stretch; display: flex; align-items: center;
+  text-box: trim-both cap alphabetic; }
+.hero-awards .stars { text-box: trim-start cap; }
+.hero-awards a > span small { text-box: trim-end alphabetic; }
 .hero-awards .stars { font-size: 14px; letter-spacing: 1px; }
 .hero-awards .stars.rated { position: relative; display: inline-block; color: var(--steel-15); white-space: nowrap; }
 .hero-awards .stars.rated .fill { position: absolute; inset: 0 auto 0 0; width: var(--pct, 100%); overflow: hidden; color: var(--orange); }
@@ -2314,9 +2325,23 @@ img.u-av { padding: .2em; border: .1em solid var(--u-line); }
 
 /* "Proudly Canadian company", centred in the bar, with a small flag (flat, its own colours; a hairline keeps the white
    field off a light page). It shows and hides with the bar's ☰ and logo; phones have no room for it between them */
+/* One slot, two things in it: the badge on the front page and the site's links once the page has been scrolled.
+   Both sit in the same grid cell so the slot keeps its centre and nothing shifts as they cross over. The colour
+   stays on .proudca, so the dark-map / sheeted / sky-dark rules below keep working for whichever one is showing. */
 .proudca { position: absolute; left: 50%; top: var(--nav-pad); z-index: 11; height: var(--icon-btn); margin: 0; translate: -50% 0;
-  display: flex; align-items: center; gap: var(--s1); font: 600 14px/1 var(--body); letter-spacing: .02em; color: var(--steel); white-space: nowrap; pointer-events: none; }
+  display: grid; align-items: center; justify-items: center; font: 600 14px/1 var(--body); letter-spacing: .02em;
+  color: var(--steel); white-space: nowrap; pointer-events: none; }
+.proudca > * { grid-area: 1 / 1; transition: opacity .3s ease, translate .35s cubic-bezier(.22, 1, .36, 1); }
+.pc-badge { display: flex; align-items: center; gap: var(--s1); color: inherit; }
 .proudca .pc-flag { display: block; height: 11px; width: auto; flex: none; border-radius: 1px; box-shadow: 0 0 0 1px rgb(25 37 74 / .18); }
+/* the links start hidden, and `visibility` keeps them out of the tab order until they are actually up */
+.pc-nav { display: flex; align-items: center; gap: var(--s4); opacity: 0; translate: 0 8px; visibility: hidden; }
+.pc-nav a { color: inherit; text-decoration: none; transition: color .2s ease; }
+.pc-nav a:hover { color: var(--orange); }
+.pc-nav a:focus-visible { outline: 2px solid var(--orange); outline-offset: 4px; border-radius: 2px; }
+#stick.nav-links .pc-badge { opacity: 0; translate: 0 -8px; }
+#stick.nav-links .pc-nav { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .proudca > * { transition: opacity .2s ease; translate: none !important; } }
 #hero #stick.nav-hidden .proudca { translate: -50% -16px; }
 /* over the dark map the line goes white (AA on the night map); back to steel once the sheet covers it */
 #stick.dark-map:not(.covered) .proudca { color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / .45); }
@@ -2950,3 +2975,24 @@ html body .btn.cap-ask.on { --ink: var(--sea); }
 @keyframes eam-thanks { 0%, 57% { opacity: 0; transform: translateY(1.5em) scale(.96); } 63%, 95% { opacity: 1; transform: none; } 99%, 100% { opacity: 0; } }
 @keyframes tap-c { 0%, 18% { opacity: 0; transform: scale(.4); } 20% { opacity: 1; transform: scale(1); } 23%, 100% { opacity: 0; transform: scale(1.7); } }
 @keyframes tap-d { 0%, 47% { opacity: 0; transform: scale(.4); } 49% { opacity: 1; transform: scale(1); } 52%, 100% { opacity: 0; transform: scale(1.7); } }
+
+/* ---------- phones: the bar reads logo-first ----------
+   On a phone the brand takes the left edge where the eye starts, the ☰ moves to the right thumb, and the booking CTA
+   sits between them. The logotype is enlarged to match: at this size it is the only thing identifying the company. */
+@media (max-width: 760px) {
+  /* the earlier phone rule centres the brand (`html body #hero #stick .brandpin`, !important); matched here so the
+     logo can take the left edge instead. The nav-hidden slide is restated because that override also wins on it. */
+  html body #hero #stick .brandpin { left: var(--inset) !important; translate: 0 !important; }
+  html body #hero #stick.nav-hidden .brandpin { translate: 0 -16px !important; }
+  #hero #stick .brandpin { gap: 10px; }
+  #hero #stick .brandpin .bp-word { height: 34px; }
+  #hero #stick .menubtn { left: auto; right: var(--inset); }
+  #hero #stick .navbar .layers-top { right: calc(var(--inset) + var(--icon-btn) + var(--s1)); }
+  /* the menu panel's own ☰ follows it across, so opening and closing happen in one place */
+  #hero #stick .menubtn[aria-expanded="true"] { left: auto; right: var(--inset); }
+  .brandpin .bp-word { height: 34px; }
+}
+@media (max-width: 420px) {
+  #hero #stick .brandpin .bp-word { height: 30px; }
+  #hero #stick .brandpin .bp-mark { width: 40px; height: 40px; }
+}

@@ -155,6 +155,35 @@
   /* off screen (LineSystem's IntersectionObserver): no grunge filter until the box scrolls back into view */
   .lines-off > .lines g, .lines-off > .stroke g { filter: none; }
 
+  /* ---------- the card (components/style/Card.tsx) ----------
+   One format for every card: UI area on top, header, tags, body, one action on the bottom edge. One border only — the
+   card wears `.single` (one printed line) and nothing inside it draws a second box. */
+  .card { display: flex; flex-direction: column; background: var(--sea); border-radius: var(--frame-radius); }
+  .card-ui { aspect-ratio: 16 / 10; display: grid; place-items: center; background: var(--steel-08);
+    border-radius: var(--frame-radius) var(--frame-radius) 0 0; color: var(--steel); }
+  .card-ui > img, .card-ui > video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+  .card-main { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s4); }
+  .card-h { margin: 0; font-size: 22px; line-height: 1.1; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  /* a tag states what the card is; it is not a control, so it carries no button styling, hover or pointer (D05) */
+  .card-tag { padding: 3px 10px; border-radius: 999px; background: var(--steel-08); color: var(--steel-70);
+    font: 500 12px/1.5 var(--body); letter-spacing: .04em; text-transform: uppercase; cursor: default; }
+  .card-body { margin: 0; color: var(--steel-70); font-size: 16px; line-height: 1.55; }
+  .card-body p { margin: 0 0 var(--s1); }
+  .card-body p:last-child { margin-bottom: 0; }
+  /* the one action, pushed to the bottom so every card in a row ends on the same line */
+  .card-go { margin-top: auto; padding-top: var(--s2); }
+  .card-grid { display: grid; gap: var(--s3); grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+    align-items: stretch; margin: 0; padding: 0; list-style: none; }
+  /* a row of four is a narrow column: the type steps down so the copy still sets a readable line */
+  .card-grid[style*="--cols: 4"] .card-h { font-size: 20px; }
+  .card-grid[style*="--cols: 4"] .card-body { font-size: 15px; }
+  /* in a row, the header keeps two lines' room so every card's tags and copy start on the same line */
+  @media (min-width: 641px) { .card-grid .card-h { min-height: calc(2 * 1.1em); } }
+  @media (max-width: 1100px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card-grid[style*="--cols: 4"] .card-h { font-size: 22px; } .card-grid[style*="--cols: 4"] .card-body { font-size: 16px; } }
+  @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } .card-main { padding: var(--s3); } }
+
   /* a printed rule (list dividers): one thin grunge line */
   .rule { position: relative; }
   .rule::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--outer-stroke); background: var(--ink); opacity: .35; filter: url(#grunge); }
@@ -473,7 +502,8 @@ html, body { overflow-x: clip; max-width: 100%; }
 
 /* ================= closing signature: "Built for what's next." written in ink, letter by letter ================= */
 .sig { min-height: 80vh; display: grid; place-content: center; justify-items: center; gap: var(--s4); padding: var(--s5) var(--s3); color: var(--steel); }
-.sig-line { width: min(1100px, 92vw); font-family: var(--accent-script); }
+.sig-line { width: min(1100px, 92vw); }   /* the written line: the React Bits pen draws it on its own canvas (components/bathurst/SignatureLine.tsx) */
+.sig-line > div { margin-inline: auto; rotate: -4deg; }   /* the same slight lift the hand-set line had */
 .sig-line svg { width: 100%; height: auto; display: block; overflow: visible; transform: rotate(-4deg); }
 .sig-line text { fill: var(--steel); fill-opacity: 0; stroke: var(--steel); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 3000; stroke-dashoffset: 3000; }   /* longer than any letter's outline: the dash draws it on in one pass */
@@ -507,6 +537,14 @@ html body .layers-top .btn.dirbtn, html body .layers-top .btn.dirbtn:hover { --i
    so the hero, Find Your Way Forward and every far-out map view sit on one seamless background */
 :root { --map-ground: #DDE2E2; }
 html, body { background: var(--map-ground); }
+
+/* the page scrollbar in the brand: a slim Steel Blue thumb on Sea Breeze, Muted Orange in the hand (the standard properties
+   for Chrome and Firefox, the WebKit pseudo-elements for Safari; a browser that honours the first ignores the second) */
+html { scrollbar-color: var(--steel) var(--sea); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--sea); }
+::-webkit-scrollbar-thumb { background: var(--steel); border-radius: 999px; border: 2px solid var(--sea); }
+::-webkit-scrollbar-thumb:hover { background: var(--orange); }
 html body #stick { background: var(--map-ground); }
 
 /* footer on phones: the link columns fit their text, the social ticks show without hover, and the last line clears the
@@ -525,6 +563,8 @@ html body #stick { background: var(--map-ground); }
 @media (hover: none) { .ft-check svg { stroke-dashoffset: 0; } .ft-check i { border-color: var(--orange); } }
 
 /* ================= headings rise in on load (components/style/RiseHeading.tsx) ================= */
+/* one kept line of a heading (RiseHeading, text with a newline): the break holds at every width */
+.rise-l { display: block; }
 .rise-w { display: inline-block; overflow: clip; overflow-clip-margin: .1em; vertical-align: bottom; padding-bottom: .06em; margin-bottom: -.06em; }
 .rise-w > span { display: inline-block; animation: rise-in .8s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--rise-delay, 0ms) + var(--i, 0) * 55ms); }
 @keyframes rise-in { from { transform: translateY(105%); } }
