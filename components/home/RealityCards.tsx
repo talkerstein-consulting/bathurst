@@ -1,5 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import FlipCard from "@/components/FlipCard";
+import { TESTIMONIALS } from "@/lib/bathurst/data";
+
+type Testimonial = (typeof TESTIMONIALS)[number];
 
 /**
  * 03 · The Reality, as a stack of cards that lays over the pinned sentence (components/home/SentenceSection.tsx moves
@@ -14,7 +17,7 @@ import FlipCard from "@/components/FlipCard";
  * element over it about the card's topic. ONE SAMPLE so far, on "You're hard to find."; the other two hold a hatched
  * slot until their pictures are made.
  */
-type Card = { key: string; label: string; kind?: string; eyebrow?: string; title: string; body: string; foot?: string; heading?: boolean; figure?: ReactNode };
+export type Card = { key: string; label: string; kind?: string; no?: string; eyebrow?: string; title: string; body: string; foot?: string; heading?: boolean; figure?: ReactNode };
 
 /* the sample's UI element: a search for the owner's trade, the business far down the results (monospace, like the
    ledger type set over the reference picture) */
@@ -64,21 +67,45 @@ export const CARDS: Card[] = [
  */
 export const REVIEW_ID = "mes";   // whose review is on the card, so the rail behind it can leave them out
 
+/* the business behind each voice, for the card's banner — the role line reads as a sentence, not a name */
+const BRAND: Record<string, string> = {
+  fringe: "FRINGE boutique", mes: "Maple Electric Supply", novarrisk: "Nova Risk Transfer",
+  gemini: "Gemini Printing", jrcc: "JRCC @ Rockford", uzbek: "Uzbek Delight", iconrocklear: "Icon Rocklear",
+};
+
+/* the published quotes run long; a card holds the opening sentences. Cut on a sentence end, never mid-word, and
+   never rewrite — §05 plays the clip and shows the quote in full. */
+const short = (quote: string, max = 190) => {
+  if (quote.length <= max) return quote;
+  const head = quote.slice(0, max);
+  const stop = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
+  return stop > 60 ? head.slice(0, stop + 1) : `${head.slice(0, head.lastIndexOf(" "))}…`;
+};
+
+/** One client's review in the card format: same frame, same slots, their own words and their own still. */
+export const reviewCard = (t: Testimonial): Card => ({
+  key: t.id, label: BRAND[t.id] ?? t.role, kind: "Client review", foot: "The proof",
+  title: t.who,
+  body: `“${short(t.quote)}”`,
+  figure: <img src={t.poster} alt="" loading="lazy" decoding="async" />,
+});
+
+/** The one on the card that turns over: the Maple Electric Supply review. */
+/* it is the first of the set of reviews, not the last of the problems: it carries the set's own count, so nothing
+   in the banner changes when components/home/ReviewFan.tsx takes the centre slot over from it */
 export const TESTIMONIAL_CARD: Card = {
-  key: "review", label: "Maple Electric Supply", kind: "Client review", foot: "The proof",
-  title: "Gadi, Toronto",
-  body: "“They helped us grow our business by 200%. There is no other team I would recommend working with more than the Talkerstein team.”",
-  figure: <img src="/testimonials/mes-poster.jpg" alt="" loading="lazy" decoding="async" />,
+  ...reviewCard(TESTIMONIALS.find((t) => t.id === REVIEW_ID)!),
+  no: `01/${String(TESTIMONIALS.length).padStart(2, "0")}`,
 };
 
 const nn = (n: number) => String(n).padStart(2, "0");
 
 /** One face of a card: the banner row, the art window, the name, the caption and the footer. */
-function Face({ c, n, of, className }: { c: Card; n: number; of: number; className?: string }) {
+export function Face({ c, n, of, className }: { c: Card; n: number; of: number; className?: string }) {
   const T = c.heading ? "h2" : "h3";
   return (
     <span className={className ? `tc-in ${className}` : "tc-in"}>
-      <span className="tc-top"><b>{c.label}</b><span className="tc-no">{c.heading ? "Section 03" : `${nn(n)}/${nn(of)}`}</span></span>
+      <span className="tc-top"><b>{c.label}</b><span className="tc-no">{c.heading ? "Section 03" : c.no ?? `${nn(n)}/${nn(of)}`}</span></span>
       {c.heading ? (
         // the head card's art window holds the section's own preheader and heading, cream on blue
         <span className="tc-art rc-art-head">
@@ -99,7 +126,7 @@ function Face({ c, n, of, className }: { c: Card; n: number; of: number; classNa
 }
 
 /** The card frame: the Steel border and the lenticular foil around one face. */
-function Frame({ children }: { children: ReactNode }) {
+export function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="tc rc-tc" style={{ "--rx": "0deg", "--ry": "0deg" } as CSSProperties}>
       {children}

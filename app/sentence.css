@@ -110,8 +110,52 @@
   transform: translate3d(0, 50svh, 0); will-change: transform; }
 .sx-head-t { margin: 0 auto; max-width: 20ch; }
 
-/* the rest of the reviews, behind the card that turned over: it sits in the middle of them, so what shows either
-   side of it is the next voice along. Layout only — the rail is not reachable here, §05 is where they play. */
-.rc-rail { position: absolute; left: 0; top: 0; width: 100%; height: 100svh; z-index: 0;
-  display: grid; place-items: center; opacity: 0; pointer-events: none; will-change: opacity; }
-.rc-rail > * { width: min(1180px, 100vw); height: min(74svh, 620px); }
+/* ---------- the rest of what clients say, fanned out behind the card that turned over ---------- */
+/* components/home/ReviewFan.tsx. The same cards as the one on the front — same frame, same slots — so the set reads
+   as one set; the card that turned over stands in this fan's own centre slot and is handed over to it. */
+
+/* the two numbers every card is placed by. `--d` is transitioned on its own when the controller pages, so paging
+   animates while the scroll keeps writing `--fan` straight through without it being interpolated. */
+@property --d { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --away { syntax: "<number>"; inherits: false; initial-value: 0; }
+
+.rvf-hold { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.rvf { position: absolute; inset: 0; z-index: 1; pointer-events: none; --sp: clamp(46px, 7.4vw, 104px); }
+.rvf-deck { position: absolute; inset: 0; display: grid; place-items: center; }
+.rvf-card { grid-area: 1 / 1; width: min(400px, calc(100vw - 48px));
+  transform:
+    translate3d(calc(var(--d) * var(--sp) * var(--fan, 0)), calc(var(--away) * 16px * var(--fan, 0)), 0)
+    rotate(calc(var(--d) * var(--fan, 0) * 6deg))
+    scale(calc(1 - var(--away) * 0.085 * var(--fan, 0)));
+  opacity: calc(1 - var(--away) * 0.13 * var(--fan, 0));
+  transition: --d .55s cubic-bezier(.22, 1, .36, 1), --away .55s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform; }
+/* every card below the centre one is stacked in the same spot until the fan opens, so its shadow only comes up as
+   it comes out — seven shadows on one footprint otherwise read as a halo around the card in front */
+.rvf-card .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset,
+  0 2px 6px rgb(25 37 74 / calc(.18 * var(--fan, 0))),
+  0 30px 56px -18px rgb(25 37 74 / calc(.55 * var(--fan, 0))); }
+.rvf-card.is-at .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px rgb(25 37 74 / .18),
+  0 30px 56px -18px rgb(25 37 74 / .55); }
+
+/* the controller, under the fan: the pair of arrows and one dot per voice */
+.rvf-bar { position: absolute; left: 0; right: 0; bottom: clamp(80px, 13svh, 132px);
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  opacity: var(--fan, 0); pointer-events: auto; }
+.rvf[data-idle] .rvf-bar { pointer-events: none; }
+.rvf-arr { display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  font: 400 22px/1 var(--font-body, inherit); color: var(--steel);
+  background: rgb(255 255 255 / .82); border: 1px solid rgb(25 37 74 / .16); border-radius: 999px;
+  cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.rvf-arr:hover { background: #fff; border-color: rgb(25 37 74 / .34); }
+.rvf-arr:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+.rvf-dots { display: flex; align-items: center; gap: 7px; }
+.rvf-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgb(25 37 74 / .26); transition: background .2s ease, transform .2s ease; }
+.rvf-dot:hover { background: rgb(25 37 74 / .5); }
+.rvf-dot.is-at { background: var(--steel); transform: scale(1.5); }
+.rvf-dot:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rvf-card { transition: none; }
+}

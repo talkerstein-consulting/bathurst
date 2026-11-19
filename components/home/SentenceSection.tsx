@@ -2,8 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { CARDS, RealityCard, TESTIMONIAL_CARD, REVIEW_ID } from "./RealityCards";
-import { AlbumRail, type AlbumRailItem } from "@/components/react-bits/album-rail";
-import { TESTIMONIALS } from "@/lib/bathurst/data";
+import ReviewFan from "./ReviewFan";
 import "@/app/sentence.css";
 
 /**
@@ -57,12 +56,6 @@ function Pic({ src }: { src: string }) {
 
 const easeOut = (x: number) => 1 - (1 - x) ** 3;
 
-/* The rest of the reviews, waiting behind the card that turned over: everyone but the client already on it. Their
-   own video posters, with who said it under them (lib/bathurst/data.ts — §05 Testimonials plays the clips). */
-const RAIL: AlbumRailItem[] = TESTIMONIALS.filter((t) => t.id !== REVIEW_ID).map((t) => ({
-  src: t.poster, alt: `${t.who} — ${t.role}`, title: t.who, subtitle: t.role,
-}));
-
 export default function SentenceSection() {
   const [open, setOpen] = useState(false);
   const at = useRef<number | null>(null);   // page scroll at which the sheet was first fully up
@@ -73,8 +66,8 @@ export default function SentenceSection() {
   const words = useRef<HTMLDivElement>(null);
   const head = useRef<HTMLDivElement>(null);
   const turned = useRef(false);
-  const rail = useRef<HTMLDivElement>(null);
-  const [onRail, setOnRail] = useState(false);   // the rail is only mounted (and WebGL started) near its beat
+  const fan = useRef<HTMLDivElement>(null);
+  const [onFan, setOnFan] = useState(false);   // the fan is only mounted near its beat
 
   // the sentence's one-scroll opening
   useEffect(() => {
@@ -125,7 +118,9 @@ export default function SentenceSection() {
         if (k === last) {
           // the one that stays: it unwinds to dead centre, upright, and grows a little as it comes forward
           tx *= 1 - oe; ty *= 1 - oe; trot *= 1 - oe;
-          extra = ` scale(${(1 + 0.07 * oe).toFixed(3)})`;
+          // once the fan is out, its own centre card is this same review in the same place: the flipping card
+          // steps aside and nothing moves.
+          opacity = 1 - Math.min(1, Math.max(0, (b - 0.3) / 0.28));
         } else if (o > 0) {
           // the rest line up behind it — same centre, no angle — and fade out there, before the review has
           // finished arriving
@@ -158,15 +153,9 @@ export default function SentenceSection() {
       const over = o >= ALIGN;
       if (over !== turned.current) { turned.current = over; setFlipped(over); }
       // the other reviews come up behind the card as it finishes turning, so the one on it is the first of a set
-      setOnRail((on) => (on === o > ALIGN - 0.12 ? on : o > ALIGN - 0.12));
-      const rl = rail.current;
-      if (rl) {
-        // The rail is pinned by its own `top`, not by the stage's transform, and sits outside it: a WebGL canvas
-        // inside a layer translated by thousands of pixels is laid out correctly but never painted, while the
-        // cards (ordinary DOM) are fine. Same position on screen, no transform over it.
-        rl.style.top = `${past.toFixed(1)}px`;
-        rl.style.opacity = Math.min(1, Math.max(0, (b - 0.25) / 0.45)).toFixed(3);
-      }
+      setOnFan((on) => (on === o > ALIGN - 0.12 ? on : o > ALIGN - 0.12));
+      const fn = fan.current;
+      if (fn) fn.style.setProperty("--fan", easeOut(Math.min(1, Math.max(0, (b - 0.18) / 0.5))).toFixed(3));
     };
     const frame = () => { measure(); raf = requestAnimationFrame(frame); };
     raf = requestAnimationFrame(frame);
@@ -182,13 +171,6 @@ export default function SentenceSection() {
             It never takes the wheel or the drag: the page's own scroll owns this stretch. The card that turned over
             stands in the rail's own centre slot — it is the first of the set, not a thing in front of it — so the
             rest are sized and spread to fan out from behind its edges. */}
-        <div className="rc-rail" ref={rail} aria-hidden={!flipped}>
-          {onRail && (
-            <AlbumRail items={RAIL} aspect={0.63} size={0.66} spread={1.12} fan={9} turn={26} depth={0.62}
-              visible={5} vinyl={false} controls={false} draggable={false} wheel={false} autoplay interval={3.2}
-              shadow={0.5} dim={0.58} ariaLabel="More of what clients say" />
-          )}
-        </div>
         <div className="sx-stage" ref={stage}>
           <div className="wrap sx-words" ref={words}>
             <h2 className="h2 sx-h">
@@ -210,6 +192,9 @@ export default function SentenceSection() {
           <div className="wrap sx-head" ref={head} aria-hidden={!flipped}>
             <h2 className="h2 sx-head-t">Don’t just take our word for it.</h2>
           </div>
+          {/* the rest of what clients say, fanned out from behind the card that turned over. It owns the centre
+              slot once it is out: the flipping card above fades, the same review is already under it. */}
+          <div className="rvf-hold" ref={fan} aria-hidden={!flipped}>{onFan && <ReviewFan live={flipped} />}</div>
           {/* 03 · The Reality: the cards, over the sentence */}
           <div className="rc-stack" ref={stack} id="reality">
             {CARDS.map((c, k) => (
