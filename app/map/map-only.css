@@ -1,0 +1,24 @@
+/* The map on its own: everything the reference build wraps around it is hidden here, and the
+   engine is pinned to its map state by MapOnly.tsx. What is left is the map. */
+/* the document stays tall — the engine reads scrollY to know it is on the map — but the bar
+   is hidden and MapOnly parks the page there, so there is nothing to scroll */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+body { background: var(--cream); }
+body::before { display: none; }            /* the page grain belongs to the page, not the map */
+
+/* the reference's front page, navbar, menu, section heading and the sheet that rises over it */
+#sv,
+#stick > .navbar,
+#stick > .menubtn,
+#stick > .brandpin,
+#stick > .proudca,
+#stick > .menu,
+#workhead,
+#cover,
+.offer-corner,
+.assess-strip,
+.thumb-cta { display: none !important; }
+
+/* the map fills the window */
+#stage { position: absolute; inset: 0; }

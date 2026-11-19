@@ -11,6 +11,8 @@
     "pagespeed": "lighthouse http://localhost:3000 --output=html --output=json --output-path=./reports/pagespeed --chrome-flags=--headless=new --only-categories=performance,accessibility,best-practices,seo"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
     "cn": "^0.4.0",
     "motion": "^12.43.0",
     "next": "16.3.6",
@@ -31,6 +33,7 @@
     "lighthouse": "^13.6.0",
     "opentype.js": "^2.0.0",
     "playwright": "^1.63.0",
+    "simple-icons": "^16.38.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wawoff2": "^2.0.1"
