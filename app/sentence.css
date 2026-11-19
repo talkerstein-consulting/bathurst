@@ -4,7 +4,7 @@
 /* ---------- the track and the pinned stage ---------- */
 .sx { padding-top: 0; }
 .sx-track { position: relative; }   /* its height is set inline from the card count */
-.sx-stage { position: relative; height: 100svh; display: grid; align-items: center; overflow: hidden;
+.sx-stage { position: relative; z-index: 1; height: 100svh; display: grid; align-items: center; overflow: hidden;
   transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
 
 /* ---------- the sentence ---------- */
@@ -89,3 +89,29 @@
 @media (prefers-reduced-motion: reduce) {
   .sx-slot { transition: none; }
 }
+
+/* ---------- the last beat: the card that stays turns over ---------- */
+/* The card that stays is mounted in a FlipCard (components/FlipCard.jsx): the problem on the front, the client
+   review on the back, turned by the scroll (SentenceSection), not by the pointer. It takes the stack's own size
+   rather than the component's fixed box, and nothing about the frame or the type changes between the faces. */
+.rc-flip .rc-fc { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; cursor: default; }
+.rc-flip .rc-fc:focus-visible { outline: 2px solid var(--steel); outline-offset: 6px; }
+.rc-flip .flip-card__face { background: none; border-radius: 16px; }
+/* the sentence clears the screen on the same beat as one block: only the wrapper is promoted, so the browser keeps
+   a single layer for the whole sentence instead of one per word. Each word is still its own box for the line to set. */
+.sx-w { display: inline-block; }
+.sx-words { will-change: transform, opacity; }
+
+/* 05 · Testimonials' heading: it waits a half screen below the sentence, rides up as the sentence clears and rests
+   at the top of the stage, over the rail. It never fades: it sits under the stack (z-index 1 against the cards' 2),
+   so the cards cover it until they clear. Out of flow, so nothing moves to make room for it. */
+.sx-head { position: absolute; left: 0; right: 0; top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px));
+  z-index: 1; text-align: center; pointer-events: none;
+  transform: translate3d(0, 50svh, 0); will-change: transform; }
+.sx-head-t { margin: 0 auto; max-width: 20ch; }
+
+/* the rest of the reviews, behind the card that turned over: it sits in the middle of them, so what shows either
+   side of it is the next voice along. Layout only — the rail is not reachable here, §05 is where they play. */
+.rc-rail { position: absolute; left: 0; top: 0; width: 100%; height: 100svh; z-index: 0;
+  display: grid; place-items: center; opacity: 0; pointer-events: none; will-change: opacity; }
+.rc-rail > * { width: min(1180px, 100vw); height: min(74svh, 620px); }

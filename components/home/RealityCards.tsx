@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import FlipCard from "@/components/FlipCard";
 
 /**
  * 03 · The Reality, as a stack of cards that lays over the pinned sentence (components/home/SentenceSection.tsx moves
@@ -13,7 +14,7 @@ import type { CSSProperties, ReactNode } from "react";
  * element over it about the card's topic. ONE SAMPLE so far, on "You're hard to find."; the other two hold a hatched
  * slot until their pictures are made.
  */
-type Card = { key: string; label: string; kind?: string; eyebrow?: string; title: string; body: string; heading?: boolean; figure?: ReactNode };
+type Card = { key: string; label: string; kind?: string; eyebrow?: string; title: string; body: string; foot?: string; heading?: boolean; figure?: ReactNode };
 
 /* the sample's UI element: a search for the owner's trade, the business far down the results (monospace, like the
    ledger type set over the reference picture) */
@@ -56,33 +57,77 @@ export const CARDS: Card[] = [
   },
 ];
 
+/**
+ * What the last card turns into once the stack is complete: the same trading-card format, the same slots, a real
+ * client review in place of the problem (lib/bathurst/data.ts — the Maple Electric Supply testimonial, quote and
+ * attribution as published; never write one on a client's behalf). It is the hand-off into 05 · Testimonials.
+ */
+export const REVIEW_ID = "mes";   // whose review is on the card, so the rail behind it can leave them out
+
+export const TESTIMONIAL_CARD: Card = {
+  key: "review", label: "Maple Electric Supply", kind: "Client review", foot: "The proof",
+  title: "Gadi, Toronto",
+  body: "“They helped us grow our business by 200%. There is no other team I would recommend working with more than the Talkerstein team.”",
+  figure: <img src="/testimonials/mes-poster.jpg" alt="" loading="lazy" decoding="async" />,
+};
+
 const nn = (n: number) => String(n).padStart(2, "0");
 
-export function RealityCard({ c, n, of }: { c: Card; n: number; of: number }) {
+/** One face of a card: the banner row, the art window, the name, the caption and the footer. */
+function Face({ c, n, of, className }: { c: Card; n: number; of: number; className?: string }) {
   const T = c.heading ? "h2" : "h3";
   return (
-    <article className={`rc${c.heading ? " rc-head" : ""}`}>
-      <div className="tc rc-tc" style={{ "--rx": "0deg", "--ry": "0deg" } as CSSProperties}>
-        <span className="tc-in">
-          <span className="tc-top"><b>{c.label}</b><span className="tc-no">{c.heading ? "Section 03" : `${nn(n)}/${nn(of)}`}</span></span>
-          {c.heading ? (
-            // the head card's art window holds the section's own preheader and heading, cream on blue
-            <span className="tc-art rc-art-head">
-              {c.eyebrow && <span className="eyebrow rc-eyebrow">{c.eyebrow}</span>}
-              <T className="h3 rc-t">{c.title}</T>
-            </span>
-          ) : (
-            <span className={`tc-art rc-art${c.figure ? "" : " is-empty"}`}>
-              {c.figure ?? <span className="rc-todo">Image to come</span>}
-              {c.kind && <span className="tc-kind">{c.kind}</span>}
-            </span>
-          )}
-          {!c.heading && <T className="tc-name rc-t">{c.title}</T>}
-          <span className="tc-cap rc-b">{c.body}</span>
-          <span className="tc-foot"><span>The reality</span></span>
+    <span className={className ? `tc-in ${className}` : "tc-in"}>
+      <span className="tc-top"><b>{c.label}</b><span className="tc-no">{c.heading ? "Section 03" : `${nn(n)}/${nn(of)}`}</span></span>
+      {c.heading ? (
+        // the head card's art window holds the section's own preheader and heading, cream on blue
+        <span className="tc-art rc-art-head">
+          {c.eyebrow && <span className="eyebrow rc-eyebrow">{c.eyebrow}</span>}
+          <T className="h3 rc-t">{c.title}</T>
         </span>
-        <span className="tc-foil" aria-hidden="true" />
-      </div>
+      ) : (
+        <span className={`tc-art rc-art${c.figure ? "" : " is-empty"}`}>
+          {c.figure ?? <span className="rc-todo">Image to come</span>}
+          {c.kind && <span className="tc-kind">{c.kind}</span>}
+        </span>
+      )}
+      {!c.heading && <T className="tc-name rc-t">{c.title}</T>}
+      <span className="tc-cap rc-b">{c.body}</span>
+      <span className="tc-foot"><span>{c.foot ?? "The reality"}</span></span>
+    </span>
+  );
+}
+
+/** The card frame: the Steel border and the lenticular foil around one face. */
+function Frame({ children }: { children: ReactNode }) {
+  return (
+    <div className="tc rc-tc" style={{ "--rx": "0deg", "--ry": "0deg" } as CSSProperties}>
+      {children}
+      <span className="tc-foil" aria-hidden="true" />
+    </div>
+  );
+}
+
+/**
+ * A card. With `morph` it is mounted in a FlipCard (components/FlipCard.jsx, react-bits) holding the problem on the
+ * front and the client review on the back: SentenceSection turns it over on the scroll, once the card is upright in
+ * the middle of the screen. Same frame, same slots, same type on both faces — only what is in them changes.
+ */
+export function RealityCard({ c, n, of, morph, flipped }: { c: Card; n: number; of: number; morph?: Card; flipped?: boolean }) {
+  const face = <Frame><Face c={c} n={n} of={of} /></Frame>;
+  return (
+    <article className={`rc${c.heading ? " rc-head" : ""}${morph ? " rc-flip" : ""}`}>
+      {morph ? (
+        <FlipCard
+          className="rc-fc"
+          front={face}
+          back={<Frame><Face c={morph} n={n} of={of} /></Frame>}
+          flipped={!!flipped}
+          flipOnClick={false} draggable={false} tilt={false} glare={false} shadow={false}
+          background="transparent" radius={16} stiffness={120} damping={18}
+          ariaLabel="The reality, and what clients say"
+        />
+      ) : face}
     </article>
   );
 }
