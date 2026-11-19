@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
-import { Reality, Transformation, Proof, Capabilities, Process, FinalCta } from "@/components/home/LandingSections";
 import Testimonials from "@/components/bathurst/Testimonials";
+import SentenceSection from "@/components/home/SentenceSection";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
 import Services from "@/components/bathurst/Services";
@@ -251,11 +251,11 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
         <div className="cover frame" id="cover" aria-label="Partner stories, services, interviews and contact">
           <button type="button" className="cover-grab" id="covergrab" aria-label="Open"><i /></button>
           <div className="cover-body" id="coverbody">
-            {/* area page: 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA.
-                landing: 03 the reality · 04 the transformation · 05 testimonials · 06 what we do · 07 our process ·
-                08 closing CTA. Then the footer. */}
-            {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /></>
-              : <><Reality /><Transformation /><Proof /><Capabilities /><Process /><FinalCta /></>}<SiteFooter />
+            {/* area page: 03 Partner Stories · 04 What We Build · 05 Bathurst Interviews · 06 Partnership CTA, then the footer.
+                landing (layout rework, 2026-11-19): the sentence, with 03 The Reality as cards stacking over it. The rest stay parked, in their
+                old order, in components/home/LandingSections.tsx: 04 The Transformation · 05 Testimonials ·
+                06 What We Do · 07 Our Process · 08 Closing CTA · then <SiteFooter />. */}
+            {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter /></> : <SentenceSection />}
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}

@@ -11,10 +11,12 @@ const jost = Jost({
 });
 
 // Brand faces: WOFF2 subsets (Latin + typographic punctuation) of the client files kept at the project root
-const cheltenham = localFont({
-  src: "./fonts/CheltenhamStdBoldCond.woff2",
-  variable: "--font-chelt",
-  weight: "700",
+// Southport: the heading face across the site (2026-11-19, replaces ITC Cheltenham Bold Condensed). One static cut,
+// declared across the whole weight range so headings set at 600/700 use it as drawn instead of a synthesized bold.
+const heading = localFont({
+  src: "./fonts/Southport.woff2",
+  variable: "--font-head",
+  weight: "100 900",
   display: "swap",
 });
 const slowly = localFont({
@@ -61,7 +63,7 @@ const LOCAL_BUSINESS = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${jost.variable} ${cheltenham.variable} ${slowly.variable} antialiased`}>
+    <html lang="en" className={`${jost.variable} ${heading.variable} ${slowly.variable} antialiased`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS) }} />
         <LineSystem />

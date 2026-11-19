@@ -1,0 +1,91 @@
+/* The sentence over the client map's sheet, and 03 · The Reality's cards stacking over it
+   (components/home/SentenceSection.tsx, components/home/RealityCards.tsx). */
+
+/* ---------- the track and the pinned stage ---------- */
+.sx { padding-top: 0; }
+.sx-track { position: relative; }   /* its height is set inline from the card count */
+.sx-stage { position: relative; height: 100svh; display: grid; align-items: center; overflow: hidden;
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+/* ---------- the sentence ---------- */
+/* an h2 by rank, set larger than any heading on the page: it is the statement the cards are laid over */
+.sx-h { margin: 0 auto; text-align: center; font-size: clamp(56px, 8vw, 120px); line-height: 1.06; }
+/* desktop: three fixed lines, so the gaps opening spread each line from its centre rather than re-wrapping it */
+.sx-line { display: block; white-space: nowrap; }
+
+/* the picture slot: closed it takes no room; open it is a square one cap height tall with a word space after it.
+   An inline-block with overflow hidden sits its bottom edge on the line's baseline, so the square stands on the
+   same line as the letters and reaches their cap height. Stills only: moving pictures here were distracting. */
+.sx-slot {
+  display: inline-block; vertical-align: baseline; overflow: hidden;
+  height: .7em; height: 1cap; width: 0; margin-inline-end: 0;
+  transition: width .9s cubic-bezier(.22, 1, .36, 1), margin-inline-end .9s cubic-bezier(.22, 1, .36, 1);
+}
+.sx-slot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sx.is-open .sx-slot { width: .7em; width: 1cap; margin-inline-end: .26em; }
+
+/* ---------- 03 · The Reality: the cards ---------- */
+/* every card sits in the same spot, centred over the sentence; the scroll loop sets each one's lift and angle */
+.rc-stack { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none; }
+/* a card is one of the Bathurst interview cards (.tc in app/bathurst-map.css): Steel frame, Sea Breeze panel with an
+   inset hairline, banner row with its number, art window, name, caption, footer with the set badge, and the
+   lenticular foil. Here it is larger, its accents are TCG blue instead of the reels' orange, and the foil also
+   sweeps as the card rises (SentenceSection writes --mx/--my from the card's own progress). */
+.rc { --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  grid-area: 1 / 1; width: min(400px, calc(100vw - 48px)); perspective: 900px;
+  pointer-events: auto; visibility: hidden; will-change: transform; }
+.rc .rc-tc, .rc .rc-tc:hover { cursor: default; max-height: calc(100svh - var(--navh, 72px) - var(--s5));
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px rgb(25 37 74 / .18), 0 30px 56px -18px rgb(25 37 74 / .55); }
+.rc-tc .tc-in { gap: 10px; padding: 12px; }
+.rc-tc .tc-top b { font-size: 20px; }
+.rc-tc .tc-no { color: var(--steel); }
+/* layout only: none of the interview cards' hover (lift, shadow, picture zoom, foil) */
+.rc .rc-tc:hover { transition: none; }   /* .rc-scoped: app/bathurst-map.css loads after this file and would win a tie */
+.rc .rc-tc:hover .tc-art img { transform: none; }
+.rc-tc .tc-name { font-family: var(--head); font-weight: 400; font-size: 30px; line-height: 1.02; white-space: normal; margin: 4px 0 0; }
+.rc-tc .tc-cap { font-size: 14px; display: block; -webkit-line-clamp: unset; overflow: visible; min-height: 0; }
+.rc-tc .tc-foot { padding-top: 8px; }
+/* the lenticular foil: faintly there, catching the light as the card rises; the reels' orange band becomes a blue one */
+.rc .rc-tc .tc-foil, .rc .rc-tc:hover .tc-foil { opacity: .55;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.8), transparent 45%),
+    linear-gradient(115deg, transparent 20%, rgba(92,122,214,.4) 38%, rgba(120,200,220,.35) 52%, rgba(255,255,255,.3) 62%, transparent 80%);
+  background-size: 100% 100%, 220% 220%; background-position: center, var(--mx, 50%) var(--my, 50%); }
+
+/* the art window: the picture, or (head card) the section's preheader and heading, cream on blue */
+/* on desktop the art fills its row of the card (the card's own 63:88 ratio sets the size) */
+.rc-art > img { object-position: 60% 22%; }
+.rc-art .tc-kind { top: 6px; bottom: auto; }   /* top left: the search panel takes the lower left */
+.rc-art.is-empty { display: grid; place-items: center;
+  background: repeating-linear-gradient(135deg, transparent 0 5px, rgb(243 247 243 / .14) 5px 7px), var(--steel); }
+.rc-todo { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--sea); opacity: .8; }
+.rc-art-head { display: grid; align-content: end; padding: var(--s5) var(--s3) var(--s3);
+  background: linear-gradient(145deg, var(--steel) 0%, #2a3a6a 60%, var(--steel) 100%); color: var(--cream); }
+.rc-eyebrow { margin: 0; color: var(--cream); }
+.rc-art-head .rc-t { margin: var(--s4) 0 0; color: var(--cream); }   /* the preheader stands off its heading at double the page rule */
+
+/* monospace, like the ledger type over the reference picture: a search for the owner's trade */
+.rc-ui { position: absolute; left: var(--s2); bottom: var(--s2); width: min(62%, 240px); padding: 10px 12px;   /* lower left: clear of the face */
+  font: 500 11px/1.55 var(--mono); color: var(--steel);
+  background: rgb(237 229 203 / .9); border: 1px solid var(--steel-15); border-radius: 8px;
+  box-shadow: 0 6px 16px rgb(25 37 74 / .18); }
+.rc-ui p { margin: 0; }
+.rc-ui ol { list-style: none; margin: 6px 0 0; padding: 0; }
+.rc-ui li { display: flex; gap: 8px; white-space: nowrap; overflow: hidden; }
+.rc-ui li span { color: var(--steel-50); }
+.rc-ui li em { margin-left: auto; font-style: normal; color: var(--steel-50); }
+.rc-ui-q { color: var(--steel-70); text-transform: uppercase; letter-spacing: .04em; }
+.rc-ui-sep { margin-top: 6px !important; color: var(--steel-50); }
+.rc-ui li.is-you { font-weight: 700; }
+
+/* ---------- phones ---------- */
+@media (max-width: 760px) {
+  .sx-h { font-size: 56px; text-align: left; }   /* D10: headings sit left on phones */
+  .sx-line { display: inline; white-space: normal; }   /* the lines can't hold at this width; the sentence flows */
+  .rc-tc .tc-name { font-size: 26px; }
+  .rc .rc-art, .rc .rc-art-head { aspect-ratio: 4 / 3; }   /* the interview cards go 4:5 on phones; these stay short enough to fit */
+  .rc-ui { width: 56%; padding: 6px 8px; font-size: 9px; left: var(--s1); bottom: var(--s1); }   /* smaller picture: keep the face clear */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-slot { transition: none; }
+}

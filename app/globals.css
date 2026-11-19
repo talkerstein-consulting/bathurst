@@ -6,11 +6,12 @@
 /*
   Talkerstein Consulting Group brand (locked): Sea Breeze, Steel Blue, Muted Orange.
   Tints are opacity mixes of those three only. Active / highlighted = orange, inactive = steel.
-  Faces: ITC Cheltenham Std Bold Condensed (headings), Jost (body), Slowly Signature (one accent phrase per section).
+  Faces: Southport (headings), Jost (body), Slowly Signature (one accent phrase per section).
   Surface: light paper grain across the page (STYLE.md §4).
 */
 :root {
   --sea: #F3F7F3;
+  --cream: #EDE5CB;   /* the map's cream (lib/bathurst/engine.ts); TCG blue on cream is the halftone pairing */
   --steel: #19254A;
   --orange: #B3530E;
   --steel-70: rgb(25 37 74 / .7);
@@ -24,7 +25,7 @@
      as a label beside the heading it belongs to. */
   --label: rgb(25 37 74 / .62);
   --body: var(--font-jost), "Futura", "Century Gothic", sans-serif;
-  --head: var(--font-chelt), Georgia, serif;
+  --head: var(--font-head), Georgia, serif;
   --accent-script: var(--font-slowly), cursive;
   --panel-w: 392px;
 
@@ -284,8 +285,8 @@
   .eyebrow { display: block; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; line-height: 1; }
 
   .h1 { font-size: var(--h1-size); line-height: 1.02; }
-  .h2 { font-size: 48px; line-height: 1.02; }
-  .h3 { font-size: 32px; line-height: 1.05; }
+  .h2 { font-size: 64px; line-height: 1.02; }
+  .h3 { font-size: 40px; line-height: 1.05; }
 
   /* sections: s6 between top-level blocks (s5 on phones), max 1200px, 24px gutter */
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
@@ -305,8 +306,8 @@
 
 @media (max-width: 760px) {
   :root { --h1-size: 48px; --accent-size: 38px; --section-gap: var(--s5); }
-  .h2 { font-size: 38px; }
-  .h3 { font-size: 26px; }
+  .h2 { font-size: 44px; }
+  .h3 { font-size: 30px; }
 }
 
 /* client spotlight (ported from the CleverPays testimonial spotlight) */
@@ -443,7 +444,7 @@ html body .dir-ctas .btn.fill { --ink: var(--steel); }
 .book-back { font-size: 14px; color: var(--steel-70); text-decoration: none; }
 .book-back:hover { color: var(--orange); }
 .book-head { display: grid; gap: var(--s2); max-width: 640px; }
-.book-head .eyebrow { margin: 0; color: var(--orange); }
+.book-head .eyebrow { margin: 0; color: var(--steel); }
 .book-title { margin: 0; font-size: clamp(36px, 5vw, 60px); line-height: 1.02; }
 .book-note { margin: 0; color: var(--steel-70); }
 .bk-form { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s3) var(--s5); align-items: start; }
@@ -466,7 +467,7 @@ html body .dir-ctas .btn.fill { --ink: var(--steel); }
 .bk-dot.end { border: 0; left: -2px; top: 0; width: 24px; height: 24px; color: var(--orange); background: none; }
 .bk-dot.end .glyph { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
 .bk-h { margin: 0 0 var(--s1); font: 700 26px/1.1 var(--head); display: flex; align-items: baseline; gap: var(--s2); }
-.bk-h small { font: 600 12px/1 var(--body); letter-spacing: .14em; color: var(--orange); }
+.bk-h small { font: 600 12px/1 var(--body); letter-spacing: .14em; color: var(--steel); }
 .bk-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 .bk-field .field-box { background: var(--sea); }
 .bk-area { resize: vertical; min-height: 112px; line-height: 1.45; }
