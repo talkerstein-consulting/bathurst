@@ -5,18 +5,27 @@ const vehicles = [
   { id: "taxi", road: "642,517 652,482 666,456 708,456 713,472 702,520", outline: "647,510 650,495 657,483 664,475 668,466 671,461 680,459 695,460 702,463 704,470 710,473 708,484 700,506 695,515 676,516" },
 ];
 
-// These patches expose the road beneath the three moving silhouettes. The other cars stay parked.
+// The parked cars and their cast shadows are printed into the original along both curbs.
+const parkedCars = "M642 359L648 347 655 341 675 340 679 349 671 365 641 365Z M360 538L369 531 369 522 380 517 390 508 396 493 404 485 439 483 455 499 455 519 419 550 378 550 359 546Z M669 630L671 591 682 567 690 549 710 543 739 549 741 559 733 630Z";
 export default function BathurstStreet() {
   return <svg className="bathurst-street" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
     <defs>
       <image id="street-print" href="/brand/og-bathurst.jpg" width="1200" height="630" />
       {vehicles.map(({id, outline}) => <clipPath key={id} id={`cut-${id}`}><polygon points={outline} /></clipPath>)}
       <clipPath id="street-repairs">{vehicles.map(({id, road}) => <polygon key={id} points={road} />)}</clipPath>
+      <clipPath id="parked-car-repairs"><path d={parkedCars} /></clipPath>
       <pattern id="street-paper" width="28" height="22" patternUnits="userSpaceOnUse">
         <svg width="28" height="22" viewBox="635 554 28 22"><use href="#street-print" /></svg>
       </pattern>
     </defs>
     <use href="#street-print" />
+    <g clipPath="url(#parked-car-repairs)">
+      <rect width="1200" height="630" fill="url(#street-paper)" />
+      <g fill="none" stroke="#303245">
+        <path d="M221 630L773 277 M229 630L773 277" strokeWidth="1.6" />
+        <path d="M730 630L775 281" strokeWidth="1.8" />
+      </g>
+    </g>
     <g className="street-live">
       {vehicles.map(({id, road}) => <polygon key={id} points={road} fill="url(#street-paper)" />)}
       <g fill="none" stroke="#303245" strokeWidth="1.6" clipPath="url(#street-repairs)">

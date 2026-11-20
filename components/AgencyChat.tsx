@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import RiseHeading from "./style/RiseHeading";
 import { leadAttributionQuestion } from "@/lib/chatbot/lead-attribution";
 import { answeredAt } from "@/lib/chatbot/duplicates";
 import { previewAnswer, previewQuestion } from "@/lib/chatbot/preview";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 const examples = [
   ["Quotes take me three hours every night", "electrical", "quotes estimates pricing trades"],
@@ -53,7 +54,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const [suggest, setSuggest] = useState(false);
   const [active, setActive] = useState(-1);
   const [open, setOpen] = useState(designPreview);
-  const [panel, setPanel] = useState<"menu" | "booking" | null>(null);
+  const [panel, setPanel] = useState<"menu" | "landing-menu" | "booking" | null>(null);
   const [note, setNote] = useState("");
   const [previewBooked, setPreviewBooked] = useState(false);
   const sheet = useRef<HTMLDialogElement>(null);
@@ -71,7 +72,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const field = useRef<HTMLInputElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const modal = useRef<HTMLDialogElement>(null);
-  const menu = useRef<HTMLDetailsElement>(null);
+  const landingMenu = useRef<HTMLButtonElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController | null>(null);
   const stick = useRef(true);
@@ -100,16 +101,8 @@ export default function AgencyChat({children, designPreview = false}: {children:
     sync(); motion.addEventListener("change", sync);
     const observer = new IntersectionObserver(([entry]) => setDocked(entry.boundingClientRect.bottom < 75), { rootMargin: "-75px 0px 0px 0px" });
     observer.observe(hero.current!);
-    const details = menu.current!;
-    const dismiss = (event: PointerEvent) => { if (!details.contains(event.target as Node)) details.open = false; };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && details.open) { details.open = false; details.querySelector("summary")?.focus(); }
-    };
-    document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", escape);
     return () => {
       controller.current?.abort(); observer.disconnect(); motion.removeEventListener("change", sync);
-      document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", escape);
       document.documentElement.classList.remove("chatting");
     };
   }, []);
@@ -180,7 +173,21 @@ export default function AgencyChat({children, designPreview = false}: {children:
     const turns: Message[] = [...messages, {role:"user", content}];
     setMessages(turns); void requestAnswer(turns);
   }
+  function alignPanel(trigger: HTMLButtonElement | null) {
+    const dialog = sheet.current;
+    if (!trigger || !dialog) return;
+    const box = trigger.getBoundingClientRect();
+    dialog.style.top = box.top + "px";
+    dialog.style.right = Math.max(0, document.documentElement.clientWidth - box.right) + "px";
+    dialog.style.setProperty("--return-width", box.width + "px");
+  }
+  function openMenu(fromLanding: boolean) {
+    alignPanel(fromLanding ? landingMenu.current : menuTrigger.current);
+    setPanel(fromLanding ? "landing-menu" : "menu");
+    sheet.current?.showModal();
+  }
   function openBooking() {
+    alignPanel(menuTrigger.current);
     setNote(messages.filter(m => m.role === "assistant").at(-1)?.meetingBrief || "");
     setPreviewBooked(false);
     setPanel("booking");
@@ -188,7 +195,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
   }
   async function dismissSheet() {
     const dialog = sheet.current;
-    const trigger = menuTrigger.current;
+    const trigger = panel === "landing-menu" ? landingMenu.current : menuTrigger.current;
     const close = dialog?.querySelector<HTMLButtonElement>(".sheet-close");
     if (!dialog?.open || !trigger || !close || dialog.hasAttribute("data-closing")) return;
 
@@ -222,17 +229,12 @@ export default function AgencyChat({children, designPreview = false}: {children:
       <a className="brand" href="#top"><img src="/brand/tcg-logo-s-h.svg" alt="Talkerstein Consulting Group" /></a>
       <div className="ask-nav">
         {docked && <button className="ask-return" onClick={() => { setOpen(true); }}>Ask Talkerstein <Arrow /></button>}
-        <details ref={menu} className="ask-menu"><summary>Menu <span aria-hidden="true">☰</span></summary>
-          <nav aria-label="Main navigation">
-            <a href="https://talkerstein.com/services">Services</a><a href="https://talkerstein.com/work">Our work</a>
-            <a href="https://talkerstein.com/our-process">Our process</a><Link href="/book">Book a call</Link>
-          </nav>
-        </details>
+        <button ref={landingMenu} className="chat-menu-trigger" aria-haspopup="dialog" aria-controls="chat-panel" aria-expanded={panel === "landing-menu"} onClick={() => openMenu(true)}>Menu</button>
       </div>
     </div></header>
     <main id="top">
       <section className="hero"><div className="wrap">
-        <h1>Better Business Systems</h1><p className="deck">What would you like to make easier?</p>
+        <RiseHeading text="Better Business Systems" className="landing-title" /><p className="deck">What would you like to make easier?</p>
         <div className="plate">
           <div className="shots" aria-hidden="true">
             {examples.map(([,photo], n) => (index === n || n === (index + 1) % examples.length) &&
@@ -241,7 +243,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
           <div className="agency-composer" ref={hero} onBlur={e => {if (!e.currentTarget.contains(e.relatedTarget)) setSuggest(false);}}>
             <form className="ask" onSubmit={e => {e.preventDefault(); send(listOpen && active >= 0 ? matches[active].q : draft || examples[index][0]);}}>
               <label className="sr" htmlFor="q">Describe what you need</label>
-              <input ref={field} id="q" role="combobox" aria-autocomplete="list" aria-expanded={listOpen} aria-controls="ask-options"
+              <div className="prompt-field"><input ref={field} id="q" role="combobox" aria-autocomplete="list" aria-expanded={listOpen} aria-controls="ask-options"
                 aria-activedescendant={listOpen && active >= 0 ? "ask-option-" + active : undefined}
                 value={draft} maxLength={2000} autoComplete="off" enterKeyHint="send" placeholder={`Try “${examples[index][0]}”`}
                 onChange={e => {setDraft(e.target.value); setSuggest(true); setActive(-1);}}
@@ -254,6 +256,10 @@ export default function AgencyChat({children, designPreview = false}: {children:
                     setActive(i => (i + (e.key === "ArrowDown" ? 1 : i === -1 ? 0 : -1) + matches.length) % matches.length);
                   }
                 }} />
+                {!draft && <span className="prompt-example" key={index} aria-hidden="true">
+                  {(`Try “${examples[index][0]}”`).split(" ").map((word, n) => <span key={n} style={{"--word": n} as CSSProperties}>{word}{" "}</span>)}
+                </span>}
+              </div>
               <button type="submit" className="send" aria-label={draft.trim() ? "Send question" : "Ask this example"}><Arrow/></button>
             </form>
             <div id="ask-options" role="listbox" aria-label="Suggested questions" hidden={!listOpen}>
@@ -276,8 +282,8 @@ export default function AgencyChat({children, designPreview = false}: {children:
       if (controller.current) stop(); setOpen(false);
     }}>
       <div className="chat-top"><img className="chat-mark" src="/brand/tcg-logo-s-h.svg" alt="Talkerstein"/>
-        <button ref={menuTrigger} className="chat-menu-trigger" aria-haspopup="dialog" aria-controls="chat-panel" aria-expanded={panel !== null}
-          onClick={() => {setPanel("menu"); sheet.current?.showModal();}}>Menu</button></div>
+        <button ref={menuTrigger} className="chat-menu-trigger" aria-haspopup="dialog" aria-controls="chat-panel" aria-expanded={panel === "menu" || panel === "booking"}
+          onClick={() => openMenu(false)}>Menu</button></div>
       <div className="thread-scroll" ref={log} onScroll={e => {const el=e.currentTarget; stick.current=el.scrollHeight-el.scrollTop-el.clientHeight<60;}}>
         <div className="thread" role="log" aria-live="polite" aria-relevant="additions">
           {!messages.length && <p className="ask-empty">What would you like to make easier?</p>}
@@ -324,7 +330,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
         </form>
       </div>
     </dialog>
-    <dialog ref={sheet} id="chat-panel" className="chat-sheet" aria-label={panel === "booking" ? "Book a call" : "Chat menu"}
+    <dialog ref={sheet} id="chat-panel" className="chat-sheet" aria-label={panel === "booking" ? "Book a call" : panel === "landing-menu" ? "Main menu" : "Chat menu"}
       onClose={() => setPanel(null)} onCancel={e => {e.preventDefault(); void dismissSheet();}} onClick={e => {
         if (e.target !== e.currentTarget) return;
         const r = e.currentTarget.getBoundingClientRect();
@@ -345,7 +351,12 @@ export default function AgencyChat({children, designPreview = false}: {children:
           <button className="call-cta" type="submit">Choose a time <span aria-hidden="true">↗</span></button>
           {previewBooked && <p role="status">In the live chat, this opens Rishon’s calendar with your notes.</p>}
         </form>
-      </div> : <nav className="sheet-links" aria-label="Chat navigation">
+      </div> : panel === "landing-menu" ? <nav className="sheet-links" aria-label="Main navigation">
+        <a href="https://talkerstein.com/services">Services</a>
+        <a href="https://talkerstein.com/work">Our work</a>
+        <a href="https://talkerstein.com/our-process">Our process</a>
+        <Link href="/book">Book a call</Link>
+      </nav> : <nav className="sheet-links" aria-label="Chat navigation">
         <button onClick={() => {sheet.current?.close(); modal.current?.close();}} >Close conversation</button>
         <a href="https://talkerstein.com/services">Services</a>
         <a href="https://talkerstein.com/work">Our work</a>

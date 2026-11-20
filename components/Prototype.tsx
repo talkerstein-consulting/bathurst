@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
-import BathurstStreet from "./BathurstStreet";
+import ClientMapSection from "./ClientMapSection";
+import RiseHeading from "./style/RiseHeading";
 import AgencyChat from "./AgencyChat";
 import OrbitImages from "@/components/OrbitImages";
 import DomeGallery from "@/components/DomeGallery";
@@ -88,9 +89,20 @@ function PhotoReel({ photos }: { photos: string[] }) {
   </span></span>;
 }
 
+function StatementLine({before, after, photos, delay}: {before: string; after: string; photos: string[]; delay: number}) {
+  function words(phrase: string, offset: number) {
+    return phrase.split(" ").map((word, index) => <span key={index}>
+      <span className="rise-w"><span style={{"--i": offset + index} as CSSProperties}>{word}</span></span>{" "}
+    </span>);
+  }
+  return <span className="sx-line landing-title" style={{"--line-delay": delay + "ms"} as CSSProperties}>
+    {words(before, 0)}<PhotoReel photos={photos} />{words(after, before.split(" ").length)}
+  </span>;
+}
+
 function useLandingMotion() {
   const root = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!root.current || !("IntersectionObserver" in window)) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const running = new Set<Animation>();
@@ -99,38 +111,36 @@ function useLandingMotion() {
       for (const {target, isIntersecting} of entries) {
         if (!isIntersecting) continue;
         reveal.unobserve(target);
+        if (target.classList.contains("landing-title")) {
+          target.classList.add("title-entered");
+          continue;
+        }
         if (media.matches) continue;
         const group = target.parentElement;
         const order = siblings.get(group) || 0;
         siblings.set(group, order + 1);
-        const motion = target.animate([{ opacity: 0, translate: "0 12px" }, { opacity: 1, translate: "0 0" }],
-          {duration: 460, delay: Math.min(order, 4) * 65, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"});
+        const motion = target.animate([{ opacity: 0, transform: "translate(18px, 12px)" }, { opacity: 1, transform: "translate(0, 0)" }],
+          {duration: 620, delay: Math.min(order, 4) * 95, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"});
         running.add(motion);
         motion.onfinish = () => running.delete(motion);
       }
-    });
+    }, {rootMargin: "0px 0px -7% 0px"});
     const loops = new IntersectionObserver(entries => {
       for (const entry of entries) entry.target.classList.toggle("motion-visible", entry.isIntersecting);
     });
-    root.current.querySelectorAll("main h1, main h2:not(.sx-h), main h3, .sx-line, .deck, .shot-cap, .rotor, .row-copy p, .row-copy a, .sample-caption, .ft-nav a, .ft-meta > div, .ft-legal > *, .map-cover > span").forEach(el => reveal.observe(el));
+    const titles = root.current.querySelectorAll(".landing-title");
+    titles.forEach(el => el.classList.add("title-pending"));
+    root.current.querySelectorAll("main h1, main h2:not(.sx-h), main h3, .sx-line, .deck, .shot-cap, .rotor, .row-copy p, .row-copy a, .sample-caption, .ft-nav a, .ft-meta > div, .ft-legal > *").forEach(el => reveal.observe(el));
     root.current.querySelectorAll(".statement, .mapwide").forEach(el => loops.observe(el));
     const stop = () => { if (media.matches) { running.forEach(animation => animation.cancel()); running.clear(); } };
     media.addEventListener("change", stop);
-    return () => { reveal.disconnect(); loops.disconnect(); running.forEach(animation => animation.cancel()); media.removeEventListener("change", stop); };
+    return () => { titles.forEach(el => el.classList.remove("title-pending", "title-entered")); reveal.disconnect(); loops.disconnect(); running.forEach(animation => animation.cancel()); media.removeEventListener("change", stop); };
   }, []);
   return root;
 }
 
 export default function Prototype({designPreview = false}: {designPreview?: boolean}) {
-  const [mapOpen, setMapOpen] = useState(false);
   const landing = useLandingMotion();
-  const cover = useRef<HTMLButtonElement>(null);
-  const mapFrame = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    if (!mapOpen || !mapFrame.current) return;
-    mapFrame.current.parentElement?.scrollIntoView({block: "start", behavior: "instant"});
-    mapFrame.current.focus({preventScroll: true});
-  }, [mapOpen]);
   return (
     <div ref={landing}>
       <AgencyChat designPreview={designPreview}>
@@ -138,25 +148,15 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
       <section className="statement is-open">
         <div className="wrap">
           <h2 className="sx-h">
-            <span className="sx-line">It answers from <PhotoReel photos={["/photos/aria.webp", "/clients/fringe/photo-1-sm.webp", "/clients/hoh/photo-1-sm.webp"]} />our own work.</span>
-            <span className="sx-line">Services. <PhotoReel photos={["/photos/kidicare.webp", "/clients/kapara/photo-1-sm.webp", "/clients/royaldairy/photo-1-sm.webp"]} /> Client projects.</span>
-            <span className="sx-line">With <PhotoReel photos={["/photos/esther.webp", "/clients/hilys/photo-1-sm.webp", "/clients/ar26/photo-1-sm.webp"]} /> links to the source.</span>
+            <StatementLine before="It answers from" after="our own work." delay={0} photos={["/photos/aria.webp", "/clients/fringe/photo-1-sm.webp", "/clients/hoh/photo-1-sm.webp"]} />
+            <StatementLine before="Services." after="Client projects." delay={80} photos={["/photos/kidicare.webp", "/clients/kapara/photo-1-sm.webp", "/clients/royaldairy/photo-1-sm.webp"]} />
+            <StatementLine before="With" after="links to the source." delay={160} photos={["/photos/esther.webp", "/clients/hilys/photo-1-sm.webp", "/clients/ar26/photo-1-sm.webp"]} />
           </h2>
         </div>
       </section>
 
       {/* ============================ the map ============================ */}
-      <section className="mapwide">
-        <div className="wrap">
-          <div className="mapplate">
-            {mapOpen ? <iframe ref={mapFrame} src="/map" title="Interactive map of Talkerstein projects across the GTA" /> :
-              <button className="map-cover" ref={cover} onClick={() => setMapOpen(true)}>
-                <BathurstStreet /><span>Explore the client map ↗</span>
-              </button>}
-          </div>
-          {mapOpen && <button className="map-close" onClick={() => {setMapOpen(false); requestAnimationFrame(() => cover.current?.focus({preventScroll: true}));}}>Close map</button>}
-        </div>
-      </section>
+      <ClientMapSection />
 
       {/* ============================ three rows ============================ */}
       <div className="wrap">
@@ -186,7 +186,7 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
               </div>
             </div>
           <div className="row-copy">
-            <h2>Technology should solve problems, not create more work.</h2>
+            <RiseHeading as="h2" className="landing-title" text="Technology should solve problems, not create more work." />
             <p>Explore how automation, AI, web development, and connected business systems can help your organization operate more efficiently, serve customers better, and create new opportunities.</p>
             <a className="btn sprout" href="https://talkerstein.com/services">Explore our services <svg className="glyph" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
           </div>
@@ -200,7 +200,7 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
               </div>
             </div>
           <div className="row-copy">
-            <h2>Ideas are only as good as what they accomplish.</h2>
+            <RiseHeading as="h2" className="landing-title" text="Ideas are only as good as what they accomplish." />
             <p>See how we turn business challenges into practical digital solutions. Explore the websites, systems, automations, and digital experiences we’ve designed and developed.</p>
             <a className="btn sprout" href="https://talkerstein.com/work">View our work <svg className="glyph" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
           </div>
@@ -238,7 +238,7 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
               </div>
             </div>
           <div className="row-copy">
-            <h2>Good technology starts with understanding your business.</h2>
+            <RiseHeading as="h2" className="landing-title" text="Good technology starts with understanding your business." />
             <p>We’re a technology consulting partner helping businesses make better use of digital tools. We bring strategy, creative thinking, and technical expertise together to build solutions that work.</p>
             <a className="btn sprout" href="https://talkerstein.com/about-us">Get to know Talkerstein <svg className="glyph" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
           </div>

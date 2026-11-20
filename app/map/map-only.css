@@ -7,11 +7,12 @@ body:has(.standalone-map)::before { display: none; }
 .standalone-map #labels .pin.pop :is(.ic, .ld, .co, .mk) { animation: none; }
 .standalone-map #hero #stick.work .chipbar {
   top: 12px !important; left: 12px !important; right: 12px !important;
-  translate: none; max-width: none; justify-content: center;
+  translate: none; max-width: none; height: auto; justify-content: center;
 }
 .standalone-map #hero #stick.work #chips {
-  flex-wrap: nowrap; width: max-content; max-width: 100%; overflow-x: auto;
-  padding: 4px; justify-content: flex-start; scrollbar-width: thin;
+  flex: 0 1 auto; flex-wrap: wrap; width: fit-content; max-width: 100%;
+  height: auto; max-height: none; overflow: visible; justify-content: center;
+  padding: 4px; gap: 5px; scroll-snap-type: none; touch-action: manipulation;
 }
 .standalone-map #mapui .ctrls {
   inset: auto 12px 12px auto; gap: 8px; transform: none !important;

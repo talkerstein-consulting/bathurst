@@ -34,7 +34,7 @@ test("suggestions preserve a draft and support a sourced conversation with follo
   await reply.press("Enter");
   await expect(dialog.locator(".msg-a")).toHaveCount(3);
   expect(requests[2].at(-1)?.content).toBe("Can you show me the Shopify project?");
-  await page.getByRole("button", {name:"Menu", exact:true}).click();
+  await page.getByRole("dialog", {name:"Ask Talkerstein"}).getByRole("button", {name:"Menu", exact:true}).click();
   await page.getByRole("dialog", {name:"Chat menu"}).getByRole("button", {name:"Close conversation"}).click();
   await expect(dialog).toBeHidden();
 });
@@ -50,9 +50,9 @@ test("the scrolled ask control stays in the header and can receive a tap above t
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await ask.click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("button", {name:"Menu", exact:true}).click();
+  await page.getByRole("dialog", {name:"Ask Talkerstein"}).getByRole("button", {name:"Menu", exact:true}).click();
   await page.getByRole("dialog", {name:"Chat menu"}).getByRole("button", {name:"Close conversation"}).click();
-  await page.locator(".ask-menu summary").click();
+  await page.getByRole("banner").getByRole("button", {name:"Menu", exact:true}).click();
   await expect(page.getByRole("navigation", {name:"Main navigation"}).getByText("Book a call")).toHaveAttribute("href", "/book");
 });
 
@@ -78,7 +78,7 @@ test("narrow screen keeps the menu and composer actions inside the viewport", as
   await expect(page.locator(".rotor .count")).toHaveText("2 / 10");
   await page.locator(".vis.bare").scrollIntoViewIfNeeded();
   await page.locator(".ask-return").waitFor();
-  const menu = await page.locator(".ask-menu summary").boundingBox();
+  const menu = await page.getByRole("banner").getByRole("button", {name:"Menu", exact:true}).boundingBox();
   expect(menu!.x + menu!.width).toBeLessThanOrEqual(320);
 });
 
@@ -110,6 +110,11 @@ test("the project map loads on demand and closes", async ({page}) => {
   await expect(frame.locator("#stick")).toHaveClass(/mapready/, {timeout: 25000});
   await page.locator(".mapplate iframe").scrollIntoViewIfNeeded();
   await expect(zoom).toBeInViewport();
+  const filters = frame.getByRole("group", {name:"Filter by industry"});
+  expect(await filters.evaluate(el => {
+    el.scrollBy(60, 60);
+    return [el.scrollLeft, el.scrollTop];
+  })).toEqual([0, 0]);
   const box = await page.locator(".mapplate iframe").boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   const pin = frame.getByLabel("Yorkville Jewish Centre, 94 Avenue Rd, Toronto", {exact: true}).locator(".ic");
@@ -138,7 +143,7 @@ test("the design preview opens a sample conversation and answers entirely in the
   await expect(dialog.getByRole("link", {name:/Fringe Boutique/})).toBeVisible();
   await dialog.getByRole("button", {name:"Send suggested question"}).click();
   await expect(dialog.locator(".ask-answer").last()).toContainText("one product");
-  await page.getByRole("button", {name:"Menu", exact:true}).click();
+  await page.getByRole("dialog", {name:"Ask Talkerstein"}).getByRole("button", {name:"Menu", exact:true}).click();
   const menu = page.getByRole("dialog", {name:"Chat menu"});
   await expect(menu.getByRole("link", {name:"Terms"})).toHaveAttribute("href", "https://talkerstein.com/terms-of-use");
   await expect(menu.getByRole("link", {name:"Contact"})).toHaveAttribute("href", "https://talkerstein.com/contact");
@@ -299,4 +304,32 @@ test("landing motion keeps a static illustration and visible project work with r
   await gallery.scrollIntoViewIfNeeded();
   expect((await gallery.boundingBox())!.height).toBeGreaterThan(200);
   await expect.poll(() => gallery.locator(".dome-item img").evaluateAll(images => images.some(image => (image as HTMLImageElement).naturalWidth > 0))).toBeTruthy();
+});
+
+test("landing titles and prompt examples stagger their words, and the menu returns focus", async ({page}) => {
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await page.goto("/chatbot");
+  const headline = page.getByRole("heading", {level:1, name:"Better Business Systems"});
+  await expect(headline).toHaveClass(/title-entered/);
+  await expect(headline.locator(".rise-w > span").last()).toHaveCSS("animation-name", "title-word-in");
+  const firstSectionTitle = page.locator(".row-copy h2").first();
+  await expect(firstSectionTitle).not.toHaveClass(/title-entered/);
+  await firstSectionTitle.scrollIntoViewIfNeeded();
+  await expect(firstSectionTitle).toHaveClass(/title-entered/);
+  await page.getByRole("button", {name:"Next example"}).click();
+  const words = page.locator(".prompt-example > span");
+  await expect(words.first()).toHaveCSS("animation-name", "prompt-word-in");
+  expect(await words.evaluateAll(spans => spans.map(el => parseFloat(getComputedStyle(el).animationDelay))))
+    .toEqual(await words.evaluateAll(spans => spans.map((_, i) => i * 45 / 1000)));
+  const input = page.getByRole("combobox");
+  await input.fill("My question");
+  await expect(page.locator(".prompt-example")).toHaveCount(0);
+  const menu = page.getByRole("banner").getByRole("button", {name:"Menu"});
+  await menu.click();
+  const dialog = page.getByRole("dialog", {name:"Main menu"});
+  await expect(dialog.getByRole("link")).toHaveCount(4);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(menu).toBeFocused();
+  await expect(input).toHaveValue("My question");
 });
