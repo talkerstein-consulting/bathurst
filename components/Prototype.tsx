@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import OrbitImages from "@/components/OrbitImages";
 import DomeGallery from "@/components/DomeGallery";
-import GrainMass from "@/components/grain-mass";
-import LionCoin from "@/components/lion-coin";
+import AnimatedList, { type AnimatedListItem } from "@/components/react-bits/animated-list";
 import runPrototype from "./prototype-behaviour";
 import "@/app/prototype.css";
 
@@ -30,11 +29,22 @@ const TOOLS = [
   "/tools/google.svg",
 ];
 
+/** the third visual: the day as it lands. Store notifications in the shape Shopify
+    sends them, cycling forever - AnimatedList wraps its cursor on the list. */
+const NOTES: AnimatedListItem[] = [
+  { id: 1, title: "New order \u00B7 $248.00", description: "Amazing Donuts \u2014 3 items, Toronto", time: "now", icon: "\u{1F6CD}" },
+  { id: 2, title: "Quote accepted", description: "AR26 \u2014 fit-out, signed off in the thread", time: "1m", icon: "\u2714\uFE0F" },
+  { id: 3, title: "Booking confirmed", description: "Ice Academy \u2014 Saturday, 9:00 AM", time: "4m", icon: "\u{1F4C5}" },
+  { id: 4, title: "New order \u00B7 $1,120.00", description: "Kapara \u2014 catering, North York", time: "7m", icon: "\u{1F6CD}" },
+  { id: 5, title: "Invoice paid", description: "MES \u2014 $3,400, two days early", time: "12m", icon: "\u{1F4B3}" },
+  { id: 6, title: "Review left \u00B7 5.0", description: "Luminari \u2014 \u201CDid what they said they would.\u201D", time: "18m", icon: "\u2B50" },
+  { id: 7, title: "Enquiry answered", description: "HOH \u2014 replied while the shop was shut", time: "26m", icon: "\u{1F4AC}" },
+  { id: 8, title: "New order \u00B7 $86.50", description: "Family Tree \u2014 pickup, Thornhill", time: "33m", icon: "\u{1F6CD}" },
+];
+
 /** the gallery: the sites we built and the businesses behind them, from public/clients */
 const WORK: { src: string; alt: string }[] = [
   { src: "/clients/amazingdonuts/site-1-sm.webp", alt: "Amazing Donuts — the site we built" },
-  { src: "/clients/amritsari/photo-1.webp", alt: "Amritsari — at work" },
-  { src: "/clients/amritsari/site-1-sm.webp", alt: "Amritsari — the site we built" },
   { src: "/clients/ar26/photo-1.webp", alt: "AR26 — at work" },
   { src: "/clients/ar26/site-1-sm.webp", alt: "AR26 — the site we built" },
   { src: "/clients/familytree/photo-1.webp", alt: "Family Tree — at work" },
@@ -49,7 +59,6 @@ const WORK: { src: string; alt: string }[] = [
   { src: "/clients/bubbys/site-1-sm.webp", alt: "Bubby's — the site we built" },
   { src: "/clients/mes/photo-1.webp", alt: "MES — at work" },
   { src: "/clients/carmel/site-1-sm.webp", alt: "Carmel — the site we built" },
-  { src: "/clients/royaldairy/photo-1.webp", alt: "Royal Dairy — at work" },
   { src: "/clients/chocolatecharm/site-1-sm.webp", alt: "Chocolate Charm — the site we built" },
   { src: "/clients/uzbek/photo-1.webp", alt: "Uzbek — at work" },
   { src: "/clients/crema/site-1-sm.webp", alt: "Crema — the site we built" },
@@ -78,13 +87,24 @@ export default function Prototype() {
       {/* ============================ header ============================ */}
       <header className="site-head" id="head">
         <div className="wrap">
-          <a className="brand" href="#top">
-            <img src="brand/tcg-logo-s-h.svg" alt="Talkerstein Consulting Group" />
+          {/* menu on the left, with the lockup beside it once the page has scrolled past
+              the masthead. The menu is the icon alone until it is pointed at, when the
+              word opens out of it. */}
+          <div className="head-left">
+            <button className="btn sm sprout icon-word menu-btn" type="button" aria-label="Menu">
+              <span className="word" aria-hidden="true">Menu</span>
+              <svg className="glyph" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <a className="brand" href="#top">
+              <img src="brand/tcg-logo-s-h.svg" alt="Talkerstein Consulting Group" />
+            </a>
+          </div>
+
+          {/* and the booking on the right: the calendar alone, opening its word on hover */}
+          <a className="btn sm sprout icon-word book-btn" href="/book" aria-label="Book a call">
+            <svg className="glyph" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span className="word" aria-hidden="true">Book a call</span>
           </a>
-          <button className="btn sm sprout" type="button">
-            Menu
-            <svg className="glyph" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-          </button>
         </div>
       </header>
 
@@ -92,27 +112,36 @@ export default function Prototype() {
       <main id="top">
       <section className="hero">
         <div className="wrap">
-          <h1>Better Business Systems</h1>
-          <p className="deck">What would you like to make easier?</p>
-
+          {/* the masthead: the logotype centred, with the place to its left and the
+              edition date to its right, both sitting on the wordmark's lower baseline.
+              The date is filled in on mount (America/Toronto), so a static page never
+              prints a stale edition. */}
+          <div className="masthead">
+            <span className="folio-side">Toronto, Ontario</span>
+            <div className="nameplate">
+              <img src="brand/tcg-text.svg" alt="Talkerstein Consulting Group" fetchPriority="high" />
+            </div>
+            <span className="folio-side right" id="folio-date">Today</span>
+          </div>
 
           <div className="plate">
-            {/* TCG's own photography: the eight service shots, plus two client jobs.
+            {/* Leyendecker-style hero plates (Higgsfield; recipe in reference/leyendecker-higgsfield-recipe.md).
                  Order matches EXAMPLES in the script below. */}
             <div className="shots" id="shots" aria-hidden="true">
-              <img className="on" src="photos/electrical.webp" alt="" fetchPriority="high" />
-              <img src="photos/auto-service.webp" alt="" />
-              <img src="photos/restaurant.webp" alt="" />
-              <img src="photos/paperwork.webp" alt="" />
-              <img src="photos/salon.webp" alt="" />
-              <img src="photos/takeout.webp" alt="" />
-              <img src="photos/events.webp" alt="" />
-              <img src="photos/clinic.webp" alt="" />
-              <img src="photos/retail.webp" alt="" />
-              <img src="photos/catering.webp" alt="" />
+              <img className="on" src="photos/leyendecker/electrical.webp" alt="" fetchPriority="high" />
+              <img src="photos/leyendecker/auto-service.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/restaurant.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/paperwork.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/salon.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/takeout.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/events.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/clinic.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/retail.webp" alt="" loading="lazy" />
+              <img src="photos/leyendecker/catering.webp" alt="" loading="lazy" />
             </div>
 
 
+            <div className="askwrap">
             <form className="ask">
               <label className="sr" htmlFor="q">Describe what you need</label>
               <input id="q" type="text" placeholder="Try ‘Quotes take me three hours every night’" autoComplete="off" />
@@ -126,18 +155,49 @@ export default function Prototype() {
                 <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </button>
             </form>
+            </div>
 
-            <p className="shot-cap" id="cap" aria-live="polite"><i></i><span>Example 1 of 10</span></p>
+            {/* the control that pages the plates: a chevron in each bottom corner of the
+                picture, the count between them. The example itself is no longer printed
+                over the art — it stays as the ask bar's placeholder, and here only for a
+                screen reader, which still needs to be told the plate changed. */}
+            <p className="sr" id="cap" aria-live="polite"><span>Example 1 of 10</span></p>
+
+            <div className="pager">
+              <button className="btn icon sprout" type="button" id="prev" aria-label="Previous example">
+                <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <span className="count sr" id="count">1 / 10</span>
+              <button className="btn icon sprout" type="button" id="next" aria-label="Next example">
+                <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
           </div>
 
-          <div className="rotor">
-            <button className="btn icon sprout" type="button" id="prev" aria-label="Previous example">
-              <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <span className="count" id="count">1 / 10</span>
-            <button className="btn icon sprout" type="button" id="next" aria-label="Next example">
-              <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
+          {/* the headline sits under the picture, the way a front page runs it below the cut */}
+          <h1>We Make Better Business Systems</h1>
+          <p className="deck">What would you like to make easier?</p>
+        </div>
+      </section>
+
+      {/* ============================ the map ============================ */}
+      {/* straight under the headline: every client we have, where they actually are */}
+      <section className="mapwide">
+        <div className="wrap">
+          <div className="mapplate" id="mapplate">
+          <iframe src="/map" title="Every Talkerstein client across the GTA. Drag to pan, scroll to zoom, click a pin." loading="lazy"></iframe>
+          {/* the whole plate opens the map full screen; panning, the chips and the pins
+              are all worked there, where there is room for them */}
+          <button className="map-open" id="mapopen" type="button" aria-label="Open the map full screen">
+            <span className="map-hint">
+              <svg className="glyph" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              Full screen
+            </span>
+          </button>
+          {/* and the way back out of it */}
+          <button className="map-close" id="mapclose" type="button" aria-label="Close the map">
+            <svg className="glyph" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
           </div>
         </div>
       </section>
@@ -252,15 +312,6 @@ export default function Prototype() {
         </div>
       </section>
 
-      {/* ============================ the map ============================ */}
-      <section className="mapwide">
-        <div className="wrap">
-          <div className="mapplate">
-          <iframe src="/map" title="Every Talkerstein client across the GTA. Drag to pan, scroll to zoom, click a pin." loading="lazy"></iframe>
-          </div>
-        </div>
-      </section>
-
       {/* ============================ three rows ============================ */}
       <div className="wrap">
       <section className="rows">
@@ -299,7 +350,7 @@ export default function Prototype() {
         <article className="row">
           <div className="row-vis">
               <div className="vis dome">
-                <DomeGallery images={WORK} segments={20} grayscale={false} fit={0.7} overlayBlurColor="#19254A" />
+                <DomeGallery images={WORK} segments={20} grayscale={false} fit={0.7} overlayBlurColor="#19254A" autoSpinDegPerSec={5} />
               </div>
             </div>
           <div className="row-copy">
@@ -312,20 +363,31 @@ export default function Prototype() {
         {/* row 3 */}
         <article className="row">
           <div className="row-vis">
-              <div className="vis coins">
-                <GrainMass
-                  colors={["#3C5BA8", "#F3F7F3"]}
-                  backgroundColor="#19254A"
-                  /* the coin's key light sits straight above and in front of it
-                     (Lightformer at [0, 5, 2]), so the mass is lit from there too */
-                  lightX={0}
-                  lightY={0.95}
-                  className="grainfield"
+              <div className="vis notes">
+                {/* the work landing as it happens: orders, bookings, invoices, reviews,
+                    stacked the way a shop sees them come in. The list runs on forever. */}
+                <AnimatedList
+                  items={NOTES}
+                  layout="stack"
+                  position="center"
+                  entrance="morph"
+                  interval={2200}
+                  initialCount={3}
+                  maxItems={5}
+                  height="100%"
+                  gap={12}
+                  radius={16}
+                  padding={14}
+                  stackDepth={3}
+                  peek={14}
+                  pauseOnHover
+                  expandOnHover
+                  liveTime={false}
+                  theme="light"
+                  accentColor="#B3530E"
+                  cardColor="#F3F7F3"
+                  className="notefeed"
                 />
-                {/* the Talkerstein coin, the real one: public/models/lion-coin.glb */}
-                <div className="coin-stage">
-                  <LionCoin spin />
-                </div>
               </div>
             </div>
           <div className="row-copy">

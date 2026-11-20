@@ -144,6 +144,20 @@ img, svg { display: block; max-width: 100%; }
   border: var(--outer-stroke) solid transparent; background: transparent;
 }
 .btn.sm { font-size: 14px; padding: 10px 16px; min-height: 44px; }
+/* buttons that read as the icon alone and open their word out on hover or keyboard focus
+   (the menu, the booking). Square while closed: one spacing token on all four sides. */
+.btn.icon-word { gap: 0; padding: var(--s2); min-height: 0; }
+/* the tumble wrapper spaces its children too, so the closed button stays square */
+.btn.icon-word .label > span { gap: 0; }
+.btn.icon-word .word {
+  display: inline-block; max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap;
+  transition: max-width .32s cubic-bezier(.22,1,.36,1), opacity .2s ease, margin .32s cubic-bezier(.22,1,.36,1);
+}
+.btn.icon-word:hover .word,
+.btn.icon-word:focus-visible .word { max-width: 12ch; opacity: 1; }
+/* the menu's word opens to the left of its icon, the booking's to the right of its own */
+.menu-btn:hover .word, .menu-btn:focus-visible .word { margin-right: var(--s1); }
+.book-btn:hover .word, .book-btn:focus-visible .word { margin-left: var(--s1); }
 .btn.icon { width: var(--icon-btn, 48px); height: var(--icon-btn, 48px); padding: 0; flex: none; }
 .btn.icon .label { clip-path: inset(0 -4px); }
 
@@ -177,27 +191,71 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
    =========================================================================== */
 .site-head {
   position: sticky; top: 0; z-index: 60;
+  /* clear at the top of the page: the masthead runs up under this bar, and glass over
+     it would veil the logotype. The bar takes its glass once it is actually stuck. */
+  background: transparent;
+  border-bottom: var(--inner-stroke) solid transparent;
+  transition: border-color .3s ease, background-color .3s ease;
+}
+.site-head.stuck {
+  border-bottom-color: var(--steel-15);
   background: color-mix(in srgb, var(--sea) 86%, transparent);
   backdrop-filter: blur(12px) saturate(1.1);
-  border-bottom: var(--inner-stroke) solid transparent;
-  transition: border-color .3s ease;
 }
-.site-head.stuck { border-bottom-color: var(--steel-15); }
 .site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-height: 76px; }
+.head-left { display: flex; align-items: center; gap: var(--s2); }
+/* the booking button: outlined, not filled — the ask bar is this page's one main action */
+.book-btn { gap: var(--s1); }
 .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+/* at the top of the page the nameplate carries the name, so the header does not: the
+   lockup (lion and all) fades in only once the masthead has been scrolled past */
+.site-head .brand { opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+.site-head.stuck .brand { opacity: 1; pointer-events: auto; }
 .brand img { height: 34px; width: auto; }
 .brand .tag { font: 600 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--label); padding-left: 12px; border-left: var(--inner-stroke) solid var(--steel-15); }
 
 /* ===========================================================================
    hero
    =========================================================================== */
-.hero { position: relative; padding-top: var(--s6); }
+/* The hero is set as a front page: the logotype as the nameplate, a folio line under it,
+   the picture as the cut — carrying its own caption band and pager — and the headline
+   below the cut. The rules are the build's own line system (--outer-stroke /
+   --inner-stroke / --gap); the ink is Steel Blue on Sea Breeze. */
+/* the masthead rides up under the sticky bar — at the top of the page that bar carries
+   nothing but the menu, so the logotype can sit where a nameplate belongs */
+.hero { position: relative; padding-top: 0; margin-top: calc(-1 * var(--s5)); }
 .hero .wrap { text-align: center; }
-.hero h1 {
-  font-family: var(--head); font-size: var(--h1-size); line-height: .98;
-  letter-spacing: -.015em; margin-bottom: var(--s3);
+
+/* the masthead row: place, logotype, edition date. The side lines are aligned on the
+   baseline of the wordmark's lower line, so they sit level with "Consulting Group"
+   rather than floating against the big letters above it. No rules anywhere. */
+.hero .masthead {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline;
+  gap: var(--s2); margin-bottom: var(--s3);
 }
-.hero .deck { font-size: 19px; color: var(--steel-70); max-width: 34ch; margin: 0 auto var(--s4); }
+.hero .folio-side {
+  font: 500 11px/1.4 var(--body);
+  letter-spacing: .2em; text-transform: uppercase; color: var(--label);
+  text-align: left; white-space: nowrap;
+}
+.hero .folio-side.right { text-align: right; }
+
+/* the logotype: the wordmark alone, no lion up here (brand/tcg-text.svg) */
+.hero .nameplate { display: flex; justify-content: center; }
+.hero .nameplate img { width: min(620px, 100%); height: auto; }
+
+/* the headline, under the cut */
+.hero h1 {
+  font-family: var(--head); font-size: var(--h1-size); line-height: .95;
+  letter-spacing: -.02em; margin: var(--s4) 0 0;
+}
+
+/* the standfirst: type alone, no rules around it, and set bold */
+.hero .deck {
+  max-width: 40ch; margin: var(--s2) auto 0;
+  font-size: 19px; font-weight: 600; color: var(--steel);
+}
+
 .hero .ask { margin: 0; }
 
 /* the plate: the photo the ask bar floats on (america.gov's hero card) */
@@ -225,16 +283,13 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
   background: linear-gradient(to bottom, rgb(25 37 74 / .34) 0%, rgb(25 37 74 / .06) 34%, rgb(25 37 74 / 0) 60%);
 }
-/* the caption the photo carries, bottom-left, like the example label */
-.shot-cap {
-  position: absolute; z-index: 2; left: var(--s3); bottom: var(--s3);
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 7px 14px; border-radius: 999px;
-  background: rgb(243 247 243 / .92); backdrop-filter: blur(6px);
-  font: 500 12px/1.4 var(--body); letter-spacing: .04em; color: var(--steel);
-  max-width: calc(100% - 2 * var(--s3));
+/* the cutline itself: the example the plate is showing, set left inside the band */
+.hero .cutline {
+  display: flex; align-items: center; gap: 10px; min-width: 0; text-align: left;
+  font: 400 13px/1.4 var(--body); color: var(--steel-70);
 }
-.shot-cap i { width: 6px; height: 6px; border-radius: 999px; background: var(--orange); flex: none; }
+.hero .cutline span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero .cutline i { width: 6px; height: 6px; border-radius: 999px; background: var(--orange); flex: none; }
 
 /* the ask bar */
 .ask {
@@ -266,6 +321,31 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
 }
 .ask .send.on { --ink: var(--sea); filter: brightness(1.06); }   /* the line is Sea Breeze here, not orange on orange */
 .ask .send svg { width: 20px; height: 20px; stroke-width: 2; }
+
+/* --- the hero plate holds both bars: the ask at the top, the caption band at the foot.
+       The plate keeps its rounded corners and its frame; nothing here squares off. --- */
+/* the cut is capped against the window as well as shaped, so the headline under it is
+   on screen at the top of the page rather than a scroll away */
+.hero .plate {
+  display: flex; flex-direction: column; justify-content: space-between;
+  aspect-ratio: 16 / 9; max-height: 56svh;
+}
+.hero .askwrap { position: relative; z-index: 3; text-align: left; }
+
+/* the pager sits on the picture's bottom corners: a chevron hard left, a chevron hard
+   right, the count between them. Each control carries a Sea Breeze disc so it reads over
+   whatever is painted behind it. */
+.hero .pager {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+}
+.hero .pager .btn.icon {
+  width: 40px; height: 40px; flex: none;
+  background: rgb(243 247 243 / .92); backdrop-filter: blur(6px);
+}
+/* the count is not printed on the picture any more — it stays in the markup, read out
+   to a screen reader as the plates change, and .sr keeps it off the page */
+.hero .pager .count.sr { padding: 0; background: none; }
 
 .bubble-q {
   justify-self: end; max-width: 70%;
@@ -413,15 +493,55 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
 .mapplate { aspect-ratio: 16 / 9; }
 /* the live map: /map renders the build reference's three.js engine pinned to its map state,
    and nothing else. Panning, zooming, the category chips and the client pins all work. */
-/* The frame runs taller than the plate and is pulled up behind it. Measured: the client
-   pins sit between 277px and 834px down a 956px frame, so lifting it 36.5% of the plate's
-   height puts the top of that band just inside the plate's top edge and crops the empty
-   land north of the city. The pins already span 91% of the width. */
+/* The frame is the plate, one to one. It used to run taller and be pulled up to crop the
+   empty land north of the city, but that cut off the two things on the map a visitor
+   actually uses: the category chips along the top and the zoom and recentre controls at
+   the bottom right. The map fits itself to whatever box it is given, so giving it this
+   one keeps its own furniture inside the frame. */
 .mapplate { position: relative; overflow: hidden; }
 .mapplate iframe {
-  position: absolute; top: -36.5%; left: 0;
-  width: 100%; height: 148%; display: block; border: 0;
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; display: block; border: 0;
 }
+
+/* the click target over the plate, and the chip that says what the click does */
+.map-open {
+  position: absolute; inset: 0; z-index: 2;
+  border: 0; background: transparent; cursor: zoom-in;
+  display: flex; align-items: flex-end; justify-content: flex-start;
+  padding: var(--s3);
+}
+.map-hint {
+  display: inline-flex; align-items: center; gap: var(--s1);
+  padding: 7px 14px; border-radius: 999px;
+  background: rgb(243 247 243 / .92); backdrop-filter: blur(6px);
+  border: var(--inner-stroke) solid var(--steel-15);
+  font: 500 12px/1 var(--body); letter-spacing: .04em; color: var(--steel);
+  transition: background .25s ease, color .25s ease;
+}
+.map-open:hover .map-hint, .map-open:focus-visible .map-hint { background: var(--steel); color: var(--sea); }
+.map-open:hover .map-hint .glyph, .map-open:focus-visible .map-hint .glyph { color: var(--sea); }
+
+/* full screen: the plate takes the window, drops its frame and its shape, and the click
+   target comes off so the map underneath takes the pointer */
+.mapplate.full {
+  position: fixed; inset: 0; z-index: 95;
+  aspect-ratio: auto; width: 100vw; height: 100svh;
+  border: 0; border-radius: 0; box-shadow: none; padding: 0;
+}
+.mapplate.full .map-open { display: none; }
+body.mapopen { overflow: hidden; }
+
+/* the close, only while the map is open over the page */
+.map-close {
+  position: absolute; z-index: 3; top: var(--s3); right: var(--s3);
+  display: none; place-items: center; width: 44px; height: 44px;
+  border-radius: 999px; cursor: pointer; color: var(--steel);
+  background: rgb(243 247 243 / .92); backdrop-filter: blur(6px);
+  border: var(--outer-stroke) solid var(--steel);
+}
+.mapplate.full .map-close { display: grid; }
+.map-close:hover { background: var(--steel); color: var(--sea); }
 
 
 /* ===========================================================================
@@ -614,7 +734,15 @@ html.chatting, html.chatting body { overflow: hidden; }
   .hero .deck { font-size: 17px; margin-bottom: var(--s4); }
   :root { --plate-pad: 12px; }
   .plate { border-radius: 20px; aspect-ratio: 4 / 5; }
-  .shot-cap { left: 12px; bottom: 12px; max-width: calc(100% - 24px); font-size: 11px; padding: 6px 11px; }
+  /* the window cap is a desktop concern: on a phone the cut keeps its tall crop */
+  .hero .plate { aspect-ratio: 4 / 5; max-height: none; }
+  .hero h1 { text-align: left; }   /* D10: headings sit left on phones */
+  /* on a phone the masthead stacks: the logotype on its own line, place and date under it */
+  .hero .masthead { grid-template-columns: 1fr auto; gap: 6px var(--s2); }
+  .hero .nameplate { grid-column: 1 / -1; order: -1; margin-bottom: 6px; }
+  .hero .folio-side { font-size: 10px; letter-spacing: .14em; }
+  .hero .deck { text-align: left; max-width: none; }
+  .hero .pager .btn.icon { width: 36px; height: 36px; }
   .ask { padding: 5px 6px 5px 16px; gap: 6px; }
   .ask input { font-size: 16px; padding-block: 10px; }
   .ask .btn.icon { width: 38px; height: 38px; }
@@ -647,10 +775,13 @@ html.chatting, html.chatting body { overflow: hidden; }
 }
 .vis.bare::before { display: none; }
 .vis.bare .orbit { width: 100%; }
-/* the mark sits at the centre the orbit turns around */
+/* the mark sits at the centre the orbit turns around. OrbitImages stacks the far
+   half of the ellipse at z 10-90 and the near half at 110-190, so the mark sits at
+   100: the tools passing behind it go under, the ones passing in front go over. */
 .vis.bare .orbit-mark {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 136px; height: auto; border-radius: 50%; pointer-events: none; z-index: 1;
+  width: clamp(180px, 26%, 300px); height: auto; border-radius: 50%;
+  pointer-events: none; z-index: 100;
 }
 /* circle containers for every tool */
 .vis.bare .orbit img {
@@ -664,12 +795,26 @@ html.chatting, html.chatting body { overflow: hidden; }
   padding: 0; overflow: hidden; background: var(--steel);
   aspect-ratio: 1 / 1; min-height: 420px;
   display: block;
+  /* and no rounded frame left on it either: the sphere fills its box corner to corner */
+  border-radius: 0;
+  /* no plate around the dome: the sphere is the picture, so the double line and
+     the inset rule that .vis draws come off it */
+  border: 0; box-shadow: none;
 }
 .vis.dome::before { display: none; }
 .vis.dome > * { width: 100%; height: 100%; }
 .vis.dome .sphere-root { width: 100%; height: 100%; }
 
-/* 3 - the coins, on plain blue */
+/* 3 - the notifications feed: the day's orders landing, on plain blue */
+.vis.notes {
+  padding: var(--s4); overflow: hidden; background: var(--steel);
+  border: 0; box-shadow: none;
+  display: grid; place-items: stretch;
+}
+.vis.notes::before { display: none; }
+.vis.notes .notefeed { width: 100%; height: 100%; }
+
+/* 3 (was) - the coins, on plain blue */
 .vis.coins { padding: 0; background: var(--steel); }
 .vis.coins::before { display: none; }
 .vis.coins .coinfield { width: 100%; height: 100%; }

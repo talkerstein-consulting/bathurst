@@ -115,6 +115,47 @@ export default function runPrototype() {
 
   /* ---- next script ---- */
 
+  /* ---------- the map opens full screen ----------
+     In the page the plate is a picture of the map with a click target over it; full
+     screen is where it is actually worked, so the target comes off while it is open. */
+  (() => {
+    const plate = document.getElementById("mapplate");
+    const open = document.getElementById("mapopen");
+    const close = document.getElementById("mapclose");
+    if (!plate || !open) return;
+
+    /* the plate takes the whole window itself rather than asking for native full screen:
+       the API is refused inside an embedded browser and is not supported for an element
+       on iOS, and this behaves the same everywhere. */
+    function show(on) {
+      plate.classList.toggle("full", on);
+      document.body.classList.toggle("mapopen", on);
+      if (on) close?.focus();
+      else open.focus();
+    }
+    open.addEventListener("click", () => show(true));
+    close?.addEventListener("click", () => show(false));
+    addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && plate.classList.contains("full")) show(false);
+    });
+  })();
+
+  /* ---------- the folio dateline ----------
+     Filled in here rather than at build time: the page is static, and a front page that
+     prints the day it was deployed is worse than no date at all. Toronto's day, not the
+     reader's, since that is the business the paper is set in. */
+  (() => {
+    const el = document.getElementById("folio-date");
+    if (!el) return;
+    try {
+      /* compact, day first: 20 Nov 2026 */
+      el.textContent = new Date().toLocaleDateString("en-GB", {
+        timeZone: "America/Toronto",
+        day: "2-digit", month: "short", year: "numeric",
+      });
+    } catch { /* leave the fallback edition line in place */ }
+  })();
+
   /* ---------- the rotating hero example ----------
      One question per photo, same order as the <img> stack in .shots. */
   const EXAMPLES = [
@@ -141,8 +182,8 @@ export default function runPrototype() {
   function render(n) {
     i = (n + EXAMPLES.length) % EXAMPLES.length;
     input.placeholder = "Try ‘" + EXAMPLES[i] + "’";
-    count.textContent = (i + 1) + " / " + EXAMPLES.length;
-    cap.textContent = "Example " + (i + 1) + " of " + EXAMPLES.length + ": " + EXAMPLES[i];
+    count.textContent = "No. " + (i + 1) + " of " + EXAMPLES.length;
+    cap.textContent = "Fig. " + (i + 1) + " — " + EXAMPLES[i] + ".";
     shots.forEach((img, n2) => img.classList.toggle("on", n2 === i));
   }
 
