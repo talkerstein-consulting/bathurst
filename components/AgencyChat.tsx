@@ -330,7 +330,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
         </form>
       </div>
     </dialog>
-    <dialog ref={sheet} id="chat-panel" className="chat-sheet" aria-label={panel === "booking" ? "Book a call" : panel === "landing-menu" ? "Main menu" : "Chat menu"}
+    <dialog ref={sheet} id="chat-panel" className="chat-sheet" data-landing-menu={panel === "landing-menu" || undefined} aria-label={panel === "booking" ? "Book a call" : panel === "landing-menu" ? "Main menu" : "Chat menu"}
       onClose={() => setPanel(null)} onCancel={e => {e.preventDefault(); void dismissSheet();}} onClick={e => {
         if (e.target !== e.currentTarget) return;
         const r = e.currentTarget.getBoundingClientRect();

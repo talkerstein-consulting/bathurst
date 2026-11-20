@@ -328,6 +328,12 @@ test("landing titles and prompt examples stagger their words, and the menu retur
   await menu.click();
   const dialog = page.getByRole("dialog", {name:"Main menu"});
   await expect(dialog.getByRole("link")).toHaveCount(4);
+  const clearance = await dialog.evaluate(el => {
+    const panel = el.getBoundingClientRect();
+    const links = el.querySelector("nav")!.getBoundingClientRect();
+    return Math.abs((links.top - panel.top) - (panel.bottom - links.bottom));
+  });
+  expect(clearance).toBeLessThanOrEqual(1);
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(menu).toBeFocused();

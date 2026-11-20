@@ -935,3 +935,9 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
   @keyframes prompt-word-in { from { opacity: 0; transform: translateY(85%); } }
 }
 @media (max-width:760px) { .prompt-example { font-size: 16px; } }
+
+/* Keep the landing links centered in the whole panel, with the close control in its corner. */
+.chat-sheet[data-landing-menu] { --menu-inset: 22px; padding-block: clamp(50px, 9dvh, 64px); }
+.chat-sheet[data-landing-menu] .sheet-close { position: absolute; top: var(--menu-inset); right: var(--menu-inset); z-index: 1; }
+.chat-sheet[data-landing-menu] .sheet-links { padding-block: 0; }
+@media (max-width:760px) { .chat-sheet[data-landing-menu] { --menu-inset: 16px; } }
