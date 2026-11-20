@@ -139,7 +139,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
   }, [docked, open, panel, draft]);
   useEffect(() => {
     if (paused || docked || open || draft) return;
-    const timer = setInterval(() => { if (!document.hidden) setIndex(previous => (previous + 1) % examples.length); }, 6000);
+    const timer = setInterval(() => { if (!document.hidden) setIndex(previous => (previous + 1) % examples.length); }, 5000);
     return () => clearInterval(timer);
   }, [paused, docked, open, draft]);
   useEffect(() => {
