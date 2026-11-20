@@ -39,16 +39,26 @@ test("suggestions preserve a draft and support a sourced conversation with follo
   await expect(dialog).toBeHidden();
 });
 
-test("the scrolled ask control stays in the header and can receive a tap above the artwork", async ({page}) => {
+test("the scrolled composer preserves the draft and sends from the bottom of the viewport", async ({page}) => {
+  await page.route("**/api/chatbot", route => route.fulfill({json:{answer:"A response from the test.",sources:[],followups:[]}}));
   await page.goto("/chatbot");
+  const input = page.getByRole("combobox");
+  await input.fill("Which ads");
   await page.locator(".vis.bare").scrollIntoViewIfNeeded();
-  const ask = page.getByRole("button", {name:"Ask Talkerstein"});
-  await expect(ask).toBeInViewport();
-  const bounds = await ask.boundingBox();
-  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(80);
-  expect(await page.locator(".vis.bare").evaluate(el => getComputedStyle(el).isolation)).toBe("isolate");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await ask.click();
+  const dock = page.locator('.agency-composer[data-docked="true"]');
+  await expect(dock).toBeInViewport();
+  await expect(input).toHaveValue("Which ads");
+  const bounds = await dock.boundingBox();
+  const gap = page.viewportSize()!.height - bounds!.y - bounds!.height;
+  expect(gap).toBeGreaterThanOrEqual(12);
+  expect(gap).toBeLessThan(36);
+  await input.fill("");
+  await input.click();
+  const options = await page.getByRole("listbox").boundingBox();
+  expect(options!.y + options!.height).toBeLessThan(bounds!.y);
+  await input.fill("Which ads bring customers?");
+  await dock.getByRole("button", {name:"Send question"}).click();
+  await expect(page.getByText("A response from the test.")).toBeVisible();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("dialog", {name:"Ask Talkerstein"}).getByRole("button", {name:"Menu", exact:true}).click();
   await page.getByRole("dialog", {name:"Chat menu"}).getByRole("button", {name:"Close conversation"}).click();
@@ -77,7 +87,7 @@ test("narrow screen keeps the menu and composer actions inside the viewport", as
   await page.getByRole("button",{name:"Next example"}).click();
   await expect(page.locator(".rotor .count")).toHaveText("2 / 10");
   await page.locator(".vis.bare").scrollIntoViewIfNeeded();
-  await page.locator(".ask-return").waitFor();
+  await page.locator('.agency-composer[data-docked="true"]').waitFor();
   const menu = await page.getByRole("banner").getByRole("button", {name:"Menu", exact:true}).boundingBox();
   expect(menu!.x + menu!.width).toBeLessThanOrEqual(320);
 });
@@ -338,4 +348,23 @@ test("landing titles and prompt examples stagger their words, and the menu retur
   await expect(dialog).toBeHidden();
   await expect(menu).toBeFocused();
   await expect(input).toHaveValue("My question");
+});
+
+test("bottom suggestions rotate independently of the paused hero and submit the displayed example", async ({page}) => {
+  await page.route("**/api/chatbot", route => route.fulfill({json:{answer:"Example received.",sources:[],followups:[]}}));
+  await page.goto("/chatbot");
+  await page.getByRole("button", {name:"Next example"}).click();
+  await expect(page.getByRole("button", {name:"Play examples"})).toBeVisible();
+  await page.locator(".vis.bare").scrollIntoViewIfNeeded();
+  const input = page.getByRole("combobox");
+  const dock = page.locator('.agency-composer[data-docked="true"]');
+  await expect(dock).toBeInViewport();
+  const first = await input.getAttribute("placeholder");
+  await expect(input).not.toHaveAttribute("placeholder", first!, {timeout:9000});
+  await input.focus();
+  const example = await input.getAttribute("placeholder");
+  await expect(page.locator(".rotor .count")).toHaveText("2 / 10");
+  const shown = example!.slice(5, -1);
+  await dock.getByRole("button", {name:"Ask this example"}).click();
+  await expect(page.locator(".msg-u").last()).toHaveText(shown);
 });

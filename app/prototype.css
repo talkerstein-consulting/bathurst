@@ -678,13 +678,11 @@ html.chatting, html.chatting body { overflow: hidden; }
 /* The header owns the scrolled entry point. Graphics keep their depth order inside their own tiles. */
 .row-vis, .vis, .plate { isolation: isolate; }
 .ask-nav { display: flex; gap: 12px; align-items: center; }
-.ask-return, .rotor button {
+.rotor button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; border: 1px solid var(--steel-15); border-radius: 999px;
   padding: 0 16px; background: var(--sea); color: var(--steel); font: 500 15px/1 var(--body); cursor: pointer;
 }
-.ask-return { background: var(--steel); color: var(--sea); }
-.ask-return svg { width: 16px; }
 .agency-composer { position: relative; z-index: 4; }
 .agency-composer .ask { background: var(--sea); }
 #ask-options { margin-top: 7px; padding: 6px; border-radius: 20px; border: 1px solid var(--steel-15); background: var(--sea); box-shadow: 0 10px 24px #19254a26; }
@@ -718,7 +716,6 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 .agency-composer input:focus-visible { outline: 0; }
 @media (max-width: 760px) {
   .ask-nav { gap: 6px; }
-  .ask-return { padding-inline: 10px; font-size: 14px; }
   .site-head .brand img { max-width: min(35vw, 155px); height: auto; }
   .hero h1 { font-size: clamp(43px, 10.9vw, 76px); }
   .chat-top { padding-block: 8px; }
@@ -941,3 +938,25 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 .chat-sheet[data-landing-menu] .sheet-close { position: absolute; top: var(--menu-inset); right: var(--menu-inset); z-index: 1; }
 .chat-sheet[data-landing-menu] .sheet-links { padding-block: 0; }
 @media (max-width:760px) { .chat-sheet[data-landing-menu] { --menu-inset: 16px; } }
+
+.hero-media { position: relative; }
+.composer-anchor {
+  position: absolute; inset: calc(var(--plate-pad) + 1px) calc(var(--plate-pad) + 1px) auto;
+  height: 60px; text-align: left; pointer-events: none;
+}
+.agency-composer { pointer-events: auto; }
+.agency-composer[data-docked="true"] {
+  position: fixed; z-index: 65; inset: auto 0 calc(var(--keyboard-inset, 0px) + max(22px, env(safe-area-inset-bottom))) 0;
+  width: min(720px, calc(100% - 2 * var(--gutter))); margin-inline: auto;
+}
+.agency-composer[data-docked="true"] .ask { box-shadow: 0 4px 22px rgb(25 37 74 / .13); }
+.agency-composer[data-docked="true"] .ask:focus-within { outline: 2px solid var(--orange); outline-offset: 2px; }
+.agency-composer[data-docked="true"] #ask-options {
+  position: absolute; bottom: calc(100% + 8px); width: 100%; margin: 0;
+  max-height: min(275px, calc(var(--visible-height, 100dvh) - 120px)); overflow-y: auto;
+}
+body:has(.agency-composer) .ft { padding-bottom: max(110px, calc(env(safe-area-inset-bottom) + 96px)); }
+@media (max-width:760px) {
+  .composer-anchor { height: 52px; }
+  .agency-composer[data-docked="true"] { width: calc(100% - 28px); bottom: calc(var(--keyboard-inset, 0px) + max(16px, env(safe-area-inset-bottom))); }
+}

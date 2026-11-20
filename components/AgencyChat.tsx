@@ -49,6 +49,9 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [docked, setDocked] = useState(false);
+  const [dockStep, setDockStep] = useState(0);
+  const promptIndex = docked ? (index + dockStep) % examples.length : index;
+  const promptExample = examples[promptIndex][0];
   const [draft, setDraft] = useState("");
   const [reply, setReply] = useState("");
   const [suggest, setSuggest] = useState(false);
@@ -106,6 +109,34 @@ export default function AgencyChat({children, designPreview = false}: {children:
       document.documentElement.classList.remove("chatting");
     };
   }, []);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const anchor = hero.current;
+    if (!docked || !viewport || !anchor) return;
+    const sync = () => {
+      const inset = viewport.scale === 1 ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
+      anchor.style.setProperty("--keyboard-inset", inset + "px");
+      anchor.style.setProperty("--visible-height", viewport.height + "px");
+    };
+    sync();
+    viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
+    return () => {
+      viewport.removeEventListener("resize", sync);
+      viewport.removeEventListener("scroll", sync);
+      anchor.style.removeProperty("--keyboard-inset");
+      anchor.style.removeProperty("--visible-height");
+    };
+  }, [docked]);
+  useEffect(() => {
+    if (!docked || open || panel || draft) return;
+    const timer = setInterval(() => {
+      if (!document.hidden && !hero.current?.contains(document.activeElement)) {
+        setDockStep(step => (step + 1) % examples.length);
+      }
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [docked, open, panel, draft]);
   useEffect(() => {
     if (paused || docked || open || draft) return;
     const timer = setInterval(() => { if (!document.hidden) setIndex(previous => (previous + 1) % examples.length); }, 6000);
@@ -217,7 +248,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const terms = draft.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const matches = (terms.length ? questions.map(item => ({...item, score: terms.filter(term => (item.q + " " + item.tags).toLowerCase().includes(term)).length}))
     .filter(item => item.score > 0).sort((a,b) => b.score - a.score).slice(0,3)
-    : [questions[index], questions[10], questions[11]]);
+    : [questions[promptIndex], questions[10], questions[11]]);
   const listOpen = suggest && matches.length > 0;
   const suggestion = reusedAnswer === null ? messages.at(-1)?.followups?.find(q => answeredAt(q, messages) === -1)?.trim() || "" : "";
   const outgoing = reply === "" ? suggestion : reply.trim();
@@ -228,46 +259,49 @@ export default function AgencyChat({children, designPreview = false}: {children:
     <header className="site-head" id="head"><div className="wrap">
       <a className="brand" href="#top"><img src="/brand/tcg-logo-s-h.svg" alt="Talkerstein Consulting Group" /></a>
       <div className="ask-nav">
-        {docked && <button className="ask-return" onClick={() => { setOpen(true); }}>Ask Talkerstein <Arrow /></button>}
         <button ref={landingMenu} className="chat-menu-trigger" aria-haspopup="dialog" aria-controls="chat-panel" aria-expanded={panel === "landing-menu"} onClick={() => openMenu(true)}>Menu</button>
       </div>
     </div></header>
     <main id="top">
       <section className="hero"><div className="wrap">
         <RiseHeading text="Better Business Systems" className="landing-title" /><p className="deck">What would you like to make easier?</p>
-        <div className="plate">
-          <div className="shots" aria-hidden="true">
-            {examples.map(([,photo], n) => (index === n || n === (index + 1) % examples.length) &&
-              <img key={photo} className={n === index ? "on" : ""} src={`/photos/${photo}.webp`} alt="" fetchPriority={n === index ? "high" : "low"}/>)}
+        <div className="hero-media">
+          <div className="plate">
+            <div className="shots" aria-hidden="true">
+              {examples.map(([,photo], n) => (index === n || n === (index + 1) % examples.length) &&
+                <img key={photo} className={n === index ? "on" : ""} src={`/photos/${photo}.webp`} alt="" fetchPriority={n === index ? "high" : "low"}/>)}
+            </div>
+            <button type="button" className="shot-cap" onClick={() => send(examples[index][0])}><i/> {examples[index][0]} <span aria-hidden="true">↗</span></button>
           </div>
-          <div className="agency-composer" ref={hero} onBlur={e => {if (!e.currentTarget.contains(e.relatedTarget)) setSuggest(false);}}>
-            <form className="ask" onSubmit={e => {e.preventDefault(); send(listOpen && active >= 0 ? matches[active].q : draft || examples[index][0]);}}>
-              <label className="sr" htmlFor="q">Describe what you need</label>
-              <div className="prompt-field"><input ref={field} id="q" role="combobox" aria-autocomplete="list" aria-expanded={listOpen} aria-controls="ask-options"
-                aria-activedescendant={listOpen && active >= 0 ? "ask-option-" + active : undefined}
-                value={draft} maxLength={2000} autoComplete="off" enterKeyHint="send" placeholder={`Try “${examples[index][0]}”`}
-                onChange={e => {setDraft(e.target.value); setSuggest(true); setActive(-1);}}
-                onFocus={() => {setPaused(true); setSuggest(true);}} onClick={() => setSuggest(true)}
-                onKeyDown={e => {
-                  if (e.nativeEvent.isComposing) return;
-                  if (e.key === "Escape") {setSuggest(false); setActive(-1);}
-                  if ((e.key === "ArrowDown" || e.key === "ArrowUp") && matches.length) {
-                    e.preventDefault(); setSuggest(true);
-                    setActive(i => (i + (e.key === "ArrowDown" ? 1 : i === -1 ? 0 : -1) + matches.length) % matches.length);
-                  }
-                }} />
-                {!draft && <span className="prompt-example" key={index} aria-hidden="true">
-                  {(`Try “${examples[index][0]}”`).split(" ").map((word, n) => <span key={n} style={{"--word": n} as CSSProperties}>{word}{" "}</span>)}
-                </span>}
+          <div className="composer-anchor" ref={hero}>
+            <div className="agency-composer" data-docked={docked} onBlur={e => {if (!e.currentTarget.contains(e.relatedTarget)) setSuggest(false);}}>
+              <form className="ask" onSubmit={e => {e.preventDefault(); send(listOpen && active >= 0 ? matches[active].q : draft || promptExample);}}>
+                <label className="sr" htmlFor="q">Describe what you need</label>
+                <div className="prompt-field"><input ref={field} id="q" role="combobox" aria-autocomplete="list" aria-expanded={listOpen} aria-controls="ask-options"
+                  aria-activedescendant={listOpen && active >= 0 ? "ask-option-" + active : undefined}
+                  value={draft} maxLength={2000} autoComplete="off" enterKeyHint="send" placeholder={`Try “${promptExample}”`}
+                  onChange={e => {setDraft(e.target.value); setSuggest(true); setActive(-1);}}
+                  onFocus={() => {setPaused(true); setSuggest(true);}} onClick={() => setSuggest(true)}
+                  onKeyDown={e => {
+                    if (e.nativeEvent.isComposing) return;
+                    if (e.key === "Escape") {setSuggest(false); setActive(-1);}
+                    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && matches.length) {
+                      e.preventDefault(); setSuggest(true);
+                      setActive(i => (i + (e.key === "ArrowDown" ? 1 : i === -1 ? 0 : -1) + matches.length) % matches.length);
+                    }
+                  }} />
+                  {!draft && <span className="prompt-example" key={promptIndex} aria-hidden="true">
+                    {(`Try “${promptExample}”`).split(" ").map((word, n) => <span key={n} style={{"--word": n} as CSSProperties}>{word}{" "}</span>)}
+                  </span>}
+                </div>
+                <button type="submit" className="send" aria-label={draft.trim() ? "Send question" : "Ask this example"}><Arrow/></button>
+              </form>
+              <div id="ask-options" role="listbox" aria-label="Suggested questions" hidden={!listOpen}>
+                {matches.map(({q}, n) => <button role="option" type="button" id={"ask-option-" + n} aria-selected={active === n}
+                  key={q} tabIndex={-1} onMouseDown={e => e.preventDefault()} onClick={() => send(q)}>{q}<span aria-hidden="true">↗</span></button>)}
               </div>
-              <button type="submit" className="send" aria-label={draft.trim() ? "Send question" : "Ask this example"}><Arrow/></button>
-            </form>
-            <div id="ask-options" role="listbox" aria-label="Suggested questions" hidden={!listOpen}>
-              {matches.map(({q}, n) => <button role="option" type="button" id={"ask-option-" + n} aria-selected={active === n}
-                key={q} tabIndex={-1} onMouseDown={e => e.preventDefault()} onClick={() => send(q)}>{q}<span aria-hidden="true">↗</span></button>)}
             </div>
           </div>
-          <button type="button" className="shot-cap" onClick={() => send(examples[index][0])}><i/> {examples[index][0]} <span aria-hidden="true">↗</span></button>
         </div>
         <div className="rotor">
           <button onClick={() => chooseExample(index-1)} aria-label="Previous example">‹</button>
