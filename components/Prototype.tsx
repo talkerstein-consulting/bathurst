@@ -125,7 +125,12 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
   const [mapOpen, setMapOpen] = useState(false);
   const landing = useLandingMotion();
   const cover = useRef<HTMLButtonElement>(null);
-  const close = useRef<HTMLButtonElement>(null);
+  const mapFrame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (!mapOpen || !mapFrame.current) return;
+    mapFrame.current.parentElement?.scrollIntoView({block: "start", behavior: "instant"});
+    mapFrame.current.focus({preventScroll: true});
+  }, [mapOpen]);
   return (
     <div ref={landing}>
       <AgencyChat designPreview={designPreview}>
@@ -144,12 +149,12 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
       <section className="mapwide">
         <div className="wrap">
           <div className="mapplate">
-            {mapOpen ? <iframe src="/map" title="Interactive map of Talkerstein projects across the GTA" /> :
-              <button className="map-cover" ref={cover} onClick={() => {setMapOpen(true); requestAnimationFrame(() => close.current?.focus({preventScroll: true}));}}>
+            {mapOpen ? <iframe ref={mapFrame} src="/map" title="Interactive map of Talkerstein projects across the GTA" /> :
+              <button className="map-cover" ref={cover} onClick={() => setMapOpen(true)}>
                 <BathurstStreet /><span>Explore the client map ↗</span>
               </button>}
           </div>
-          {mapOpen && <button className="map-close" ref={close} onClick={() => {setMapOpen(false); requestAnimationFrame(() => cover.current?.focus({preventScroll: true}));}}>Close map</button>}
+          {mapOpen && <button className="map-close" onClick={() => {setMapOpen(false); requestAnimationFrame(() => cover.current?.focus({preventScroll: true}));}}>Close map</button>}
         </div>
       </section>
 
