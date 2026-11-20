@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { answeredAt } from "@/lib/chatbot/duplicates";
 import { previewAnswer, previewQuestion } from "@/lib/chatbot/preview";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -22,7 +23,7 @@ const questions = [...examples.map(([q,, tags]) => ({q, tags})),
   { q: "What did Talkerstein build for Fringe Boutique?", tags: "portfolio shopify retail work projects case studies" },
   { q: "How does a business diagnostic work?", tags: "consulting process getting started" },
 ];
-type Message = { role: "assistant" | "user"; content: string; sources?: {title: string; url: string}[]; followups?: string[]; meetingBrief?: string; invite?: boolean };
+type Message = { role: "assistant" | "user"; content: string; sources?: {title: string; url: string}[]; followups?: string[]; meetingBrief?: string; invite?: boolean; paraphrases?: string[] };
 function AnswerRating() {
   const [vote, setVote] = useState<"up" | "down" | null>(null);
   return <div className="answer-rating" role="group" aria-label="Rate this answer">
@@ -57,7 +58,9 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const sheet = useRef<HTMLDialogElement>(null);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
+  const [reusedAnswer, setReusedAnswer] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [historyReady, setHistoryReady] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     if (!designPreview) return [];
     const sample = previewAnswer(previewQuestion);
@@ -71,6 +74,24 @@ export default function AgencyChat({children, designPreview = false}: {children:
   const log = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController | null>(null);
   const stick = useRef(true);
+  const session = useRef("");
+
+  // Keep completed live turns in this tab so a refresh can still find an earlier answer.
+  useEffect(() => {
+    if (designPreview) return;
+    try {
+      const history: unknown = JSON.parse(sessionStorage.getItem("talkerstein.chat.v1") || "[]");
+      if (Array.isArray(history) && history.length && history.at(-1)?.role === "assistant" &&
+        history.every(m => m && (m.role === "assistant" || m.role === "user") && typeof m.content === "string")) {
+        setMessages(history);
+      }
+    } catch { /* Storage can be unavailable in private browsing. */ }
+    setHistoryReady(true);
+  }, [designPreview]);
+  useEffect(() => {
+    if (designPreview || !historyReady || messages.at(-1)?.role !== "assistant") return;
+    try { sessionStorage.setItem("talkerstein.chat.v1", JSON.stringify(messages)); } catch { /* In-memory history still works. */ }
+  }, [messages, designPreview, historyReady]);
 
   useEffect(() => {
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -120,13 +141,20 @@ export default function AgencyChat({children, designPreview = false}: {children:
           sources: invite ? [] : sample.sources, followups: invite ? [] : sample.followups, meetingBrief, invite}]);
         return;
       }
+      const recent = turns.slice(-11);
+      session.current ||= crypto.randomUUID();
       const res = await fetch("/api/chatbot", {
-        method: "POST", headers: {"Content-Type": "application/json"}, signal: ac.signal,
-        body: JSON.stringify({previousBrief, messages: turns.slice(-11).map(({role, content}) => ({role, content}))}),
+        method: "POST", headers: {"Content-Type": "application/json", "X-Chat-Session": session.current}, signal: ac.signal,
+        body: JSON.stringify({previousBrief, messages: recent.map(({role, content, paraphrases}) => ({role, content, paraphrases}))}),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "The answer could not be completed.");
-      if (!ac.signal.aborted) setMessages([...turns, {role: "assistant", content: data.answer, sources: data.sources, followups: data.followups, meetingBrief: data.meetingBrief, invite: data.invite}]);
+      if (!ac.signal.aborted && Number.isInteger(data.reusedIndex)) {
+        setMessages(turns.slice(0, -1));
+        setReusedAnswer(turns.length - recent.length + data.reusedIndex);
+        return;
+      }
+      if (!ac.signal.aborted) setMessages([...turns, {role: "assistant", paraphrases: data.paraphrases, content: data.answer, sources: data.sources, followups: data.followups, meetingBrief: data.meetingBrief, invite: data.invite}]);
     } catch (reason) {
       if (!ac.signal.aborted) setError(reason instanceof TypeError ? "Connection interrupted. Check your connection and retry." : (reason as Error).message);
     } finally {
@@ -140,6 +168,14 @@ export default function AgencyChat({children, designPreview = false}: {children:
     const content = value.trim();
     if (!content || controller.current) return;
     setSuggest(false); setDraft(""); setReply(""); setOpen(true);
+    const earlier = answeredAt(content, messages);
+    if (earlier !== -1) {
+      stick.current = false;
+      setError(""); setReusedAnswer(earlier);
+      requestAnimationFrame(() => document.getElementById("answer-" + earlier)?.scrollIntoView({block:"center"}));
+      return;
+    }
+    setReusedAnswer(null);
     const turns: Message[] = [...messages, {role:"user", content}];
     setMessages(turns); void requestAnswer(turns);
   }
@@ -175,7 +211,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
     .filter(item => item.score > 0).sort((a,b) => b.score - a.score).slice(0,3)
     : [questions[index], questions[10], questions[11]]);
   const listOpen = suggest && matches.length > 0;
-  const suggestion = messages.at(-1)?.followups?.[0]?.trim() || "";
+  const suggestion = reusedAnswer === null ? messages.at(-1)?.followups?.find(q => answeredAt(q, messages) === -1)?.trim() || "" : "";
   const outgoing = reply === "" ? suggestion : reply.trim();
   function chooseExample(n: number) { setPaused(true); setIndex((n + examples.length) % examples.length); }
 
@@ -245,7 +281,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
         <div className="thread" role="log" aria-live="polite" aria-relevant="additions">
           {!messages.length && <p className="ask-empty">What would you like to make easier?</p>}
           {messages.map((m,i) => m.role === "user" ? <p className="msg-u" key={i}>{m.content}</p>
-            : <article className="msg-a beat" key={i}>
+            : <article className="msg-a beat" key={i} id={"answer-" + i}>
               <div className="answer-row">
                 <img className="answer-avatar" src="/icon.png" width="28" height="28" alt="Talkerstein"/>
                 <div className="answer-bubble">
@@ -263,6 +299,8 @@ export default function AgencyChat({children, designPreview = false}: {children:
         {error && <div role="status" className="ask-error">{error} <button onClick={() => void requestAnswer(messages)}>Retry</button></div>}
       </div>
       <div className="chat-foot">
+        {reusedAnswer !== null && <p className="reused-answer" role="status">Already answered in this chat. <button onClick={() =>
+          document.getElementById("answer-" + reusedAnswer)?.scrollIntoView({block:"center"})}>View earlier answer</button></p>}
         <form className="ask" onSubmit={e => { e.preventDefault(); if (busy) stop(); else send(outgoing); }}>
           <label htmlFor="ask-reply" className="sr">Ask a question</label>
           <textarea ref={composer} id="ask-reply" rows={1} maxLength={2000} value={reply}

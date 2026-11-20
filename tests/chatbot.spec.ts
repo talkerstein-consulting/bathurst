@@ -29,8 +29,7 @@ test("suggestions preserve a draft and support a sourced conversation with follo
   expect(requests[0][0].content).toMatch(/stock/);
   expect(requests[1].map(message => message.role)).toEqual(["user","assistant","user"]);
   expect(requests[1].at(-1)?.content).toBe(followup);
-  await reply.press("ArrowRight");
-  await expect(reply).toHaveValue(followup);
+  await expect(reply).toHaveAttribute("placeholder", "Ask a question…");
   await reply.fill("Can you show me the Shopify project?");
   await reply.press("Enter");
   await expect(dialog.locator(".msg-a")).toHaveCount(3);
@@ -195,4 +194,83 @@ test("live booking passes only the reviewed notes to Rishon’s scheduler", asyn
   const url = new URL(calendar.url());
   expect(url.origin + url.pathname).toBe("https://calendly.com/hi-talkerstein/30min");
   expect([...url.searchParams.entries()]).toEqual([["a1","Trace one quote."]]);
+});
+
+test("reuses answered questions across rewording and reload, while changed evidence gets a new answer", async ({page}) => {
+  let calls = 0;
+  await page.route("**/api/chatbot", route => {
+    calls++;
+    return route.fulfill({json:{answer:"Compare the qualified rate.", sources:[], followups:[],
+      paraphrases:["How do I attribute sales-ready prospects to their ads?"]}});
+  });
+  const original = "How can I tell which ads bring in qualified leads?";
+  await page.goto("/chatbot");
+  await page.getByRole("combobox").fill(original);
+  await page.getByRole("combobox").press("Enter");
+  await expect(page.locator(".ask-answer")).toHaveCount(1);
+  await page.reload();
+  await page.getByRole("combobox").fill(original);
+  await page.getByRole("combobox").press("Enter");
+  const reply = page.getByRole("textbox",{name:"Ask a question"});
+  for (const q of ["Which advertisements generate quality leads?", "How do I attribute sales-ready prospects to their ads?"]) {
+    await reply.fill(q);
+    await reply.press("Enter");
+    await expect(page.getByRole("button",{name:"View earlier answer"})).toBeVisible();
+    await expect(page.locator(".ask-answer")).toHaveCount(1);
+  }
+  expect(calls).toBe(1);
+  await reply.fill("Ad A had 40 leads, 8 qualified. What is its qualification rate?");
+  await reply.press("Enter");
+  await expect(page.locator(".ask-answer")).toHaveCount(2);
+  expect(calls).toBe(2);
+});
+
+test("the API returns the prior answer for a paraphrase before invoking the model", async ({request}) => {
+  const response = await request.post("/api/chatbot", {data:{messages:[
+    {role:"user",content:"How can I tell which ads bring in qualified leads?"},
+    {role:"assistant",content:"Compare qualified leads across your ads."},
+    {role:"user",content:"Which advertisements generate high-quality leads?"}
+  ]}});
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({reusedIndex:1,answer:"Compare qualified leads across your ads."});
+});
+
+test("overlapping deliveries share one model call, and a failed delivery can retry", async () => {
+  const {POST} = await import("../app/api/chatbot/route");
+  const originalFetch = globalThis.fetch;
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "local-test";
+  let calls = 0;
+  let shouldFail = false;
+  const session = crypto.randomUUID();
+  const submit = (content: string) => POST(new Request("http://localhost/api/chatbot", {
+    method:"POST", headers:{"Content-Type":"application/json","X-Chat-Session":session},
+    body:JSON.stringify({messages:[{role:"user",content}]})
+  }));
+  globalThis.fetch = async () => {
+    calls++;
+    if (shouldFail) throw new Error("Offline test failure");
+    return Response.json({status:"completed", output:[{content:[{type:"output_text", text:JSON.stringify({
+      answer:"Group by originating ad.", sources:[], followups:[], paraphrases:[],
+      meetingBrief:"Compare ad quality.", bookingIntent:"continue", evidenceRequest:"Can you share the two counts?"
+    })}]}]});
+  };
+  try {
+    const q = "Which ads deliver qualified leads?";
+    const results = await Promise.all([submit(q), submit(q), submit(q)]);
+    for (const result of results) {
+      expect(result.status).toBe(200);
+      expect((await result.json()).answer).toBe("Group by originating ad.\n\nCan you share the two counts?");
+    }
+    expect(calls).toBe(1);
+    shouldFail = true;
+    expect((await submit("What about automation?")).status).toBe(503);
+    shouldFail = false;
+    expect((await submit("What about automation?")).status).toBe(200);
+    expect(calls).toBe(3);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
 });

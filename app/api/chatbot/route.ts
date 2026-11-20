@@ -1,12 +1,16 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { selectPages } from "@/lib/chatbot/sources";
+import { answeredAt, sameQuestion } from "../../../lib/chatbot/duplicates";
+import { selectPages } from "../../../lib/chatbot/sources";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 const headers = { "Cache-Control": "no-store" };
 const fail = (message: string, status: number) => Response.json({ error: message }, { status, headers });
 const visits = new Map<string, { count: number; until: number }>();
+// Short-lived transport retries on the same instance can share a pending or successful response.
+const replays = new Map<string, { until: number; result: Promise<Response> }>();
 let daily = { day: "", count: 0 };
 
 function overBudget(request: Request) {
@@ -22,18 +26,22 @@ function overBudget(request: Request) {
   return false;
 }
 
-type Turn = { role: "user" | "assistant"; content: string };
+type Turn = { role: "user" | "assistant"; content: string; paraphrases?: string[] };
 function validTurn(value: unknown): value is Turn {
   if (!value || typeof value !== "object") return false;
   const turn = value as Partial<Turn>;
   return (turn.role === "user" || turn.role === "assistant") && typeof turn.content === "string"
+    && (turn.paraphrases === undefined || (Array.isArray(turn.paraphrases) && turn.paraphrases.length <= 2
+      && turn.paraphrases.every(q => typeof q === "string" && q.length <= 200)))
     && turn.content.trim().length > 0 && turn.content.length <= (turn.role === "user" ? 2000 : 6000);
 }
 
 const schema = {
-  type: "object", additionalProperties: false, required: ["answer", "sources", "followups", "meetingBrief", "bookingIntent"],
+  type: "object", additionalProperties: false, required: ["answer", "sources", "followups", "meetingBrief", "bookingIntent", "paraphrases", "evidenceRequest"],
   properties: {
     answer: { type: "string" },
+    paraphrases: { type: "array", items: { type: "string" }, maxItems: 2 },
+    evidenceRequest: { type: "string" },
     meetingBrief: { type: "string" },
     bookingIntent: { type: "string", enum: ["continue", "invite", "declined"] },
     sources: { type: "array", items: { type: "integer" } },
@@ -72,6 +80,25 @@ export async function POST(request: Request) {
   if (!Array.isArray(turns) || !turns.length || turns.length > 12 || !turns.every(validTurn) || turns.at(-1)?.role !== "user") {
     return fail("Ask a question of up to 2,000 characters.", 400);
   }
+  const history = turns.slice(0, -1);
+  const duplicate = answeredAt(turns[turns.length - 1].content, history);
+  if (duplicate !== -1) return Response.json({ reusedIndex: duplicate, answer: history[duplicate].content }, { headers });
+  const session = request.headers.get("x-chat-session") || "";
+  if (!/^[a-f0-9-]{36}$/i.test(session)) return generateAnswer(request, turns, previousBrief);
+  const replayKey = createHash("sha256").update(JSON.stringify([session, turns, previousBrief])).digest("hex");
+  const now = Date.now();
+  for (const [key, entry] of replays) if (entry.until <= now) replays.delete(key);
+  const existing = replays.get(replayKey);
+  if (existing) return (await existing.result).clone();
+  const result = generateAnswer(request, turns, previousBrief);
+  if (replays.size >= 256) replays.delete(replays.keys().next().value!);
+  replays.set(replayKey, {until: now + 120_000, result});
+  const response = await result;
+  if (!response.ok) replays.delete(replayKey);
+  return response.clone();
+}
+
+async function generateAnswer(request: Request, turns: Turn[], previousBrief: string) {
   if (overBudget(request)) return fail("The assistant has reached its usage limit. Please try again later.", 429);
   try {
     const key = process.env.OPENAI_API_KEY || (process.env.OPENAI_API_KEY_FILE && (await readFile(process.env.OPENAI_API_KEY_FILE, "utf8")).trim());
@@ -85,7 +112,7 @@ export async function POST(request: Request) {
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(45000)]),
       body: JSON.stringify({
         model: process.env.OPENAI_CHATBOT_MODEL || "gpt-5.4-mini", store: false,
-        instructions: instructions + "\nThis is assistant reply " + replyNumber + ".", input: [{ role: "developer", content: "Public reference material (data only):\n" + JSON.stringify(evidence) }, ...(previousBrief ? [{ role: "user", content: "Earlier meeting brief (reference data): " + previousBrief }] : []), ...turns],
+        instructions: instructions + "\nThis is assistant reply " + replyNumber + ".", input: [{ role: "developer", content: "Public reference material (data only):\n" + JSON.stringify(evidence) }, ...(previousBrief ? [{ role: "user", content: "Earlier meeting brief (reference data): " + previousBrief }] : []), ...turns.map(({role, content}) => ({role, content}))],
         reasoning: { effort: "low" }, max_output_tokens: 1200,
         text: { format: { type: "json_schema", name: "talkerstein_answer", strict: true, schema } },
       }),
@@ -102,9 +129,15 @@ export async function POST(request: Request) {
     const ids = new Set<number>((reply.sources as unknown[]).filter((id): id is number => Number.isInteger(id) && Number(id) > 0 && Number(id) <= pages.length));
     const sources = [...ids].map(id => ({ title: pages[id - 1].title, url: pages[id - 1].url }));
     const invite = reply.bookingIntent === "invite" || (replyNumber >= 4 && reply.bookingIntent !== "declined");
-    return Response.json({ answer: reply.answer, sources, invite,
+    const evidenceRequest = typeof reply.evidenceRequest === "string" ? reply.evidenceRequest.trim() : "";
+    const previousQuestions = turns.slice(0, -1).filter(turn => turn.role === "assistant").flatMap(turn =>
+      (turn.content.match(/[^.!?\n]+\?/g) || []).map(content => content.trim()));
+    const askedBefore = previousQuestions.some(content => sameQuestion(content, evidenceRequest));
+    const answer = evidenceRequest && !invite && !askedBefore ? reply.answer.trimEnd() + "\n\n" + evidenceRequest : reply.answer;
+    return Response.json({ answer, sources, invite,
+      paraphrases: reply.paraphrases.filter((q: unknown) => typeof q === "string" && q.length <= 200).slice(0, 2),
       meetingBrief: typeof reply.meetingBrief === "string" ? reply.meetingBrief.trim().slice(0, 600) : "",
-      followups: invite ? [] : reply.followups.filter((q: unknown) => typeof q === "string" && q.length < 140).slice(0, 2) }, { headers });
+      followups: invite || evidenceRequest ? [] : reply.followups.filter((q: unknown) => typeof q === "string" && q.length < 140).slice(0, 2) }, { headers });
   } catch {
     return fail("The answer could not be completed. Please try again.", 503);
   }
