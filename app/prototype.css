@@ -647,13 +647,10 @@ html.chatting, html.chatting body { overflow: hidden; }
 }
 .vis.bare::before { display: none; }
 .vis.bare .orbit { width: 100%; }
-/* the mark sits at the centre the orbit turns around. OrbitImages stacks the far
-   half of the ellipse at z 10-90 and the near half at 110-190, so the mark sits at
-   100: the tools passing behind it go under, the ones passing in front go over. */
+/* the mark sits at the centre the orbit turns around */
 .vis.bare .orbit-mark {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: clamp(180px, 26%, 300px); height: auto; border-radius: 50%;
-  pointer-events: none; z-index: 100;
+  width: 136px; height: auto; border-radius: 50%; pointer-events: none; z-index: 1;
 }
 /* circle containers for every tool */
 .vis.bare .orbit img {
@@ -667,24 +664,12 @@ html.chatting, html.chatting body { overflow: hidden; }
   padding: 0; overflow: hidden; background: var(--steel);
   aspect-ratio: 1 / 1; min-height: 420px;
   display: block;
-  /* no plate around the dome: the sphere is the picture, so the double line and
-     the inset rule that .vis draws come off it */
-  border: 0; box-shadow: none;
 }
 .vis.dome::before { display: none; }
 .vis.dome > * { width: 100%; height: 100%; }
 .vis.dome .sphere-root { width: 100%; height: 100%; }
 
-/* 3 - the notifications feed: the day's orders landing, on plain blue */
-.vis.notes {
-  padding: var(--s4); overflow: hidden; background: var(--steel);
-  border: 0; box-shadow: none;
-  display: grid; place-items: stretch;
-}
-.vis.notes::before { display: none; }
-.vis.notes .notefeed { width: 100%; height: 100%; }
-
-/* 3 (was) - the coins, on plain blue */
+/* 3 - the coins, on plain blue */
 .vis.coins { padding: 0; background: var(--steel); }
 .vis.coins::before { display: none; }
 .vis.coins .coinfield { width: 100%; height: 100%; }

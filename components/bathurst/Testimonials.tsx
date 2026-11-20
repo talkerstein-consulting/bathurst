@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { GOOGLE, REVIEW, TESTIMONIALS } from "@/lib/bathurst/data";
+import ReviewVideoModal from "./ReviewVideoModal";
 import RowArrows from "./RowArrows";
 import RowDots from "./RowDots";
 import { useCoverNear } from "./useCoverNear";
@@ -13,9 +14,6 @@ type Tile = { key: string; node: ReactNode };
 
 
 const Play = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>;
-const Prev = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>;
-const Next = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>;
-const Close = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
 /**
  * Reviews on the cover sheet (STYLE.md: Sea Breeze surfaces, double-line frames, outline CTAs).
@@ -26,11 +24,7 @@ const Close = () => <svg className="glyph" viewBox="0 0 24 24" aria-hidden="true
 export default function Testimonials({ heading, split = false }: { heading?: ReactNode; split?: boolean } = {}) {
   const [cols, setCols] = useState(3);
   const [at, setAt] = useState<number | null>(null);
-  const open: Item | null = at === null ? null : TESTIMONIALS[at];
   const setOpen = (s: Item | null) => setAt(s ? TESTIMONIALS.indexOf(s) : null);
-  const step = (d: number) => setAt((i) => (i === null ? i : (i + d + TESTIMONIALS.length) % TESTIMONIALS.length));
-  const dialog = useRef<HTMLDialogElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
   const swipe = useRef<HTMLDivElement>(null);
   const near = useCoverNear();   // posters load once the visitor heads for the sheet, not with the first page load
 
@@ -38,21 +32,6 @@ export default function Testimonials({ heading, split = false }: { heading?: Rea
     const m = matchMedia("(max-width: 759px)"), set = () => setCols(m.matches ? 1 : 3);   // 1 = the phone layout
     set(); m.addEventListener("change", set); return () => m.removeEventListener("change", set);
   }, []);
-  useEffect(() => {
-    const d = dialog.current; if (!d) return;
-    if (open && !d.open) { d.showModal(); video.current?.play().catch(() => {}); }
-    if (!open && d.open) d.close();
-    // the page underneath stays put while the dialog is up
-    document.documentElement.style.overflow = open ? "hidden" : "";
-    return () => { document.documentElement.style.overflow = ""; };
-  }, [open]);
-  // ← / → move between testimonials while the dialog is open
-  useEffect(() => {
-    if (at === null) return;
-    const k = (e: KeyboardEvent) => { if (e.key === "ArrowLeft") step(-1); if (e.key === "ArrowRight") step(1); };
-    addEventListener("keydown", k); return () => removeEventListener("keydown", k);
-  }, [at]);
-
   const rating = (key: string, href: string, score: string, label: string, stars: string | undefined, muted = false): Tile => ({
     key,
     node: (
@@ -89,39 +68,7 @@ export default function Testimonials({ heading, split = false }: { heading?: Rea
   const google = rating("google", GOOGLE.url, GOOGLE.rating ? GOOGLE.rating.toFixed(1) : "–", GOOGLE.count ? `${GOOGLE.count} ratings on Google` : "Rating on Google",
     GOOGLE.rating ? `${GOOGLE.rating} out of 5` : undefined, !GOOGLE.rating);
 
-  const modal = (
-    <>
-      {/* the video with the rest of the testimonial; a native modal dialog (top layer, so the sheet's transform never clips it) */}
-      <dialog ref={dialog} className="rv-modal" aria-label={open ? `Video testimonial from ${open.who}` : "Video testimonial"}
-        onClose={() => setOpen(null)} onClick={(e) => { if (e.target === dialog.current) setOpen(null); }}>
-        {open && (
-          <div className="rv-modal-in frame" key={open.id}>
-            <button type="button" className="sprout btn icon rv-x" aria-label="Close" onClick={() => setOpen(null)}><Close /></button>
-            <div className="rv-modal-video single hair">
-              <video ref={video} src={open.video} poster={open.poster} controls playsInline autoPlay onEnded={() => step(1)} />
-            </div>
-            <div className="rv-modal-text">
-              <div className="rv-id">
-                <span className="rv-logo single hair"><img src={open.logo} alt="" /></span>
-                <span className="rv-who"><b>{open.who}</b><small>{open.role}</small></span>
-              </div>
-              <blockquote className="rv-full">“{open.quote}”</blockquote>
-              {/* move through every testimonial without closing; a video that finishes rolls on to the next */}
-              <nav className="rv-nav" aria-label="More testimonials">
-                <button type="button" className="sprout btn icon" aria-label="Previous testimonial" onClick={() => step(-1)}><Prev /></button>
-                <span className="rv-dots" aria-live="polite">
-                  {TESTIMONIALS.map((t, i) => (
-                    <button type="button" key={t.id} className={i === at ? "on" : ""} aria-label={`${t.who}${i === at ? " (playing)" : ""}`} aria-current={i === at || undefined} onClick={() => setAt(i)} />
-                  ))}
-                </span>
-                <button type="button" className="sprout btn icon" aria-label="Next testimonial" onClick={() => step(1)}><Next /></button>
-              </nav>
-            </div>
-          </div>
-        )}
-      </dialog>
-    </>
-  );
+  const modal = <ReviewVideoModal items={TESTIMONIALS} at={at} setAt={setAt} />;
 
   // split: the heading and the ratings hold the left column, the cards run off the right edge of the sheet, and the
   // dots under the ratings say where in the row you are (the landing's section 05)

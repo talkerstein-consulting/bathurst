@@ -60,7 +60,7 @@ export function Proof() {
   return (
     <section id="proof" className="section hs lf lf-proof">
       <Testimonials split heading={
-        <SectionHead title="Don’t just take our word for it.">
+        <SectionHead title="Good Work Speaks for Itself.">
           <p className="lp-lead">
             Good work should make a difference to the businesses behind it. Hear from the people we’ve worked with and
             learn what it’s like to have Talkerstein as a partner.

@@ -316,7 +316,7 @@
 .sp-in { animation: sp-in 420ms cubic-bezier(.65,0,.35,1) both; }
 .sp-out { animation: sp-out 420ms cubic-bezier(.65,0,.35,1) both; pointer-events: none; }
 @keyframes sp-fill { from { transform: scaleX(0); } }
-.sp-fill { transform-origin: left center; animation: sp-fill var(--ms, 6000ms) linear both; }
+.sp-fill { transform-origin: left center; animation: sp-fill 6000ms linear both; animation-duration: var(--ms, 6000ms); }
 .sp-row { position: relative; }
 .sp-row::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: var(--steel); opacity: .3; filter: url(#grunge); }
 .sp-tab { position: relative; min-height: 88px; padding: var(--s2); border: 0; background: none; cursor: pointer; color: rgb(25 37 74 / .55); transition: color .3s ease; }

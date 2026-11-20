@@ -309,7 +309,7 @@
 @media (max-width: 760px) { .chip { height: 36px; padding: 0 12px; font-size: 14px; } }
 
 /* callouts arrive one by one, top to bottom (engine sets --d per pin) */
-.pin.pop .mk, .pin.pop .ld, .pin.pop .co { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
+.pin.pop .mk, .pin.pop .ld, .pin.pop .co { animation: pin-in .3s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0ms); }
 .pin.pop .ld { transform-origin: bottom; animation-name: pin-line; }
 @keyframes pin-in { from { opacity: 0; transform: translateY(10px) scale(.92); } }
 @keyframes pin-line { from { opacity: 0; transform: scaleY(0); } }
@@ -600,7 +600,7 @@
 .cover { bottom: -48px; }
 .cover-body { padding-bottom: 48px; }
 /* reviews tabs: the active tab's line fills over the time until the next switch */
-.rv-tabs .sp-tab.on::before { transform-origin: left center; animation: sp-fill var(--ms, 7000ms) linear both; }
+.rv-tabs .sp-tab.on::before { transform-origin: left center; animation: sp-fill 7000ms linear both; animation-duration: var(--ms, 7000ms); }
 @media (prefers-reduced-motion: reduce) { .rv-tabs .sp-tab.on::before { animation: none; } }
 
 
@@ -926,7 +926,7 @@
   background: var(--ind, var(--steel)); color: var(--sea); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--ind, var(--steel)), 0 4px 12px rgba(0,0,0,.28); pointer-events: auto;   /* big, double-ringed and lifted so each client reads at a glance */ cursor: pointer; transition: background .2s ease; }
 .pin .ic .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pin.mini:hover .ic, .pin.mini:focus-visible .ic { background: var(--orange); box-shadow: 0 0 0 2.5px var(--sea), 0 0 0 4px var(--orange), 0 4px 12px rgba(0,0,0,.28); }
-.pin.pop .ic { animation: pin-in .3s cubic-bezier(.22,1,.36,1) var(--d, 0ms) both; }
+.pin.pop .ic { animation: pin-in .3s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0ms); }
 /* icon pins: the name as a tooltip on hover, and always once the map is zoomed in */
 .pin .nm { display: none; }
 .pin.mini .nm { display: block; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
@@ -1960,12 +1960,30 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 }
 
 /* pins carry the client's own logo on white, inside the industry-coloured ring (the industry icon only where there is no logo) */
-.pin.has-logo .ic { background: #fff; overflow: hidden; }
+/* one definite cell, so a logo's `height: 100%` has a height to resolve against. Without it the cell sizes to the
+   logo and an SVG taller than it is wide (Amazing Donuts) is laid out at its own ratio and cropped by the circle. */
+.pin.has-logo .ic { background: #fff; overflow: hidden; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
 .pin .ic .lg { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; border-radius: 50%; }
 .pin.has-logo.mini:hover .ic, .pin.has-logo.mini:focus-visible .ic { background: #fff; }
 @media (max-width: 760px) { .pin .ic .lg { transition: rotate .35s cubic-bezier(.22,1,.36,1); } .pin:not(.mini) .ic .lg { rotate: 45deg; } }
 /* logos drawn in white sit on the client's dark ink instead of white */
 .pin.has-logo[data-logo="elis"] .ic { background: var(--steel); }
+
+/* Some marks read much smaller than the rest at the same padding — a wordmark laid out wide, or artwork with its
+   own margin baked into the file — so the logo sits in the middle of the circle with a ring of nothing round it.
+   These take the full circle instead, and the ones that can afford it are pushed a little past it: a square logo
+   loses only its corners under the circle's edge, which it already does. A wide wordmark is NOT scaled past 1 —
+   it would run out of the sides and lose its own ends. */
+.pin.has-logo[data-logo="fringe"] .ic .lg,
+.pin.has-logo[data-logo="amazingdonuts"] .ic .lg,
+.pin.has-logo[data-logo="bubbys"] .ic .lg,
+.pin.has-logo[data-logo="kidicare"] .ic .lg,
+.pin.has-logo[data-logo="kapara"] .ic .lg { padding: 0; scale: var(--lg, 1); }
+.pin.has-logo[data-logo="fringe"] .ic .lg { --lg: 1; }           /* 4.7:1 wordmark: the circle's width is the limit */
+.pin.has-logo[data-logo="amazingdonuts"] .ic .lg { --lg: 1.1; }  /* taller than wide: room at the sides */
+.pin.has-logo[data-logo="bubbys"] .ic .lg { --lg: 1.12; }
+.pin.has-logo[data-logo="kidicare"] .ic .lg { --lg: 1.12; }
+.pin.has-logo[data-logo="kapara"] .ic .lg { --lg: 1.12; }
 
 /* the navbar has no fill and no rule along its foot: the ☰, the logo and the CTA float on the page; the TCG logo slides back in from the left */
 .navbar { height: calc(var(--inset) * 2 + var(--icon-btn)); background: none; }

@@ -5,6 +5,9 @@ import type { CSSProperties, ReactNode } from "react";
 import { CtaButton, CtaLink } from "@/components/style/Cta";
 import RiseHeading from "@/components/style/RiseHeading";
 import Testimonials from "@/components/bathurst/Testimonials";
+import CapabilityPanels from "@/components/home/CapabilityPanels";
+import { FinalCta } from "@/components/home/LandingSections";
+import ToolOrbit from "@/components/home/ToolOrbit";
 import SentenceSection from "@/components/home/SentenceSection";
 import ReelCards from "@/components/bathurst/ReelCards";
 import { AREAS, CONTACT, GOOGLE, REVIEW } from "@/lib/bathurst/data";
@@ -255,7 +258,8 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
                 landing (layout rework, 2026-11-19): the sentence, with 03 The Reality as cards stacking over it. The rest stay parked, in their
                 old order, in components/home/LandingSections.tsx: 04 The Transformation · 05 Testimonials ·
                 06 What We Do · 07 Our Process · 08 Closing CTA · then <SiteFooter />. */}
-            {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter /></> : <SentenceSection />}
+            {A ? <><Testimonials /><Services /><Showcase /><div className="rv rv-after"><ReelCards /></div><SignatureLine /><SiteFooter /></>
+               : <><SentenceSection /><CapabilityPanels /><ToolOrbit /><FinalCta /><SiteFooter /></>}
           </div>
         </div>
         {/* directions: The Way Forward heading, then one framed card per leg that slides in and out (filled by the engine) */}

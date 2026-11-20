@@ -120,10 +120,6 @@ export default function DomeGallery({
   enlargeTransitionMs = DEFAULTS.enlargeTransitionMs,
   segments = DEFAULTS.segments,
   dragDampening = 2,
-  /* degrees of yaw per second the sphere turns on its own, forever. 0 is still.
-     It yields to the hand: dragging, a throw still slowing down, an open picture,
-     a hidden tab or a reduced-motion setting all stop it, and it picks up after. */
-  autoSpinDegPerSec = 0,
   openedImageWidth = '400px',
   openedImageHeight = '400px',
   imageBorderRadius = '30px',
@@ -260,40 +256,6 @@ export default function DomeGallery({
   useEffect(() => {
     applyTransform(rotationRef.current.x, rotationRef.current.y);
   }, []);
-
-  /* the endless turn */
-  useEffect(() => {
-    if (!autoSpinDegPerSec) return;
-    if (typeof window === 'undefined') return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let raf = null;
-    let last = null;
-    const frame = now => {
-      if (last == null) last = now;
-      const dt = Math.min(now - last, 100) / 1000;
-      last = now;
-      const held =
-        draggingRef.current ||
-        inertiaRAF.current ||
-        focusedElRef.current ||
-        openingRef.current ||
-        document.hidden ||
-        reduced.matches;
-      if (!held) {
-        const nextY = wrapAngleSigned(rotationRef.current.y + autoSpinDegPerSec * dt);
-        rotationRef.current = { x: rotationRef.current.x, y: nextY };
-        applyTransform(rotationRef.current.x, nextY);
-      }
-      raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    const resync = () => { last = null; };
-    document.addEventListener('visibilitychange', resync);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      document.removeEventListener('visibilitychange', resync);
-    };
-  }, [autoSpinDegPerSec]);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {

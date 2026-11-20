@@ -73,8 +73,8 @@ export default function AssessLead() {
       <div className="term-main">
         <div className="term-intro">
           <RiseHeading className="h1 term-h" text={"Turn More Leads\nInto Sales."} delay={80} />
-          <p className="term-sub al-sub2 rise-after" style={{ "--rise-delay": "380ms" } as CSSProperties}>Your website, marketing, and systems should work together to attract customers, convert leads, and grow your business.</p>
-          <p className="term-sub al-sub3 rise-after" style={{ "--rise-delay": "440ms" } as CSSProperties}>Start by finding out what’s working and where you can improve.</p>
+          <p className="term-sub al-sub2 rise-after" style={{ "--rise-delay": "380ms" } as CSSProperties}>Is your digital presence helping you grow?</p>
+          <p className="term-sub al-sub3 rise-after" style={{ "--rise-delay": "440ms" } as CSSProperties}>Find out what’s working and what’s costing you customers.</p>
         </div>
         <form className="al-form rise-after" style={{ "--rise-delay": "520ms" } as CSSProperties} action="/book" method="get" onSubmit={submit}>
           <input type="hidden" name="service" value="Website assessment" />

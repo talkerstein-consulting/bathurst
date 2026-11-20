@@ -41,10 +41,14 @@ const CLEAR = 1.3;        // how fast a card behind fades once it has lined up �
 const LIFT = 0.62;        // how far up the sentence travels on the last beat, in screens
 // 05 · Testimonials' heading is already waiting below the sentence, at full strength and under the cards: it is
 // covered by the stack rather than faded in, and rides up into the sentence's place as the sentence clears.
-const HEAD_RISE = 0.5;    // how far below its resting place the heading starts, in screens
+const HEAD_RISE = 1.15;   // how far below its resting place the heading starts, in screens (clear of the fold:
+                          // it must not read over the sentence on its way up)
 // track layout, in screens: a lead for the sentence to open, then one step per card, then a short hold, then the
 // last beat — the stack clears and the card that stays turns upright in the middle and becomes the review
 const LEAD = 0.7, PER = 0.8, HOLD = 0.4, OUTRO = 1.1;
+// then the reviews hold: the fan is fully out and the stage stays pinned for this much longer before the page
+// moves on, so the set is read rather than passed. Every beat above is already over, so nothing moves in it.
+const TAIL = 0.75;
 
 function Pic({ src }: { src: string }) {
   return (
@@ -67,6 +71,9 @@ export default function SentenceSection() {
   const head = useRef<HTMLDivElement>(null);
   const turned = useRef(false);
   const fan = useRef<HTMLDivElement>(null);
+  const rotor = useRef<HTMLElement | null>(null);   // the turning card's own rotor, read to know when it is square
+  const handed = useRef<number | null>(null);       // the beat at which the fan took the card's place, if it has
+  const handedT = useRef(0);                        // and when, so the set can open on its own clock too
   const [onFan, setOnFan] = useState(false);   // the fan is only mounted near its beat
 
   // the sentence's one-scroll opening
@@ -109,6 +116,21 @@ export default function SentenceSection() {
       const oe = easeOut(a);
       const b = Math.min(1, Math.max(0, (o - ALIGN) / (1 - ALIGN)));
       const last = CARDS.length - 1;
+      // The hand-off from the turning card to the fan behind it has to be invisible: the fan's centre card is the
+      // same review as the card's back face, in the same place, so swapping them while the card is square to the
+      // screen cannot be seen — but swapping a moment early shows the fan THROUGH the turning card, edge-on.
+      // So the moment is not taken from the scroll (the turn is a spring; a fast scroll outruns it) but from the
+      // card itself: the rotor's own matrix. For `rotateY(t)` the matrix's m11 is cos t, so it reaches -1 exactly
+      // when the card has come to rest on its back. Nothing of the fan exists on screen before that frame.
+      if (!rotor.current) rotor.current = stack.current?.querySelector<HTMLElement>(".rc-flip .flip-card__rotor") ?? null;
+      let upright = false;
+      if (rotor.current && b > 0) {
+        const tf = getComputedStyle(rotor.current).transform;
+        if (tf && tf !== "none") upright = new DOMMatrixReadOnly(tf).m11 <= -0.995;
+      }
+      if (upright && handed.current === null) { handed.current = b; handedT.current = performance.now(); }   // the card is over: hand over here
+      else if (!upright && handed.current !== null && b <= handed.current) handed.current = null;            // scrolled back: take it back
+      const handedAt = handed.current;
       stack.current?.querySelectorAll<HTMLElement>(".rc").forEach((c, k) => {
         const t = Math.min(1, Math.max(0, (s - LEAD - k * PER) / PER));
         const e = easeOut(t);
@@ -118,9 +140,10 @@ export default function SentenceSection() {
         if (k === last) {
           // the one that stays: it unwinds to dead centre, upright, and grows a little as it comes forward
           tx *= 1 - oe; ty *= 1 - oe; trot *= 1 - oe;
-          // once the fan is out, its own centre card is this same review in the same place: the flipping card
-          // steps aside and nothing moves.
-          opacity = 1 - Math.min(1, Math.max(0, (b - 0.3) / 0.28));
+          // the flipping card does not fade out — a fade would show the fan through it while it is still turning.
+          // It holds at full strength for the whole turn and is cut on the single frame the fan takes over, with
+          // the identical card already standing in its place.
+          opacity = handedAt === null ? 1 : 0;
         } else if (o > 0) {
           // the rest line up behind it — same centre, no angle — and fade out there, before the review has
           // finished arriving
@@ -155,14 +178,30 @@ export default function SentenceSection() {
       // the other reviews come up behind the card as it finishes turning, so the one on it is the first of a set
       setOnFan((on) => (on === o > ALIGN - 0.12 ? on : o > ALIGN - 0.12));
       const fn = fan.current;
-      if (fn) fn.style.setProperty("--fan", easeOut(Math.min(1, Math.max(0, (b - 0.18) / 0.5))).toFixed(3));
+      if (fn) {
+        // it is mounted early so it is laid out and ready, but it shows nothing until the card has come to rest:
+        // at --fan 0 every card is stacked dead centre, which is the card that was just there, so the first frame
+        // of the fan is identical to the last frame of the turn. Only then does the set spread out.
+        // the spread runs on the scroll, and on its own clock as well, whichever is further along. The turn is a
+        // spring, so the hand-off can land anywhere in the beat — including at the very end of it, where there is
+        // no scroll left to open the fan with. The clock makes sure it always opens, and keeping the scroll in
+        // front means it still answers the wheel when there is room.
+        const v = handedAt === null ? 0 : easeOut(Math.min(1, Math.max(
+          (b - handedAt) / 0.45,
+          (performance.now() - handedT.current) / 700,
+        )));
+        fn.style.setProperty("--fan", v.toFixed(3));
+        fn.classList.toggle("is-live", handedAt !== null);
+        // the cards only become pressable once they are actually fanned out, never while they are still stacked
+        fn.classList.toggle("is-out", v > 0.6);
+      }
     };
     const frame = () => { measure(); raf = requestAnimationFrame(frame); };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const trackH = `calc(100svh + ${((LEAD + CARDS.length * PER + HOLD + OUTRO) * 100).toFixed(0)}svh)`;
+  const trackH = `calc(100svh + ${((LEAD + CARDS.length * PER + HOLD + OUTRO + TAIL) * 100).toFixed(0)}svh)`;
 
   return (
     <section id="further" className={`section sx${open ? " is-open" : ""}`} aria-label="Your digital infrastructure">
@@ -190,7 +229,7 @@ export default function SentenceSection() {
           </div>
           {/* 05 · Testimonials' heading: always there, under the cards, waiting below the sentence */}
           <div className="wrap sx-head" ref={head} aria-hidden={!flipped}>
-            <h2 className="h2 sx-head-t">Don’t just take our word for it.</h2>
+            <h2 className="h2 sx-head-t">Good Work Speaks for Itself.</h2>
           </div>
           {/* the rest of what clients say, fanned out from behind the card that turned over. It owns the centre
               slot once it is out: the flipping card above fades, the same review is already under it. */}

@@ -107,8 +107,13 @@
    so the cards cover it until they clear. Out of flow, so nothing moves to make room for it. */
 .sx-head { position: absolute; left: 0; right: 0; top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px));
   z-index: 1; text-align: center; pointer-events: none;
-  transform: translate3d(0, 50svh, 0); will-change: transform; }
+  transform: translate3d(0, 115svh, 0); will-change: transform; }
 .sx-head-t { margin: 0 auto; max-width: 20ch; }
+/* on a wide screen the fanned cards sit low in the stage, so the heading drops to meet them and the two read as
+   one block rather than a line stranded under the navbar. On phones the cards already reach the top: it stays put. */
+@media (min-width: 760px) {
+  .sx-head { top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px) + clamp(16px, 12svh, 160px)); }
+}
 
 /* ---------- the rest of what clients say, fanned out behind the card that turned over ---------- */
 /* components/home/ReviewFan.tsx. The same cards as the one on the front — same frame, same slots — so the set reads
@@ -119,22 +124,38 @@
 @property --d { syntax: "<number>"; inherits: false; initial-value: 0; }
 @property --away { syntax: "<number>"; inherits: false; initial-value: 0; }
 
-.rvf-hold { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+/* nothing of the fan is on screen until the turning card has come to rest on its back and SentenceSection
+   hands over: shown any earlier, the set reads through the card while it is edge-on */
+.rvf-hold { position: absolute; inset: 0; z-index: 1; pointer-events: none; visibility: hidden; }
+.rvf-hold.is-live { visibility: visible; }
 .rvf { position: absolute; inset: 0; z-index: 1; pointer-events: none; --sp: clamp(46px, 7.4vw, 104px); }
-.rvf-deck { position: absolute; inset: 0; display: grid; place-items: center; }
+/* the deck takes the sideways drag itself; `pan-y` leaves the up-and-down to the page's own scroll */
+.rvf-deck { position: absolute; inset: 0; display: grid; place-items: center; touch-action: pan-y;
+  -webkit-user-select: none; user-select: none; }   /* a sideways drag pages the fan; it never selects the quotes */
 .rvf-card { grid-area: 1 / 1; width: min(400px, calc(100vw - 48px));
   transform:
     translate3d(calc(var(--d) * var(--sp) * var(--fan, 0)), calc(var(--away) * 16px * var(--fan, 0)), 0)
     rotate(calc(var(--d) * var(--fan, 0) * 6deg))
     scale(calc(1 - var(--away) * 0.085 * var(--fan, 0)));
-  opacity: calc(1 - var(--away) * 0.13 * var(--fan, 0));
+  /* every card in the fan stays at full strength: depth is read from the scale, the offset and the shadow, never
+     from a card being faded out */
+  opacity: 1;
   transition: --d .55s cubic-bezier(.22, 1, .36, 1), --away .55s cubic-bezier(.22, 1, .36, 1);
-  will-change: transform; }
+  will-change: transform;
+  /* each card is its own review's video: it is pressable, and only once the fan is out */
+  pointer-events: none; cursor: pointer; }
+/* …and only once the fan has actually opened, so the cards never take a press while they are still stacked
+   behind the one that is turning over (SentenceSection sets .is-out on the same beat it writes --fan) */
+.rvf-hold.is-out .rvf-card { pointer-events: auto; }
+.rvf-card:focus-visible { outline: 2px solid var(--steel); outline-offset: 6px; border-radius: 18px; }
 /* every card below the centre one is stacked in the same spot until the fan opens, so its shadow only comes up as
    it comes out — seven shadows on one footprint otherwise read as a halo around the card in front */
 .rvf-card .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset,
   0 2px 6px rgb(25 37 74 / calc(.18 * var(--fan, 0))),
   0 30px 56px -18px rgb(25 37 74 / calc(.55 * var(--fan, 0))); }
+/* while a card is crossing into 06 · What We Do (components/home/CapabilityPanels.tsx lays one over the page and
+   flies it there), the fan lets go of the one in its centre slot: one card makes the crossing, not two */
+:root.rvf-handoff .rvf-card.is-at { opacity: 0; }
 .rvf-card.is-at .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px rgb(25 37 74 / .18),
   0 30px 56px -18px rgb(25 37 74 / .55); }
 

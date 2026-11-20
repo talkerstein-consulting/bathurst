@@ -6,7 +6,9 @@ import { Fragment, type ElementType } from "react";
  * `delay` (ms) offsets the whole heading, so a page can sequence its eyebrow, heading and body.
  * A newline in `text` is a line break the heading keeps at every width.
  */
-export default function RiseHeading({ as: Tag = "h1", text, className, delay = 0 }: { as?: ElementType; text: string; className?: string; delay?: number }) {
+export default function RiseHeading({ as = "h1", text, className, delay = 0 }: { as?: ElementType; text: string; className?: string; delay?: number }) {
+  // React 19 + fiber's JSX augmentation collapse a bare ElementType union to never at the tag
+  const Tag = as as React.ElementType<Record<string, unknown>>;
   // a newline in `text` is a line the heading always keeps (.rise-l is a block), so a two-line headline stays two lines
   // whatever the width or the font that is loaded; without one the words wrap on their own.
   const lines = text.split("\n");

@@ -1,3 +1,4 @@
+import { TOOLS, toolSrc } from "@/lib/bathurst/tools";
 import "@/app/interfaces.css";
 
 /**
@@ -106,9 +107,18 @@ export const FigNotFollowed = () => (
   </div>
 );
 
-/** §06 — the same chain, joined up and running itself */
+/** §06 — the same chain, joined up and running itself, with the tools it runs on scattered around it. The marks
+ *  are the desk this card is about; 07 · The Stack (components/home/ToolOrbit.tsx) flies these same ones out of
+ *  here and puts them into orbit, so they have to be the same list in the same colours. */
 export const FigSystems = () => (
-  <div className="fg">
+  <div className="fg fg-stack">
+    <div className="tool-scatter" aria-hidden="true">
+      {TOOLS.map((t) => (
+        <span key={t.slug} className="tool-chip" style={{ left: `${t.at[0]}%`, top: `${t.at[1]}%` }}>
+          <img src={toolSrc(t.slug)} alt="" loading="lazy" decoding="async" />
+        </span>
+      ))}
+    </div>
     <div className="ch">
       <Step>“Can you quote a reno?”</Step>
       <Join note="replied in two minutes" />

@@ -28,8 +28,6 @@ declare module "@/components/DomeGallery" {
     fit?: number; segments?: number; grayscale?: boolean;
     overlayBlurColor?: string; imageBorderRadius?: string;
     dragSensitivity?: number; maxVerticalRotationDeg?: number;
-    /** degrees of yaw per second the sphere turns on its own, endlessly; 0 is still */
-    autoSpinDegPerSec?: number;
     className?: string; style?: CSSProperties;
   }
   const DomeGallery: (p: DomeGalleryProps) => JSX.Element;

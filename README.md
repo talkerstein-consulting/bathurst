@@ -1,58 +1,74 @@
-# Talkerstein Consulting Group landing page
+# Ask Talkerstein — front-end prototype
 
-Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn · React Bits Pro · three.js
+A feel-check, not production code. One static page, no build step.
 
-```bash
-npm install
-npm run dev        # http://localhost:3000
-npm run build
-```
+    npx serve -l 4178 .     # or just open index.html
 
-## Layout
+## What came from where
 
-| Path | What it is |
-|---|---|
-| `app/page.tsx` | Page composition, top to bottom |
-| `app/globals.css` | Brand tokens (Sea Breeze / Steel Blue / Muted Orange) mapped into Tailwind and shadcn |
-| `app/bathurst-map.css` | Styles for the hero + maps-app chrome driven by the engine |
-| `components/bathurst/BathurstHero.tsx` | Hero markup (Street View → crane → live map); mounts the engine |
-| `lib/bathurst/engine.ts` | three.js scene, fly-through, map camera, gestures, industry scroll steps |
-| `lib/bathurst/globe.ts` | The paper planet: a vertex-shader bend that curls the whole map over a sphere (the curvature of the earth), with the matching maths for pins, fits and raycasts |
-| `lib/bathurst/data.ts` | Clients, cross streets, services, steps, review. Single source for map and sections |
-| `components/bathurst/*.tsx` | Sections: Bathurst line, Directions, Services, Saved places, Reviews, Contact, Footer |
-| `components/bathurst/SignatureLine.tsx` | "Built for what's next." written by the React Bits Signature pen; the paths are the Slowly Signature letterforms traced by `scripts/trace-signature.mjs` into `lib/bathurst/signature-strokes.json` (re-run it if the words change) |
-| `components/react-bits/` | React Bits Pro components (Staggered Text, Blur Highlight) |
-| `reference/prototype-v15.html` | The approved single-file prototype the engine was ported from |
+**Formatting / page architecture — america.gov**
+- Hero: huge serif headline, one-line deck, a big rounded photo card with the ask bar
+  floating over the top of the photo, example question rotating through 10 photos,
+  prev / count / next under the card.
+- A centred serif statement with small square pictures set inline in the text. The
+  treatment itself is the build reference's (`303 Promax/app/sentence.css`): fixed lines
+  that don't re-wrap, slots one cap height tall standing on the baseline, opening when the
+  block comes into view.
+- Three alternating visual + text rows (square tile one side, 40px heading + short body
+  + text link the other).
+- Wide CTA with its own ask bar, then a footer of stacked serif links, a full-width
+  wordmark, a three-column meta row and a legal line.
+- A pinned ask bar that appears whenever neither real ask bar is on screen.
 
-Sections ask the map to open a client with `openOnMap(id)` (a `tcg:open` window event).
+**Everything else — the locked TCG brand** (from `303 TCG Promax/bathurst`)
+- Sea Breeze `#F3F7F3`, Steel Blue `#19254A`, Muted Orange `#B3530E`, cream `#EDE5CB`.
+- Southport (headings) + Jost (body) + Slowly Signature (one accent phrase per section),
+  copied from the Promax project into `fonts/`.
+- Paper grain, double-line frames, outlined CTAs, orange reserved for actions.
+- `brand/` holds the TCG wordmark and icon, copied from the same project.
 
-## Get directions (booking)
+## Photography — all TCG's own
 
-Every "Get directions" lands on `/book` (`components/bathurst/BookingForm.tsx`), which posts JSON to `/api/book` (`app/api/book/route.ts`).
-The route validates the request and forwards it to a webhook set in the environment:
+Copied from `303 TCG Promax/bathurst/public`. Nothing is stock and nothing is a render.
 
-```bash
-BOOKING_WEBHOOK_URL=https://…        # HubSpot / Zapier / Make / GoHighLevel inbound webhook
-BOOKING_WEBHOOK_SECRET=…             # optional, sent as Authorization: Bearer …
-```
+**Hero** (`photos/`) — ten client shots, one per owner problem. The `<img>` order in
+`#shots` must match the order of `EXAMPLES` in the script; they pair by index and nothing
+enforces it.
 
-Until `BOOKING_WEBHOOK_URL` is set the route answers 503 and the form offers the same request as a pre-filled email, so nothing is lost.
-The payload fields are listed at the top of `app/api/book/route.ts`.
+| # | Photo | Client | Question |
+|---|---|---|---|
+| 1 | `electrical.webp` | MES | Quotes take me three hours every night |
+| 2 | `auto-service.webp` | AR26 | Customers can't book a service slot online |
+| 3 | `restaurant.webp` | Kapara | Our reservations all come in by phone |
+| 4 | `paperwork.webp` | Family Tree | We still do intake on paper |
+| 5 | `salon.webp` | HOH | Half our clients no-show their appointment |
+| 6 | `takeout.webp` | Uzbek | We want online ordering without the delivery apps |
+| 7 | `events.webp` | Hily's | Event enquiries get lost in my inbox |
+| 8 | `clinic.webp` | Family Tree | Patients can't see when we're free |
+| 9 | `retail.webp` | Fringe | The shop and the website disagree on stock |
+| 10 | `catering.webp` | Royal Dairy | Catering orders arrive six different ways |
 
-## React Bits Pro
+**Sentence slots** (`photos/aria|kidicare|esther.webp`) — the squares that open inside the
+statement, taken from the build reference's own `public/sentence/`.
 
-The license key lives in `.env.local` (git-ignored) as `REACTBITS_LICENSE_KEY`. Install more with:
+**What's ahead** (`work/`) — ten client screens, six phone and four desktop, set into a
+12-column bed after the reference's arrangement. Static: nothing drifts, nothing casts a
+shadow. Placement is by class (`.p5-9`, `.rr2`), never inline, so the breakpoints can
+override it — at 1040px and below the bed collapses to two-up and the arrangement is
+dropped.
 
-```bash
-npx shadcn@latest add @reactbits-starter/<slug>-tw   # components
-npx shadcn@latest add @reactbits-pro/<slug>          # blocks
-```
+## Still filler
 
-## Open items
+- Nothing is wired up: the ask bars don't submit, the links don't go anywhere.
+- Footer links, the three row headings and the CTA chips are placeholder copy.
 
-- Brand header font (ITC Cheltenham Std Bold Condensed) and Slowly Signature files: add via `next/font/local`.
-- White logo lockup for dark grounds (footer currently uses the colored lockup on a Sea Breeze panel).
-- Real buildings: Toronto 3D Massing + OpenStreetMap to replace the placeholder massing.
-- Case-study photography, the other six Clutch reviews, and a real submit target for the contact form.
-- Services, photos and case studies for the clients added in Oct 2026 (Eli's Barbershop onward in `lib/bathurst/data.ts`).
-- Type `lib/bathurst/engine.ts` (ported untyped for this first pass).
+## Known deviations from the guardrails
+
+- **D03** — the send button uses an up-arrow, not a chevron, because that is the ask-bar
+  convention america.gov set and the one people expect. Chevrons are used for the
+  carousel's prev / next.
+- **D04** — CTAs are outlined, never filled, per the Promax `globals.css` rule, which
+  overrides the global "main CTA is filled" default. The orange send circle is the one
+  filled control.
+- The grunge SVG line system from Promax is approximated here with CSS borders +
+  inset shadows. It reads the same at a glance; it is not the same code.

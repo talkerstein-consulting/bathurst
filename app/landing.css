@@ -231,11 +231,12 @@
    screen of scroll before it gave way to the next — they went past rather than being read. 540vh gives each a good
    screen and a half, so the change between them lands as a change rather than as a flicker. */
 .cp-track { position: relative; height: 540vh; }
-/* Only the three columns are pinned — the head scrolls past above them (components/home/CapabilityPanels.tsx) — so
-   the stage holds one thing and centres it. The picture ends up in the middle of the screen, with the list of
-   capabilities and the note on either side of it, wherever the section is caught. */
-.cp-stage { position: relative; height: 100svh; align-content: center;
-  display: grid; gap: var(--s5); max-width: 1200px; margin: 0 auto; padding: calc(var(--navh, 72px) + var(--s4)) 24px var(--s5);
+/* The head is pinned with the columns (components/home/CapabilityPanels.tsx), so the stage holds two things, one
+   under the other, and packs them up from the top rather than floating one block in the middle: the statement sits
+   just under the navbar and the three capabilities take every row left under it, wherever the section is caught. */
+.cp-stage { position: relative; height: 100svh; align-content: start;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--s4);
+  max-width: 1200px; margin: 0 auto; padding: calc(var(--navh, 72px) + var(--s2)) 24px var(--s4);
   transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
 
 /* The head is the whole top of the screen: one large centred statement whose second half sits right back, so the
@@ -292,6 +293,7 @@
 @media (max-width: 899px) {
   .cp-track, .cp-track.is-flat { height: auto; }
   .cp-stage { position: static; height: auto; transform: none; gap: var(--s5);
+    grid-template-rows: none; align-content: start;   /* the pinned layout's rows mean nothing once it flows */
     padding: 0 24px; }   /* as .rp-stage: the section's own --lf-gap is the whole gap */
   .cp-head { text-align: left; justify-items: start; }
   .cp .lp-h, .cp .lp-lead { max-width: none; }
@@ -395,3 +397,170 @@
   .rv.rv-split { grid-template-columns: 1fr; gap: var(--s4); padding-inline: 24px; }
   .rv-split-l { gap: var(--s4); }
 }
+
+/* ---------- 06 · What We Do: the text on the left, the drawn interface pinned on the right ----------
+   components/home/CapabilityPanels.tsx. The right-hand panel never moves: it morphs from one capability's
+   interface into the next as the column on its left steps on, so the section reads as one thing turning over. */
+/* the columns take the row the head leaves and sit in the middle of it */
+.cp-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: var(--s6);
+  align-items: center; align-content: center; min-block-size: 0; }
+
+/* left: one capability in the window at a time. The three are laid out down the column as real rows, each one
+   window tall, and the whole column travels up — it is the same text moving past, not one piece swapped for
+   another. It is translated by whole windows, so it only ever rests on a capability, never between two. */
+/* The window is taller than one block on purpose: the one before and the one after stay on the page, running off
+   into the top and bottom edges. They are not hidden — the mask takes them down to nothing at the edges, so the
+   column reads as a list you are part-way down rather than as one block replaced by another.
+   The height and the mask sit on the window, NOT on the list inside it: a fixed height on the grid itself
+   stretches its three auto rows to a third of it each and the blocks then run over one another. */
+/* The window keeps its height so the pinned layout never moves as the column travels, but it does NOT clip:
+   cutting at the edge sliced the block above and below through the middle of a line of type, which read as
+   broken text rather than as a list carrying on past the edge. The blocks not being read are taken down in
+   strength instead, and are whole wherever they land. */
+.cp-reel { position: relative; block-size: min(62vh, 560px); overflow: visible; }
+.cp-reel-in { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s6); align-content: start;
+  translate: 0 var(--shift, 0px);
+  transition: translate .6s cubic-bezier(.22, 1, .36, 1); }
+/* the two not being read stay where they are and stay whole — they are only taken right down in strength, so the
+   column reads as a list you are part-way down. The block itself carries the strength, one opacity for all of it,
+   rather than the window fading its own edges: a gradient dimmed the live block's own first and last lines too. */
+.cp-item { display: grid; gap: var(--s2); align-content: center;
+  opacity: .14; transition: opacity .5s ease; }
+.cp-item.is-on { opacity: 1; }
+.cp-name { margin: 0; color: var(--label); }
+.cp-items { list-style: none; margin: var(--s1) 0 0; padding: 0; display: grid; gap: 7px; }
+.cp-items li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.45; color: var(--steel); }
+.cp-items li::before { content: ""; position: absolute; left: 2px; top: .58em; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--orange); }
+
+
+/* the diagram's own container: the same trading card the reviews are on (components/home/RealityCards.tsx's
+   Frame, .tc-* in app/bathurst-map.css), settled on the right and widened — it is the card that turned over at
+   the end of the fan, now holding a drawn interface instead of a review. The three interfaces still cross over
+   inside it; only the card holds still. */
+/* the card is width-driven (its aspect ratio sets the height), and the width is capped off the viewport's height
+   too, so the card can never grow taller than the row the head leaves it */
+.cp-card .tc, .cp-card .tc:hover { aspect-ratio: 4 / 3; cursor: default;
+  inline-size: min(100%, 640px, calc(46vh * 4 / 3)); margin-inline: auto; }
+.cp-card { display: grid; justify-items: center; align-content: center; min-block-size: 0; }
+.cp-card .tc-in { grid-template-rows: auto 1fr auto; gap: 10px; padding: 12px; }
+.cp-card .tc-top b { font-size: 20px; }
+.cp-card .tc-no { color: var(--steel); }
+/* the drawn interfaces are light-on-cream, so the art window keeps the sheet's own paper rather than the
+   reviews' Steel Blue still */
+.cp-card .tc-art { background: var(--sea); box-shadow: 0 0 0 1px rgb(25 37 74 / .15); }
+.cp-card .cp-figs { position: absolute; inset: 0; block-size: auto; }
+.cp-card .cp-slot { place-content: center; }
+.cp-card .cp-fig { block-size: 100%; padding: var(--s2); }
+
+@media (max-width: 899px) {
+  .cp-two { grid-template-columns: 1fr; }
+  .cp-reel { block-size: auto; overflow: visible; }
+  .cp-reel-in { translate: none; }
+  .cp-item { translate: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .cp-reel-in, .cp-item { transition: none; } }
+
+/* ---------- the crossing out of the reviews: one card flies into the first diagram ----------
+   components/home/CapabilityPanels.tsx writes --x/--y/--w/--h (where the card is, between the fan's centre slot
+   and where the diagram's card rests) and --face (how far it has turned over) every frame. Laid over the page so
+   neither section's own clipping can cut it, and only while it is actually crossing. */
+.cp-fly { position: fixed; left: 0; top: 0; z-index: 20; visibility: hidden; pointer-events: none;
+  inline-size: var(--w, 400px); block-size: var(--h, 560px); perspective: 1600px;
+  translate: var(--x, 0px) var(--y, 0px); will-change: translate, width, height; }
+/* the review is the card's front and the diagram its back: it turns over on the way, the same move the card at the
+   end of the fan makes, rather than one picture dissolving into another */
+.cp-fly-in { position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: rotateY(calc(var(--face, 0) * 180deg)); will-change: transform; }
+.cp-fly-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cp-fly-cp { transform: rotateY(180deg); }
+/* the card stretches to whatever the flight asks for: its resting aspect ratio would fight the morph */
+.cp-fly .tc, .cp-fly .tc:hover { inline-size: 100%; block-size: 100%; max-inline-size: none; aspect-ratio: auto;
+  cursor: default; margin: 0; }
+.cp-fly .tc-in { grid-template-rows: auto 1fr auto; gap: 10px; padding: 12px; }
+.cp-fly .tc-top b { font-size: 20px; }
+.cp-fly .tc-no { color: var(--steel); }
+.cp-fly .cp-figs { position: absolute; inset: 0; block-size: auto; }
+.cp-fly .cp-fly-cp .tc-art { background: var(--sea); box-shadow: 0 0 0 1px rgb(25 37 74 / .15); }
+
+/* the card that rests here is covered until the flight lands on it, so one card arrives rather than two */
+.cp-stage.is-handoff .cp-card { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no flight: the card is simply where it belongs, in both places */
+  .cp-fly { display: none; }
+  .cp-stage.is-handoff .cp-card { opacity: 1; }
+}
+
+/* ---------- 07 · The Stack: the tools leave the card and go into orbit ----------
+   components/home/ToolOrbit.tsx. The chips are the same marks lying on 06's last card
+   (components/home/Interfaces.tsx, lib/bathurst/tools.ts), so the two have to look identical. */
+
+/* one chip: the mark in a white circle, never on a coloured ground — the marks carry their own colour */
+.tool-chip { position: absolute; display: grid; place-items: center; width: 44px; height: 44px;
+  margin: -22px 0 0 -22px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .08), 0 2px 8px rgb(25 37 74 / .12); }
+.tool-chip img { width: 56%; height: 56%; object-fit: contain; display: block; }
+.tool-chip.is-flat { position: static; margin: 0; }
+
+/* on the card: the marks lie behind the chain, quiet enough that the chain still reads first. The figure is only
+   as tall as the chain in it, so the scatter is given the whole art window to spread over instead — otherwise the
+   per-cent places collapse into one band across the middle and the marks pile on each other. */
+.fg-stack { position: relative; min-block-size: 100%; align-content: center; }
+.tool-scatter { position: absolute; inset: -14% -6%; opacity: .45; pointer-events: none; }
+.tool-scatter .tool-chip { width: 32px; height: 32px; margin: -16px 0 0 -16px;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .06), 0 1px 5px rgb(25 37 74 / .1); }
+.fg-stack .ch { position: relative; z-index: 1; }
+
+.to-track { position: relative; }
+.to-stage { position: sticky; top: 0; height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  align-content: start; gap: var(--s4); padding-top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px));
+  transform: translate3d(0, var(--pin, 0px), 0); }
+.to-head { text-align: center; display: grid; justify-items: center; gap: var(--s2); }
+.to-head .lp-h { max-width: 18em; }
+.to-head .lp-lead { max-width: 42em; font-size: 16px; }
+
+.to-field { position: relative; min-block-size: 0; }
+
+/* Every chip is placed from the top-left of the field by one transform the scroll writes each frame: the whole
+   run — off the card, out across the page, into the network — is one interpolation on one element, so there is
+   no point in it where a chip stops being the same chip. The component owns the numbers; the CSS only says what
+   a chip looks like. */
+.to-fly { left: 0; top: 0; margin: 0; will-change: transform; }
+
+/* the network: one line from the mark to each node, under the chips */
+.to-web { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.to-web line { stroke: rgb(25 37 74 / .22); stroke-width: 1.25; }
+
+/* the TCG mark: nothing at the start, the middle of the network by the end */
+.to-mark { position: absolute; left: 0; top: 0; display: grid; place-items: center;
+  width: 136px; height: 136px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .1), 0 14px 38px -12px rgb(25 37 74 / .45); }
+.to-mark img { width: 64%; height: 64%; object-fit: contain; }
+
+/* ---------- narrow: no track, no pin — the marks simply sit together ---------- */
+@media (max-width: 899px) {
+  .to-track { height: auto; }
+  .to-stage { position: static; height: auto; transform: none; padding-top: 0; }
+  .to-head { text-align: left; justify-items: start; }
+  .to-head .lp-h, .to-head .lp-lead { max-width: none; }
+  .to-grid { list-style: none; margin: var(--s4) 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: var(--s2); justify-items: center; }
+  .to-mark-flat { position: static; width: 72px; height: 72px; margin: var(--s4) auto 0; }
+}
+
+
+
+/* The tools lying on 06's last card need the whole art window to lie on. .fg is a content-sized grid item, so
+   .fg-stack's `min-block-size: 100%` had nothing to resolve against and the marks collapsed into a band across the
+   middle of the card — the very thing lib/bathurst/tools.ts's per-cent places are there to avoid. Giving the
+   figure the card's full height and width spreads them over the card as a desk rather than a row. */
+.cp-card .cp-fig, .cp-fly-cp .cp-fig { align-content: stretch; }
+.cp-card .fg-stack, .cp-fly-cp .fg-stack { block-size: 100%; max-inline-size: none; }
+
+/* No connector down 06's last card. The chain's rule read as an axis ruled across the card — with the tools now
+   scattered over the whole art window, a line through them fought the scatter instead of joining the two boxes,
+   which sit close enough to read as a sequence on their own. §03's broken chain keeps its rule: there the break
+   IS the point, so the line has to be there to be broken (.ch-join.is-broken in app/interfaces.css). */
+.fg-stack .ch-line { display: none; }
+.fg-stack .ch-join { height: 34px; padding-left: 2px; }
