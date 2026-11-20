@@ -368,3 +368,16 @@ test("bottom suggestions rotate independently of the paused hero and submit the 
   await dock.getByRole("button", {name:"Ask this example"}).click();
   await expect(page.locator(".msg-u").last()).toHaveText(shown);
 });
+
+test("the hero card and prompt share both upper corner centers", async ({page}) => {
+  await page.goto("/chatbot");
+  const offsets = await page.locator(".hero-media").evaluate(el => {
+    const plate = el.querySelector(".plate")!;
+    const form = el.querySelector("form")!;
+    const outer = plate.getBoundingClientRect(), inner = form.getBoundingClientRect();
+    const radius = parseFloat(getComputedStyle(plate).borderTopLeftRadius);
+    return [inner.top - outer.top, inner.left - outer.left, outer.right - inner.right]
+      .map(gap => Math.abs(radius - gap - inner.height / 2));
+  });
+  for (const offset of offsets) expect(offset).toBeLessThan(0.5);
+});

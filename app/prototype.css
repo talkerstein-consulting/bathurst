@@ -61,7 +61,6 @@
   --section-gap: var(--s7);
   --gutter: 24px;
   --maxw: 1200px;
-  --plate-pad: 24px;      /* the hero plate's inset: the intake sits this far in */
 
   /* type */
   --h1-size: 96px;
@@ -207,7 +206,7 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
   background: var(--cream);
   border: var(--outer-stroke) solid var(--steel);
   box-shadow: inset 0 0 0 var(--gap) var(--cream), inset 0 0 0 calc(var(--gap) + var(--inner-stroke)) var(--steel);
-  padding: var(--plate-pad);
+  padding: var(--hero-inset);
   overflow: hidden; text-align: left;
   aspect-ratio: 16 / 10;
 }
@@ -591,7 +590,6 @@ html.chatting, html.chatting body { overflow: hidden; }
   .brand .tag { display: none; }
   .hero { padding-top: var(--s4); }
   .hero .deck { font-size: 17px; margin-bottom: var(--s4); }
-  :root { --plate-pad: 12px; }
   .plate { border-radius: 20px; aspect-ratio: 4 / 5; }
   .shot-cap { left: 12px; bottom: 12px; max-width: calc(100% - 24px); font-size: 11px; padding: 6px 11px; }
   .ask { padding: 5px 6px 5px 16px; gap: 6px; }
@@ -939,10 +937,15 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 .chat-sheet[data-landing-menu] .sheet-links { padding-block: 0; }
 @media (max-width:760px) { .chat-sheet[data-landing-menu] { --menu-inset: 16px; } }
 
-.hero-media { position: relative; }
+/* The concentric curves share a center: outer radius = prompt radius + the visible gap. */
+.hero-media { position: relative; --hero-inset: 16px; --hero-prompt-radius: 32px; }
+.hero-media .plate { border-radius: calc(var(--hero-prompt-radius) + var(--hero-inset)); }
+.hero-media .agency-composer[data-docked="false"] .ask {
+  height: calc(2 * var(--hero-prompt-radius)); border-radius: var(--hero-prompt-radius);
+}
 .composer-anchor {
-  position: absolute; inset: calc(var(--plate-pad) + 1px) calc(var(--plate-pad) + 1px) auto;
-  height: 60px; text-align: left; pointer-events: none;
+  position: absolute; inset: var(--hero-inset) var(--hero-inset) auto;
+  height: calc(2 * var(--hero-prompt-radius)); text-align: left; pointer-events: none;
 }
 .agency-composer { pointer-events: auto; }
 .agency-composer[data-docked="true"] {
@@ -957,6 +960,6 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 }
 body:has(.agency-composer) .ft { padding-bottom: max(110px, calc(env(safe-area-inset-bottom) + 96px)); }
 @media (max-width:760px) {
-  .composer-anchor { height: 52px; }
+  .hero-media { --hero-inset: 10px; --hero-prompt-radius: 28px; }
   .agency-composer[data-docked="true"] { width: calc(100% - 28px); bottom: calc(var(--keyboard-inset, 0px) + max(16px, env(safe-area-inset-bottom))); }
 }
