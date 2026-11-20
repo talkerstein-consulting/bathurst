@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import RiseHeading from "./style/RiseHeading";
 import { leadAttributionQuestion } from "@/lib/chatbot/lead-attribution";
 import { answeredAt } from "@/lib/chatbot/duplicates";
 import { previewAnswer, previewQuestion } from "@/lib/chatbot/preview";
@@ -264,7 +263,7 @@ export default function AgencyChat({children, designPreview = false}: {children:
     </div></header>
     <main id="top">
       <section className="hero"><div className="wrap">
-        <RiseHeading text="Better Business Systems" className="landing-title" /><p className="deck">What would you like to make easier?</p>
+        <h1>Better Business Systems</h1><p className="deck">What would you like to make easier?</p>
         <div className="hero-media">
           <div className="plate">
             <div className="shots" aria-hidden="true">

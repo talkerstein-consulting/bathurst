@@ -35,12 +35,13 @@ export default function ClientMapSection() {
     dispose.current = () => {observer.disconnect(); clearTimeout(fallback);};
   }
 
+  const label = open ? "Close map" : "Explore the client map";
   return <section className="mapwide" data-open={open} data-revealed={open && ready}>
     <div className="wrap"><div className="map-shell">
       <button type="button" className="map-toggle" aria-controls="client-map" aria-expanded={open}
-        aria-label={open ? "Close map" : "Explore the client map"} onClick={() => {setMounted(true); setOpen(!open);}}>
+        aria-label={label} onClick={() => {setMounted(true); setOpen(!open);}}>
         <span className="map-pill" aria-hidden="true">
-          <span className="map-labels"><span>Explore the client map</span><span>Close map</span></span>
+          <span key={label} className="map-label">{label}</span>
           <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 15 15 5 M5.5 5H15v9.5" /></svg>
         </span>
       </button>

@@ -130,7 +130,7 @@ function useLandingMotion() {
     });
     const titles = root.current.querySelectorAll(".landing-title");
     titles.forEach(el => el.classList.add("title-pending"));
-    root.current.querySelectorAll("main h1, main h2:not(.sx-h), main h3, .sx-line, .deck, .shot-cap, .rotor, .row-copy p, .row-copy a, .sample-caption, .ft-nav a, .ft-meta > div, .ft-legal > *").forEach(el => reveal.observe(el));
+    root.current.querySelectorAll("main h2:not(.sx-h), main h3, .sx-line, .row-copy p, .row-copy a, .sample-caption, .ft-nav a, .ft-meta > div, .ft-legal > *").forEach(el => reveal.observe(el));
     root.current.querySelectorAll(".statement, .mapwide").forEach(el => loops.observe(el));
     const stop = () => { if (media.matches) { running.forEach(animation => animation.cancel()); running.clear(); } };
     media.addEventListener("change", stop);

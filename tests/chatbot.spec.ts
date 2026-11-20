@@ -320,8 +320,10 @@ test("landing titles and prompt examples stagger their words, and the menu retur
   await page.emulateMedia({reducedMotion:"no-preference"});
   await page.goto("/chatbot");
   const headline = page.getByRole("heading", {level:1, name:"Better Business Systems"});
-  await expect(headline).toHaveClass(/title-entered/);
-  await expect(headline.locator(".rise-w > span").last()).toHaveCSS("animation-name", "title-word-in");
+  await expect(headline).toHaveCSS("animation-name", "hero-fade-in");
+  const sequence = await page.locator(".hero h1, .hero .deck, .hero-media, .hero .rotor")
+    .evaluateAll(els => els.map(el => parseFloat(getComputedStyle(el).animationDelay)));
+  expect(sequence).toEqual([0, .16, .32, .44]);
   const firstSectionTitle = page.locator(".row-copy h2").first();
   await expect(firstSectionTitle).not.toHaveClass(/title-entered/);
   await firstSectionTitle.scrollIntoViewIfNeeded();
