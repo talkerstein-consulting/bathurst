@@ -8,6 +8,16 @@ npm run dev        # http://localhost:3000
 npm run build
 ```
 
+## Ask Talkerstein
+
+Open `/chatbot` for the prompt-led experience. The browser sends up to 11 recent turns to `/api/chatbot`. The server selects relevant public pages, calls OpenAI’s Responses API with storage disabled, and resolves the returned citation IDs into links from the local knowledge base.
+
+- Set the server-only `OPENAI_API_KEY` in your environment, or set `OPENAI_API_KEY_FILE` to an absolute private file path for local development. The key file should live outside this checkout. Set `OPENAI_CHATBOT_MODEL` to override the default `gpt-5.4-mini`.
+- Edit `lib/chatbot/instructions.md` to update how the assistant answers. The separate Canadian SME terminal retains its own instructions and endpoint.
+- The published site snapshot lives in `lib/chatbot/knowledge.json`. Run `python scripts/refresh-chatbot-knowledge.py` with `requests` and `beautifulsoup4` installed to refresh agency, service and case-study pages from the Talkerstein sitemap.
+- The local route allows eight requests per minute per visitor and 250 per UTC day per server process. A multi-instance deployment needs a shared usage limit for a single production budget.
+- Run `npm run test:e2e -- tests/chatbot.spec.ts` for desktop and mobile interaction coverage. These browser tests use fixture responses. A live check requires a configured key.
+
 ## Layout
 
 | Path | What it is |

@@ -642,7 +642,7 @@ export default function DomeGallery({
         ['--image-filter']: grayscale ? 'grayscale(1)' : 'none'
       }}
     >
-      <main ref={mainRef} className="sphere-main">
+      <div ref={mainRef} className="sphere-main">
         <div className="stage">
           <div ref={sphereRef} className="sphere">
             {items.map((it, i) => (
@@ -664,12 +664,18 @@ export default function DomeGallery({
                 <div
                   className="item__image"
                   role="button"
-                  tabIndex={0}
+                  tabIndex={items.findIndex(item => item.src === it.src) === i ? 0 : -1}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openItemFromElement(e.currentTarget);
+                    }
+                  }}
                   aria-label={it.alt || 'Open image'}
                   onClick={onTileClick}
                   onPointerUp={onTilePointerUp}
                 >
-                  <img src={it.src} draggable={false} alt={it.alt} />
+                  <img src={it.src} loading="lazy" decoding="async" draggable={false} alt={it.alt} />
                 </div>
               </div>
             ))}
@@ -685,7 +691,7 @@ export default function DomeGallery({
           <div ref={scrimRef} className="scrim" />
           <div ref={frameRef} className="frame" />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

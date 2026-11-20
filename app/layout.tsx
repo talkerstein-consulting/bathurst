@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Jost } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import LineSystem from "@/components/style/LineSystem";
 
-const jost = Jost({
+const jost = localFont({
+  src: "./fonts/JostVariable.ttf",
   variable: "--font-jost",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
 // Brand faces: WOFF2 subsets (Latin + typographic punctuation) of the client files kept at the project root
