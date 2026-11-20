@@ -1,6 +1,7 @@
+import { leadAttributionAnswer } from "./lead-attribution";
+
 const fringe = { title: "Fringe Boutique", url: "https://talkerstein.com/work/fringe-boutique" };
 const crm = { title: "CRM automation", url: "https://talkerstein.com/services/crm-automation" };
-const ads = { title: "Paid advertising", url: "https://talkerstein.com/services/paid-ads" };
 
 export const previewQuestion = "What did Talkerstein build for Fringe Boutique?";
 
@@ -20,11 +21,7 @@ export function previewAnswer(question: string) {
     };
   }
   if (/ad spend|ads|campaign|paid|lead/i.test(question)) {
-    return {
-      answer: "Group your CRM leads by the ad they came from. The qualified count tells you which ad delivered the most potential customers. Dividing that count by total leads tells you which ad brought the highest share. If you have spend, divide it by qualified leads for the cost per qualified lead.\n\nCan you share total leads and qualified leads for two ads over the same period? “Ad A” and “Ad B” are enough. I can compare them and tell you whether volume and quality point to the same ad.",
-      meetingBrief: "Explore how to trace a campaign lead through the CRM and measure cost per qualified lead.",
-      sources: [ads, crm], followups: [],
-    };
+    return leadAttributionAnswer;
   }
   if (/crm|follow.up|quote/i.test(question)) {
     return {

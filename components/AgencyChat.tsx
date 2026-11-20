@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { leadAttributionQuestion } from "@/lib/chatbot/lead-attribution";
 import { answeredAt } from "@/lib/chatbot/duplicates";
 import { previewAnswer, previewQuestion } from "@/lib/chatbot/preview";
 
@@ -19,7 +20,7 @@ const examples = [
   ["Catering orders arrive six different ways", "catering", "orders inbox automation"],
 ];
 const questions = [...examples.map(([q,, tags]) => ({q, tags})),
-  { q: "How can I tell which ads bring in qualified leads?", tags: "advertising ad spend campaigns reporting paid leads" },
+  { q: leadAttributionQuestion, tags: "advertising ad spend campaigns reporting paid leads" },
   { q: "What did Talkerstein build for Fringe Boutique?", tags: "portfolio shopify retail work projects case studies" },
   { q: "How does a business diagnostic work?", tags: "consulting process getting started" },
 ];

@@ -175,7 +175,7 @@ test("ratings stay per answer, Menu restores the draft, and the fourth preview r
   await chat.getByRole("article").last().locator(".answer-bubble").getByRole("button", {name:"Book a free 30-minute call"}).click();
   const booking = page.getByRole("dialog", {name:"Book a call"});
   const notes = booking.getByLabel("Meeting notes for Rishon");
-  await expect(notes).toHaveValue(/Fringe Boutique.*campaign.*stock.*quote/);
+  await expect(notes).toHaveValue(/Fringe Boutique.*ad quality.*stock.*quote/);
   await notes.fill("Review one quote handoff.");
   await booking.getByRole("button", {name:"Choose a time"}).click();
   await expect(booking.getByRole("status")).toContainText("live chat");
@@ -256,7 +256,10 @@ test("overlapping deliveries share one model call, and a failed delivery can ret
     })}]}]});
   };
   try {
-    const q = "Which ads deliver qualified leads?";
+    const q = "Which ads deliver qualified leads for my catering shop?";
+    const starter = await (await submit("How can I tell which ads bring in qualified leads?")).json();
+    expect(starter.answer).toContain("total leads and qualified leads for two ads");
+    expect(calls).toBe(0);
     const results = await Promise.all([submit(q), submit(q), submit(q)]);
     for (const result of results) {
       expect(result.status).toBe(200);

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { answeredAt, sameQuestion } from "../../../lib/chatbot/duplicates";
+import { leadAttributionAnswer, leadAttributionQuestion } from "../../../lib/chatbot/lead-attribution";
 import { selectPages } from "../../../lib/chatbot/sources";
 
 export const runtime = "nodejs";
@@ -83,6 +84,10 @@ export async function POST(request: Request) {
   const history = turns.slice(0, -1);
   const duplicate = answeredAt(turns[turns.length - 1].content, history);
   if (duplicate !== -1) return Response.json({ reusedIndex: duplicate, answer: history[duplicate].content }, { headers });
+  if (!history.length && !previousBrief && [leadAttributionQuestion, ...leadAttributionAnswer.paraphrases]
+    .some(q => sameQuestion(q, turns[0].content))) {
+    return Response.json(leadAttributionAnswer, { headers });
+  }
   const session = request.headers.get("x-chat-session") || "";
   if (!/^[a-f0-9-]{36}$/i.test(session)) return generateAnswer(request, turns, previousBrief);
   const replayKey = createHash("sha256").update(JSON.stringify([session, turns, previousBrief])).digest("hex");
