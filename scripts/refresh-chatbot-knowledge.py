@@ -14,6 +14,19 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = {"/", "/about-us", "/services", "/our-process", "/contact", "/work", "/business-resources"}
 
 
+# Omit commercial figures and rate-card copy from the public assistant's evidence.
+PRICING = re.compile(
+    r"[$£€¥]|\b(?:pricing|prices?|priced|fees?|rates?\s+(?:start|from)|rate\s+card|hourly\s+rate|"
+    r"retainer\s+(?:of|starts)|starting\s+(?:at|from)|costs?\s+between|per\s+(?:hour|month)\b|"
+    r"CAD|USD|dollars?|cents?)\b|\b\d[\d,.]*\s*(?:/\s*(?:mo|hr|month|hour)|[kK]\s+(?:per|a)\s+month)",
+    re.IGNORECASE,
+)
+
+
+def public_copy(text):
+    return "\n".join(line for line in text.splitlines() if not PRICING.search(line))
+
+
 def fetch_page(url):
     response = requests.get(url, timeout=30)
     response.raise_for_status()
@@ -31,7 +44,7 @@ def fetch_page(url):
         is_case_label = "/work/" in url and 3 <= len(value) < 45 and not tag.find_parent("a")
         if (len(value) >= 45 or is_case_label) and value not in paragraphs:
             paragraphs.append(value)
-    return {"url": url, "title": title, "text": "\n".join(dict.fromkeys(paragraphs))[:5200]}
+    return {"url": url, "title": title, "text": public_copy("\n".join(dict.fromkeys(paragraphs)))[:5200]}
 
 
 def main():
@@ -44,6 +57,7 @@ def main():
         raise ValueError("Expected agency and case-study pages in sitemap")
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         pages = list(pool.map(fetch_page, selected))
+    pages = [page for page in pages if not PRICING.search(page["title"] + " " + page["url"])]
     if any(not page["text"] for page in pages):
         raise ValueError("A source is missing its text")
     target = ROOT / "lib/chatbot/knowledge.json"

@@ -1,0 +1,306 @@
+[
+  {
+    "id": "form-delivery",
+    "title": "Website form leads missing from the CRM",
+    "basis": "Gmail • staged form delivery and QA",
+    "topic": [
+      "form",
+      "forms",
+      "submission",
+      "submissions",
+      "webhook",
+      "intake"
+    ],
+    "context": [
+      "missing",
+      "lost",
+      "blank",
+      "other",
+      "repeat",
+      "alert",
+      "notification",
+      "crm",
+      "ghl",
+      "mapping",
+      "disappear",
+      "disappearing"
+    ],
+    "text": "Follow one anonymous submission from the website through the webhook to the GHL contact, then to the internal alert. A thank-you screen proves only the first step. Try a blank or Other service choice and submit a shorter form for the same test contact. Check that the right person gets one alert and that omitted fields preserve earlier answers. Ask which of those three places last shows the test."
+  },
+  {
+    "id": "quote",
+    "title": "Quote requests and estimates going quiet",
+    "basis": "Gmail design brief and GHL quote templates",
+    "topic": [
+      "quote",
+      "quotes",
+      "estimate",
+      "estimates",
+      "proposal",
+      "proposals"
+    ],
+    "context": [
+      "follow",
+      "following",
+      "chase",
+      "quiet",
+      "ghost",
+      "ghosted",
+      "stale",
+      "sent",
+      "respond",
+      "crm",
+      "request",
+      "requests",
+      "reply"
+    ],
+    "text": "Talkerstein separates a new request from an offer already sent. Its quote templates include an initial finding and industry-specific follow-up. A workable design creates one opportunity, alerts a named person to respond, and follows up on the specific finding when the quote goes out. To locate the delay, compare requests received, quotes sent and replies over the same period."
+  },
+  {
+    "id": "stops",
+    "title": "Follow-up sequences after a lead replies or books",
+    "basis": "Gmail workflow design",
+    "topic": [
+      "sequence",
+      "sequences",
+      "drip",
+      "automation",
+      "automated",
+      "follow",
+      "following",
+      "email",
+      "emails",
+      "text",
+      "texts"
+    ],
+    "context": [
+      "stop",
+      "stopping",
+      "reply",
+      "replies",
+      "replied",
+      "booked",
+      "booking",
+      "opted",
+      "unsubscribe",
+      "dnd",
+      "already",
+      "duplicate"
+    ],
+    "text": "The team’s workflow design calls for stopping automated follow-up on a reply, booking, do-not-disturb, or a won, lost or excluded contact. Treat this as a design rule to verify in the specific account. If messages continue, compare the event time with enrollment and the next scheduled message. Check whether a second sequence enrolled the same person."
+  },
+  {
+    "id": "reviews",
+    "title": "Google review requests after invoice payment",
+    "basis": "Gmail implementation discussion and GHL review-request template",
+    "topic": [
+      "reviews",
+      "review",
+      "feedback"
+    ],
+    "context": [
+      "google",
+      "payment",
+      "invoice",
+      "paid",
+      "quickbooks",
+      "request",
+      "requests",
+      "subcontractor",
+      "customer",
+      "customers"
+    ],
+    "text": "A payment-triggered review flow needs three decisions: which payment event qualifies, who is an eligible customer, and whether to send once per customer or once per job. Exclude vendors and subcontractors using a maintained contact field or tag. Apply the same invitation to eligible customers regardless of sentiment. Test an eligible and an excluded record before enabling delivery."
+  },
+  {
+    "id": "missed-calls",
+    "title": "Missed calls and automatic text-back",
+    "basis": "Gmail call activity audit and workflow design",
+    "topic": [
+      "missed",
+      "unanswered",
+      "tracking",
+      "unused"
+    ],
+    "context": [
+      "calls",
+      "call",
+      "phone",
+      "number",
+      "numbers",
+      "callback",
+      "text",
+      "sms"
+    ],
+    "text": "Check the call log for missed or unanswered calls, then check whether each has an outgoing text and a reply or callback. Separate automatic acknowledgements from conversations a person picked up. Before retiring a tracking number, check inbound calls, SMS activity and routing over a representative period. Use counts in chat and keep phone numbers private."
+  },
+  {
+    "id": "booking",
+    "title": "Appointment reminders and no-show rebooking",
+    "basis": "GHL booking and no-show templates and Gmail workflow design",
+    "topic": [
+      "appointment",
+      "appointments",
+      "booking",
+      "bookings",
+      "show",
+      "shows",
+      "rebook",
+      "reschedule"
+    ],
+    "context": [
+      "missed",
+      "miss",
+      "reminder",
+      "reminders",
+      "confirm",
+      "confirmation",
+      "no",
+      "rebooking",
+      "calendar"
+    ],
+    "text": "Talkerstein maintains distinct templates for booking confirmations and missed appointments. An example setup uses the booking event for confirmation and the no-show status for a rebooking invitation. Verify the calendar and who marks attendance. Compare booked, attended, missed and rebooked counts to see whether the gap comes before the appointment or afterwards."
+  },
+  {
+    "id": "reactivation",
+    "title": "Reactivating old leads and stale opportunities",
+    "basis": "GHL reactivation and nurture templates and Gmail workflow design",
+    "topic": [
+      "old",
+      "stale",
+      "dormant",
+      "reactivate",
+      "reactivation",
+      "nurture",
+      "cold"
+    ],
+    "context": [
+      "leads",
+      "lead",
+      "opportunity",
+      "opportunities",
+      "contacts",
+      "customers",
+      "pipeline",
+      "nurture"
+    ],
+    "text": "Talkerstein has separate message templates for reactivation, cold outreach and monthly nurture. For stalled opportunities, first separate past customers, people who received a quote and people who never had a conversation. Select eligible contacts and respect exclusions. A previous quote gives a person a specific reason to reconnect. One practical question is where that group last stopped in the pipeline."
+  },
+  {
+    "id": "routing",
+    "title": "Routing collaboration, partnership and referral inquiries",
+    "basis": "Gmail intake design and delivery handoff",
+    "topic": [
+      "collaboration",
+      "collaborations",
+      "referral",
+      "referrals",
+      "partnership",
+      "partnerships",
+      "inquiry",
+      "inquiries"
+    ],
+    "context": [
+      "intake",
+      "form",
+      "forms",
+      "route",
+      "routing",
+      "review",
+      "referral",
+      "collaboration",
+      "partnership",
+      "project"
+    ],
+    "text": "A project collaboration inquiry can be acknowledged, tagged and sent to a person for review. Partnership and referral requests can follow a different path. Keep a decision stage before an exploration call. For mixed inquiries, inspect a few anonymous examples and ask which answer determines who should handle each."
+  },
+  {
+    "id": "ownership",
+    "title": "Who owns the accounts and what happens at onboarding",
+    "basis": "Gmail onboarding and project kickoff guidance",
+    "topic": [
+      "onboard",
+      "onboarding",
+      "kickoff",
+      "ownership",
+      "owns",
+      "own",
+      "access",
+      "password",
+      "passwords",
+      "handoff"
+    ],
+    "context": [
+      "client",
+      "account",
+      "accounts",
+      "website",
+      "domain",
+      "ads",
+      "agency",
+      "access",
+      "analytics",
+      "onboarding",
+      "login",
+      "handoff"
+    ],
+    "text": "Talkerstein’s onboarding guidance puts domains and marketing accounts in the client’s name and uses invitations for agency access. A useful handoff inventory lists the account owner, billing owner, who can grant access and who maintains each asset. Confirm these items against the project scope. Start with the domain registrar and the ad account. Never request passwords in chat."
+  },
+  {
+    "id": "delivery",
+    "title": "Client kickoff and project accountability",
+    "basis": "Gmail onboarding and delivery review",
+    "topic": [
+      "kickoff",
+      "onboarding",
+      "handoff",
+      "launch",
+      "checklist",
+      "approval",
+      "approvals"
+    ],
+    "context": [
+      "tasks",
+      "owner",
+      "owners",
+      "project",
+      "client",
+      "assets",
+      "website",
+      "review",
+      "status",
+      "work"
+    ],
+    "text": "The team’s onboarding brief assigns each task an owner, a due date and a status. Distinguish work ready on staging, work approved by the client and work released to production. For a stalled handoff, identify the one missing asset, access invitation or decision and the person who can supply it. Verify a deliverable from its link or test result before marking it complete."
+  },
+  {
+    "id": "crm-overview",
+    "title": "How Talkerstein uses GoHighLevel for CRM and lead management",
+    "basis": "GHL template inventory and Gmail intake and follow-up design",
+    "topic": [
+      "crm",
+      "ghl",
+      "gohighlevel",
+      "leads",
+      "pipeline"
+    ],
+    "context": [
+      "use",
+      "uses",
+      "using",
+      "manage",
+      "manages",
+      "management",
+      "handle",
+      "handles",
+      "process",
+      "approach",
+      "setup",
+      "talkerstein",
+      "work",
+      "organize",
+      "organise"
+    ],
+    "text": "Talkerstein organizes CRM follow-up around what has actually happened: a new inquiry, a quote sent, a reply, a booking or a missed appointment. Its GHL account has separate template families for quotes, reactivation, ongoing nurture and appointment messages. Its intake designs pair contact records with opportunities and an assigned human next step. To sketch a workable CRM for a visitor, start with where inquiries arrive, who owns the first response, and which event should stop the reminders."
+  }
+]

@@ -25,7 +25,7 @@ declare module "@/components/OrbitImages" {
 declare module "@/components/DomeGallery" {
   import type { CSSProperties } from "react";
   export interface DomeGalleryProps {
-    images?: { src: string; alt?: string }[];
+    images?: { src: string; thumbnail?: string; alt?: string }[];
     fit?: number; segments?: number; grayscale?: boolean;
     overlayBlurColor?: string; imageBorderRadius?: string;
     dragSensitivity?: number; maxVerticalRotationDeg?: number;

@@ -176,8 +176,7 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
    =========================================================================== */
 .site-head {
   position: sticky; top: 0; z-index: 60;
-  background: color-mix(in srgb, var(--sea) 86%, transparent);
-  backdrop-filter: blur(12px) saturate(1.1);
+  background: var(--sea);
   border-bottom: var(--inner-stroke) solid transparent;
   transition: border-color .3s ease;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { leadAttributionQuestion } from "@/lib/chatbot/lead-attribution";
+import { asksForPricing, pricingInvitation } from "@/lib/chatbot/pricing";
 import { answeredAt } from "@/lib/chatbot/duplicates";
 import { previewAnswer, previewQuestion } from "@/lib/chatbot/preview";
 
@@ -157,6 +158,11 @@ export default function AgencyChat({children, designPreview = false}: {children:
     const previousBrief = turns.filter(m => m.role === "assistant").at(-1)?.meetingBrief || "";
     try {
       if (designPreview) {
+        if (asksForPricing(turns[turns.length - 1].content)) {
+          const {answer, ...details} = pricingInvitation(previousBrief);
+          setMessages([...turns, {role: "assistant", content: answer, ...details}]);
+          return;
+        }
         const sample = previewAnswer(turns[turns.length - 1].content);
         await new Promise(resolve => setTimeout(resolve, 650));
         const invite = turns.filter(m => m.role === "assistant").length >= 3 || /book a call|schedule a call/i.test(turns[turns.length - 1].content);
@@ -328,13 +334,13 @@ export default function AgencyChat({children, designPreview = false}: {children:
                   <div className="ask-answer">{m.content}</div>
                   {!!m.sources?.length && <div className="ask-sources" aria-label="Sources">{m.sources.map(s =>
                     <a href={s.url} key={s.url} target="_blank" rel="noreferrer">{s.title.split(/ \|| - Talkerstein/)[0]} ↗</a>)}</div>}
-                  {m.invite && i === messages.length - 1 &&
+                  {m.invite && (i === messages.length - 1 || i === reusedAnswer) &&
                     <button className="call-cta" onClick={openBooking}>Book a free 30-minute call <span aria-hidden="true">↗</span></button>}
                 </div>
               </div>
               <div className="answer-tools"><AnswerRating/></div>
             </article>)}
-          {busy && <p className="typing" role="status"><b aria-hidden="true"><span/><span/><span/></b>Checking Talkerstein’s published work…</p>}
+          {busy && <p className="typing" role="status"><b aria-hidden="true"><span/><span/><span/></b>Checking Talkerstein’s knowledge base…</p>}
         </div>
         {error && <div role="status" className="ask-error">{error} <button onClick={() => void requestAnswer(messages)}>Retry</button></div>}
       </div>

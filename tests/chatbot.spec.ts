@@ -316,6 +316,108 @@ test("landing motion keeps a static illustration and visible project work with r
   await expect.poll(() => gallery.locator(".dome-item img").evaluateAll(images => images.some(image => (image as HTMLImageElement).naturalWidth > 0))).toBeTruthy();
 });
 
+test("operational questions retrieve the right practice notes without private links", async () => {
+  const {selectPracticeNotes} = await import("../lib/chatbot/sources");
+  const cases = [
+    ["Why do repeat form submissions wipe earlier answers in my CRM?", "Website form leads"],
+    ["Our leads still get automated texts after they already booked", "Follow-up sequences"],
+    ["How should we send Google reviews after a QuickBooks invoice is paid?", "Google review requests"],
+    ["Who owns our domain and ads accounts at handoff?", "Who owns the accounts"],
+    ["How do we follow up when quotes go quiet?", "Quote requests"],
+    ["How do we get old leads back into the pipeline?", "Reactivating old leads"],
+    ["Can we rebook appointment no-shows?", "Appointment reminders"],
+    ["Do our missed calls get a text?", "Missed calls"],
+    ["How does Talkerstein use GHL to manage leads?", "How Talkerstein uses"],
+  ];
+  for (const [question, title] of cases) {
+    const notes = selectPracticeNotes(question);
+    expect(notes.some(note => note.title.startsWith(title)), question).toBeTruthy();
+    expect(JSON.stringify(notes)).not.toMatch(/https?:|@/);
+  }
+  expect(selectPracticeNotes("Show me a retail website you built")).toEqual([]);
+});
+
+test("pricing uses the booking flow while CRM diagnosis uses curated evidence", async () => {
+  const {POST} = await import("../app/api/chatbot/route");
+  const {asksForPricing} = await import("../lib/chatbot/pricing");
+  expect(asksForPricing("How much does it cost per lead?")).toBe(false);
+  const originalFetch = globalThis.fetch;
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "fixture";
+  const inputs: string[] = [];
+  globalThis.fetch = async (_url, options) => {
+    const input = JSON.parse(String(options?.body)).input;
+    inputs.push(input[0].content);
+    return Response.json({status: "completed", output: [{content: [{type: "output_text", text: JSON.stringify({
+      bookingIntent: inputs.length === 1 ? "continue" : "pricing",
+      answer: inputs.length === 1 ? "Check the form mapping." : "An unapproved estimate.",
+      sources: [], followups: [], paraphrases: [], evidenceRequest: "", meetingBrief: "",
+    })}]}]});
+  };
+  const ask = async (content: string) => (await POST(new Request("http://localhost/api/chatbot", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({messages: [{role: "user", content}], previousBrief: "Website migration."}),
+  }))).json();
+  try {
+    const direct = await ask("How much do you charge for a website?");
+    expect(direct.invite).toBe(true);
+    expect(direct.meetingBrief).toContain("Website migration.");
+    expect(inputs).toHaveLength(0);
+    const diagnosis = await ask("Why do duplicate form submissions erase earlier CRM answers?");
+    expect(diagnosis.answer).toBe("Check the form mapping.");
+    const fixture = JSON.parse(inputs[0].split("\n").slice(1).join("\n"));
+    expect(fixture.practiceNotes[0].title).toContain("form leads");
+    expect(fixture.publicPages.length + fixture.practiceNotes.length).toBeLessThanOrEqual(5);
+    const indirect = await ask("Would my budget cover a full rebuild?");
+    expect(indirect.answer).toBe(direct.answer);
+    expect(indirect.invite).toBe(true);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
+});
+
+test("the portfolio sleeps offscreen and resumes when visible", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "no-preference"});
+  await page.goto("/chatbot");
+  const gallery = page.locator(".sphere-main");
+  const sphere = gallery.locator(".sphere");
+  const transform = () => sphere.evaluate(el => (el as HTMLElement).style.transform);
+  await gallery.evaluate(el => el.scrollIntoView({block: "center", behavior: "instant"}));
+  const visible = await transform();
+  await expect.poll(transform).not.toBe(visible);
+  await page.evaluate(() => scrollTo({top: 0, behavior: "instant"}));
+  await expect(gallery).not.toBeInViewport();
+  const writes = await sphere.evaluate(el => new Promise<number>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      let count = 0;
+      const observer = new MutationObserver(records => { count += records.length; });
+      observer.observe(el, {attributes: true, attributeFilter: ["style"]});
+      setTimeout(() => { observer.disconnect(); resolve(count); }, 250);
+    }));
+  }));
+  expect(writes).toBe(0);
+});
+
+test("a vertical swipe on the portfolio scrolls the page", async ({page, isMobile}) => {
+  test.skip(!isMobile, "Requires touch input");
+  await page.goto("/chatbot");
+  const gallery = page.locator(".sphere-main");
+  await gallery.evaluate(el => el.scrollIntoView({block: "center", behavior: "instant"}));
+  const box = (await gallery.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  const start = await page.evaluate(() => scrollY);
+  const touch = await page.context().newCDPSession(page);
+  await touch.send("Input.dispatchTouchEvent", {type: "touchStart", touchPoints: [{x, y}]});
+  for (const offset of [24, 60, 100, 150]) {
+    await touch.send("Input.dispatchTouchEvent", {type: "touchMove", touchPoints: [{x, y: y - offset}]});
+  }
+  await touch.send("Input.dispatchTouchEvent", {type: "touchEnd", touchPoints: []});
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(start + 60);
+  await expect(page.locator(".viewer .enlarge")).toHaveCount(0);
+});
+
 test("landing titles and prompt examples stagger their words, and the menu returns focus", async ({page}) => {
   await page.emulateMedia({reducedMotion:"no-preference"});
   await page.goto("/chatbot");

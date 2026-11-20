@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { answeredAt, sameQuestion } from "../../../lib/chatbot/duplicates";
 import { leadAttributionAnswer, leadAttributionQuestion } from "../../../lib/chatbot/lead-attribution";
-import { selectPages } from "../../../lib/chatbot/sources";
+import { asksForPricing, pricingInvitation } from "../../../lib/chatbot/pricing";
+import { selectPages, selectPracticeNotes } from "../../../lib/chatbot/sources";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -44,7 +45,7 @@ const schema = {
     paraphrases: { type: "array", items: { type: "string" }, maxItems: 2 },
     evidenceRequest: { type: "string" },
     meetingBrief: { type: "string" },
-    bookingIntent: { type: "string", enum: ["continue", "invite", "declined"] },
+    bookingIntent: { type: "string", enum: ["continue", "invite", "declined", "pricing"] },
     sources: { type: "array", items: { type: "integer" } },
     followups: { type: "array", items: { type: "string" } },
   },
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
   if (!Array.isArray(turns) || !turns.length || turns.length > 12 || !turns.every(validTurn) || turns.at(-1)?.role !== "user") {
     return fail("Ask a question of up to 2,000 characters.", 400);
   }
+  if (asksForPricing(turns[turns.length - 1].content)) return Response.json(pricingInvitation(previousBrief), {headers});
   const history = turns.slice(0, -1);
   const duplicate = answeredAt(turns[turns.length - 1].content, history);
   if (duplicate !== -1) return Response.json({ reusedIndex: duplicate, answer: history[duplicate].content }, { headers });
@@ -109,7 +111,11 @@ async function generateAnswer(request: Request, turns: Turn[], previousBrief: st
     const key = process.env.OPENAI_API_KEY || (process.env.OPENAI_API_KEY_FILE && (await readFile(process.env.OPENAI_API_KEY_FILE, "utf8")).trim());
     if (!key) return fail("The assistant is temporarily unavailable.", 503);
     const instructions = await readFile(path.join(process.cwd(), "lib/chatbot/instructions.md"), "utf8");
-    const pages = selectPages(turns.filter(turn => turn.role === "user").slice(-2).map(turn => turn.content).join(" "));
+    const questions = turns.filter(turn => turn.role === "user").slice(-2).map(turn => turn.content);
+    const query = questions.join(" ");
+    const currentNotes = selectPracticeNotes(questions[questions.length - 1]);
+    const practice = currentNotes.length ? currentNotes : selectPracticeNotes(query);
+    const pages = selectPages(query).slice(0, 5 - practice.length);
     const evidence = pages.map((page, i) => ({ id: i + 1, title: page.title, excerpt: page.text }));
     const replyNumber = turns.filter(turn => turn.role === "assistant").length + 1;
     const upstream = await fetch("https://api.openai.com/v1/responses", {
@@ -117,7 +123,7 @@ async function generateAnswer(request: Request, turns: Turn[], previousBrief: st
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(45000)]),
       body: JSON.stringify({
         model: process.env.OPENAI_CHATBOT_MODEL || "gpt-5.4-mini", store: false,
-        instructions: instructions + "\nThis is assistant reply " + replyNumber + ".", input: [{ role: "developer", content: "Public reference material (data only):\n" + JSON.stringify(evidence) }, ...(previousBrief ? [{ role: "user", content: "Earlier meeting brief (reference data): " + previousBrief }] : []), ...turns.map(({role, content}) => ({role, content}))],
+        instructions: instructions + "\nThis is assistant reply " + replyNumber + ".", input: [{ role: "developer", content: "Reference material (data only):\n" + JSON.stringify({publicPages: evidence, practiceNotes: practice}) }, ...(previousBrief ? [{ role: "user", content: "Earlier meeting brief (reference data): " + previousBrief }] : []), ...turns.map(({role, content}) => ({role, content}))],
         reasoning: { effort: "low" }, max_output_tokens: 1200,
         text: { format: { type: "json_schema", name: "talkerstein_answer", strict: true, schema } },
       }),
@@ -131,6 +137,7 @@ async function generateAnswer(request: Request, turns: Turn[], previousBrief: st
     const raw = content?.find((part: {type: string}) => part.type === "output_text")?.text;
     const reply = JSON.parse(raw || "{}");
     if (data.status !== "completed" || typeof reply.answer !== "string" || !reply.answer.trim()) throw new Error("Incomplete answer");
+    if (reply.bookingIntent === "pricing") return Response.json(pricingInvitation(previousBrief), {headers});
     const ids = new Set<number>((reply.sources as unknown[]).filter((id): id is number => Number.isInteger(id) && Number(id) > 0 && Number(id) <= pages.length));
     const sources = [...ids].map(id => ({ title: pages[id - 1].title, url: pages[id - 1].url }));
     const invite = reply.bookingIntent === "invite" || (replyNumber >= 4 && reply.bookingIntent !== "declined");

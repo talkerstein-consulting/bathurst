@@ -75,7 +75,7 @@ function buildItems(pool, seg) {
     if (typeof image === 'string') {
       return { src: image, alt: '' };
     }
-    return { src: image.src || '', alt: image.alt || '' };
+    return { src: image.src || '', thumbnail: image.thumbnail, alt: image.alt || '' };
   });
 
   const usedImages = Array.from({ length: totalSlots }, (_, i) => normalizedImages[i % normalizedImages.length]);
@@ -95,8 +95,7 @@ function buildItems(pool, seg) {
 
   return coords.map((c, i) => ({
     ...c,
-    src: usedImages[i].src,
-    alt: usedImages[i].alt
+    ...usedImages[i]
   }));
 }
 
@@ -263,35 +262,43 @@ export default function DomeGallery({
 
   /* the endless turn */
   useEffect(() => {
-    if (!autoSpinDegPerSec) return;
-    if (typeof window === 'undefined') return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let visible = false;
     let raf = null;
     let last = null;
     const frame = now => {
-      if (last == null) last = now;
-      const dt = Math.min(now - last, 100) / 1000;
-      last = now;
-      const held =
-        draggingRef.current ||
-        inertiaRAF.current ||
-        focusedElRef.current ||
-        openingRef.current ||
-        document.hidden ||
-        reduced.matches;
-      if (!held) {
+      if (last !== null && !draggingRef.current && !inertiaRAF.current && !focusedElRef.current && !openingRef.current) {
+        const dt = Math.min(now - last, 100) / 1000;
         const nextY = wrapAngleSigned(rotationRef.current.y + autoSpinDegPerSec * dt);
-        rotationRef.current = { x: rotationRef.current.x, y: nextY };
+        rotationRef.current.y = nextY;
         applyTransform(rotationRef.current.x, nextY);
       }
+      last = now;
       raf = requestAnimationFrame(frame);
     };
-    raf = requestAnimationFrame(frame);
-    const resync = () => { last = null; };
-    document.addEventListener('visibilitychange', resync);
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(inertiaRAF.current);
+      inertiaRAF.current = null;
+      raf = null;
+      last = null;
+    };
+    const sync = () => {
+      if (!visible || document.hidden || reduced.matches) stop();
+      else if (autoSpinDegPerSec && raf === null) raf = requestAnimationFrame(frame);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      sync();
+    });
+    observer.observe(rootRef.current);
+    document.addEventListener('visibilitychange', sync);
+    reduced.addEventListener('change', sync);
     return () => {
-      if (raf) cancelAnimationFrame(raf);
-      document.removeEventListener('visibilitychange', resync);
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', sync);
+      reduced.removeEventListener('change', sync);
+      stop();
     };
   }, [autoSpinDegPerSec]);
 
@@ -349,6 +356,12 @@ export default function DomeGallery({
       onDrag: ({ event, last, velocity = [0, 0], direction = [0, 0], movement }) => {
         if (focusedElRef.current || !draggingRef.current || !startPosRef.current) return;
         const evt = event;
+        if (evt.type === 'pointercancel' || evt.type === 'touchcancel') {
+          draggingRef.current = false;
+          movedRef.current = false;
+          startPosRef.current = null;
+          return;
+        }
         const dxTotal = evt.clientX - startPosRef.current.x;
         const dyTotal = evt.clientY - startPosRef.current.y;
         if (!movedRef.current) {
@@ -376,7 +389,7 @@ export default function DomeGallery({
             vx = clamp((mx / dragSensitivity) * 0.02, -1.2, 1.2);
             vy = clamp((my / dragSensitivity) * 0.02, -1.2, 1.2);
           }
-          if (Math.abs(vx) > 0.005 || Math.abs(vy) > 0.005) startInertia(vx, vy);
+          if ((Math.abs(vx) > 0.005 || Math.abs(vy) > 0.005) && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) startInertia(vx, vy);
           if (movedRef.current) lastDragEndAt.current = performance.now();
           movedRef.current = false;
         }
@@ -675,7 +688,7 @@ export default function DomeGallery({
                   onClick={onTileClick}
                   onPointerUp={onTilePointerUp}
                 >
-                  <img src={it.src} loading="lazy" decoding="async" draggable={false} alt={it.alt} />
+                  <img src={it.thumbnail || it.src} loading="lazy" decoding="async" draggable={false} alt={it.alt} />
                 </div>
               </div>
             ))}
@@ -683,7 +696,6 @@ export default function DomeGallery({
         </div>
 
         <div className="overlay" />
-        <div className="overlay overlay--blur" />
         <div className="edge-fade edge-fade--top" />
         <div className="edge-fade edge-fade--bottom" />
 
