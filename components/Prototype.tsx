@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import OrbitImages from "@/components/OrbitImages";
 import DomeGallery from "@/components/DomeGallery";
-import GrainMass from "@/components/grain-mass";
-import LionCoin from "@/components/lion-coin";
+import AnimatedList, { type AnimatedListItem } from "@/components/react-bits/animated-list";
 import runPrototype from "./prototype-behaviour";
 import "@/app/prototype.css";
 
@@ -28,6 +27,19 @@ const TOOLS = [
   "/chatbot-tools/wordpress.svg",
   "/chatbot-tools/zapier.svg",
   "/chatbot-tools/google.svg",
+];
+
+/** the third visual: the day as it lands. Store notifications in the shape Shopify
+    sends them, cycling forever - AnimatedList wraps its cursor on the list. */
+const NOTES: AnimatedListItem[] = [
+  { id: 1, title: "New order \u00B7 $248.00", description: "Amazing Donuts \u2014 3 items, Toronto", time: "now", icon: "\u{1F6CD}" },
+  { id: 2, title: "Quote accepted", description: "AR26 \u2014 fit-out, signed off in the thread", time: "1m", icon: "\u2714\uFE0F" },
+  { id: 3, title: "Booking confirmed", description: "Ice Academy \u2014 Saturday, 9:00 AM", time: "4m", icon: "\u{1F4C5}" },
+  { id: 4, title: "New order \u00B7 $1,120.00", description: "Kapara \u2014 catering, North York", time: "7m", icon: "\u{1F6CD}" },
+  { id: 5, title: "Invoice paid", description: "MES \u2014 $3,400, two days early", time: "12m", icon: "\u{1F4B3}" },
+  { id: 6, title: "Review left \u00B7 5.0", description: "Luminari \u2014 \u201CDid what they said they would.\u201D", time: "18m", icon: "\u2B50" },
+  { id: 7, title: "Enquiry answered", description: "HOH \u2014 replied while the shop was shut", time: "26m", icon: "\u{1F4AC}" },
+  { id: 8, title: "New order \u00B7 $86.50", description: "Family Tree \u2014 pickup, Thornhill", time: "33m", icon: "\u{1F6CD}" },
 ];
 
 /** the gallery: the sites we built and the businesses behind them, from public/clients */
@@ -299,7 +311,7 @@ export default function Prototype() {
         <article className="row">
           <div className="row-vis">
               <div className="vis dome">
-                <DomeGallery images={WORK} segments={20} grayscale={false} fit={0.7} overlayBlurColor="#19254A" />
+                <DomeGallery images={WORK} segments={20} grayscale={false} fit={0.7} overlayBlurColor="#19254A" autoSpinDegPerSec={5} />
               </div>
             </div>
           <div className="row-copy">
@@ -312,20 +324,31 @@ export default function Prototype() {
         {/* row 3 */}
         <article className="row">
           <div className="row-vis">
-              <div className="vis coins">
-                <GrainMass
-                  colors={["#3C5BA8", "#F3F7F3"]}
-                  backgroundColor="#19254A"
-                  /* the coin's key light sits straight above and in front of it
-                     (Lightformer at [0, 5, 2]), so the mass is lit from there too */
-                  lightX={0}
-                  lightY={0.95}
-                  className="grainfield"
+              <div className="vis notes">
+                {/* the work landing as it happens: orders, bookings, invoices, reviews,
+                    stacked the way a shop sees them come in. The list runs on forever. */}
+                <AnimatedList
+                  items={NOTES}
+                  layout="stack"
+                  position="center"
+                  entrance="morph"
+                  interval={2200}
+                  initialCount={3}
+                  maxItems={5}
+                  height="100%"
+                  gap={12}
+                  radius={16}
+                  padding={14}
+                  stackDepth={3}
+                  peek={14}
+                  pauseOnHover
+                  expandOnHover
+                  liveTime={false}
+                  theme="light"
+                  accentColor="#B3530E"
+                  cardColor="#F3F7F3"
+                  className="notefeed"
                 />
-                {/* the Talkerstein coin, the real one: public/models/lion-coin.glb */}
-                <div className="coin-stage">
-                  <LionCoin spin />
-                </div>
               </div>
             </div>
           <div className="row-copy">
