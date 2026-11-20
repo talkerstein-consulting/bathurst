@@ -413,15 +413,8 @@ svg.glyph { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap:
 .mapplate { aspect-ratio: 16 / 9; }
 /* the live map: /map renders the build reference's three.js engine pinned to its map state,
    and nothing else. Panning, zooming, the category chips and the client pins all work. */
-/* The frame runs taller than the plate and is pulled up behind it. Measured: the client
-   pins sit between 277px and 834px down a 956px frame, so lifting it 36.5% of the plate's
-   height puts the top of that band just inside the plate's top edge and crops the empty
-   land north of the city. The pins already span 91% of the width. */
-.mapplate { position: relative; overflow: hidden; }
-.mapplate iframe {
-  position: absolute; top: -36.5%; left: 0;
-  width: 100%; height: 148%; display: block; border: 0;
-}
+.mapplate { position: relative; overflow: hidden; scroll-margin-block: 80px 12px; }
+.mapplate iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
 
 /* ===========================================================================
@@ -637,12 +630,11 @@ html.chatting, html.chatting body { overflow: hidden; }
    half of the ellipse at z 10-90 and the near half at 110-190, so the mark sits at
    100: the tools passing behind it go under, the ones passing in front go over. */
 .vis.bare .orbit-mark {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: clamp(180px, 26%, 300px); height: auto; border-radius: 50%;
-  pointer-events: none; z-index: 100;
+  width: clamp(96px, 29%, 210px); height: auto; border-radius: 50%;
+  pointer-events: none;
 }
 /* circle containers for every tool */
-.vis.bare .orbit img {
+.vis.bare .orbit-image {
   border-radius: 50%; background: var(--sea); object-fit: contain; padding: 20%;
   box-shadow: 0 2px 10px rgb(0 0 0 / .25);
 }
@@ -683,19 +675,8 @@ html.chatting, html.chatting body { overflow: hidden; }
   width: 46%; aspect-ratio: 1; z-index: 2; pointer-events: none;
 }
 
-/* DomeGallery names its enlarge slot .frame, and so does the line system - so the TCG
-   double-line box was being painted over the middle of the dome. Nothing of ours reaches
-   inside the sphere. */
-.sphere-root .frame,
-.sphere-root .single,
-.sphere-root .card {
-  background: none !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
 /* The header owns the scrolled entry point. Graphics keep their depth order inside their own tiles. */
 .row-vis, .vis, .plate { isolation: isolate; }
-.vis.bare .orbit-mark { width: clamp(96px, 29%, 210px); }
 .ask-nav { display: flex; gap: 12px; align-items: center; }
 .ask-return, .ask-menu summary, .rotor button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -760,7 +741,7 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 
 .map-cover { position: absolute; inset: 0; display: grid; place-items: center; border: 0; cursor: pointer; background: var(--cream) url('/brand/og-bathurst.jpg') center / cover; }
 .map-cover span, .map-close { padding: 12px 18px; border-radius: 999px; border: 1px solid var(--steel); color: var(--steel); background: var(--sea); font: 500 16px/1.25 var(--body); }
-.map-close { position: absolute; bottom: 8px; right: 8px; cursor: pointer; }
+.map-close { display: block; margin: 8px 0 0 auto; min-height: 44px; cursor: pointer; }
 
 
 
@@ -867,3 +848,46 @@ dialog.chatsec[open] { width: 100%; height: 100dvh; max-width: none; max-height:
 
 .chat-foot .reused-answer { margin-block: 0 8px; padding-inline: 5px; color: var(--steel-70); font: 400 14px/1.4 var(--body); }
 .reused-answer button { background: none; border: 0; color: var(--steel); cursor: pointer; font: inherit; text-decoration: underline; }
+
+/* Each photo advances by one mask height. An identical final frame closes the loop. */
+.sx-reel, .sx-slot .sx-reel img { display: block; width: 100%; height: 100%; }
+.sx-slot { isolation: isolate; }
+.map-cover { width: 100%; height: 100%; padding: 0; }
+.map-cover > span { position: relative; z-index: 1; }
+.bathurst-street { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.street-live { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .sx-reel { animation: project-reel 12s cubic-bezier(.65,0,.25,1) infinite paused; }
+  .sx-line:nth-child(2) .sx-reel { animation-delay: -1.3s; }
+  .sx-line:nth-child(3) .sx-reel { animation-delay: -2.6s; }
+  .statement.motion-visible .sx-reel { animation-play-state: running; }
+  @keyframes project-reel {
+    0%, 28% { transform: translateY(0); }
+    33.333%, 61% { transform: translateY(-100%); }
+    66.667%, 94.5% { transform: translateY(-200%); }
+    100% { transform: translateY(-300%); }
+  }
+  .street-live { display: inline; }
+  .street-vehicle { transform-box: view-box; transform-origin: 772px 278px; animation: street-traffic 22s cubic-bezier(.45,.12,.75,.65) infinite paused; }
+  .street-tram { animation-delay: -12.75s; }
+  .street-sedan { animation-duration: 16s; animation-delay: -9.6s; }
+  .street-taxi { animation-duration: 19s; animation-direction: reverse; animation-delay: -6s; }
+  .street-flock { animation: bathurst-birds 28s linear -9s infinite paused; }
+  .motion-visible .street-vehicle, .motion-visible .street-flock { animation-play-state: running; }
+  @keyframes street-traffic {
+    0% { transform: scale(.10); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: scale(3); opacity: 1; }
+  }
+  @keyframes bathurst-birds {
+    0% { transform: translate(-64px, 185px) scale(.64); }
+    50% { transform: translate(540px, 103px) scale(.82); }
+    100% { transform: translate(1210px, 124px) scale(.72); }
+  }
+}
+@media (max-width: 760px) {
+  .mapplate:has(iframe) { width: 100%; height: clamp(390px, 66svh, 540px); aspect-ratio: auto; }
+  .rows .row { grid-template-columns: minmax(0, 1fr); }
+  .row-vis .vis { width: 100%; min-height: 0; }
+  .statement .sx-line { display: block; white-space: normal; }
+}

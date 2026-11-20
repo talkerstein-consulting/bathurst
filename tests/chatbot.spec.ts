@@ -105,6 +105,18 @@ test("the project map loads on demand and closes", async ({page}) => {
   await expect(page.locator(".mapplate iframe")).toHaveCount(0);
   await page.getByRole("button",{name:/Explore the client map/}).click();
   await expect(page.locator(".mapplate iframe")).toHaveAttribute("src","/map");
+  const frame = page.frameLocator(".mapplate iframe");
+  const zoom = frame.getByRole("button", {name: "Zoom in", exact: true});
+  await expect(frame.locator("#stick")).toHaveClass(/mapready/, {timeout: 25000});
+  await page.locator(".mapplate iframe").scrollIntoViewIfNeeded();
+  await expect(zoom).toBeInViewport();
+  const box = await page.locator(".mapplate iframe").boundingBox();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  const pin = frame.getByLabel("Yorkville Jewish Centre, 94 Avenue Rd, Toronto", {exact: true}).locator(".ic");
+  await expect(pin).toHaveCSS("opacity", "1");
+  await pin.click();
+  await expect(frame.locator("#sheetBody")).toContainText("Yorkville Jewish Centre");
+  await expect(frame.locator("#sheetBody")).toContainText("94 Avenue");
   await page.getByRole("button",{name:"Close map"}).click();
   await expect(page.locator(".mapplate iframe")).toHaveCount(0);
 });
@@ -276,4 +288,15 @@ test("overlapping deliveries share one model call, and a failed delivery can ret
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;
   }
+});
+
+test("landing motion keeps a static illustration and visible project work with reduced motion", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "reduce"});
+  await page.goto("/chatbot");
+  await expect(page.locator(".street-live")).toBeHidden();
+  await expect(page.locator(".sx-reel").first()).toHaveCSS("animation-name", "none");
+  const gallery = page.locator(".sphere-main");
+  await gallery.scrollIntoViewIfNeeded();
+  expect((await gallery.boundingBox())!.height).toBeGreaterThan(200);
+  await expect.poll(() => gallery.locator(".dome-item img").evaluateAll(images => images.some(image => (image as HTMLImageElement).naturalWidth > 0))).toBeTruthy();
 });

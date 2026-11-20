@@ -1,8 +1,9 @@
 // The two React Bits items that ship as .jsx: give their props a surface TypeScript can see.
 declare module "@/components/OrbitImages" {
-  import type { CSSProperties } from "react";
+  import type { CSSProperties, ReactNode } from "react";
   export interface OrbitImagesProps {
     images?: string[];
+    centerContent?: ReactNode;
     altPrefix?: string;
     baseWidth?: number;
     fill?: boolean;

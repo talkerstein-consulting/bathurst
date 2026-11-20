@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import BathurstStreet from "./BathurstStreet";
 import AgencyChat from "./AgencyChat";
 import OrbitImages from "@/components/OrbitImages";
 import DomeGallery from "@/components/DomeGallery";
@@ -81,18 +82,60 @@ const WORK: { src: string; alt: string }[] = [
   { src: "/clients/mes/site-1-sm.webp", alt: "MES — the site we built" },
 ];
 
+function PhotoReel({ photos }: { photos: string[] }) {
+  return <span className="sx-slot" aria-hidden="true"><span className="sx-reel">
+    {[...photos, photos[0]].map((photo, index) => <img key={index} src={photo} alt="" loading="lazy" decoding="async" />)}
+  </span></span>;
+}
+
+function useLandingMotion() {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!root.current || !("IntersectionObserver" in window)) return;
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const running = new Set<Animation>();
+    const reveal = new IntersectionObserver(entries => {
+      const siblings = new Map<Element | null, number>();
+      for (const {target, isIntersecting} of entries) {
+        if (!isIntersecting) continue;
+        reveal.unobserve(target);
+        if (media.matches) continue;
+        const group = target.parentElement;
+        const order = siblings.get(group) || 0;
+        siblings.set(group, order + 1);
+        const motion = target.animate([{ opacity: 0, translate: "0 12px" }, { opacity: 1, translate: "0 0" }],
+          {duration: 460, delay: Math.min(order, 4) * 65, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"});
+        running.add(motion);
+        motion.onfinish = () => running.delete(motion);
+      }
+    });
+    const loops = new IntersectionObserver(entries => {
+      for (const entry of entries) entry.target.classList.toggle("motion-visible", entry.isIntersecting);
+    });
+    root.current.querySelectorAll("main h1, main h2:not(.sx-h), main h3, .sx-line, .deck, .shot-cap, .rotor, .row-copy p, .row-copy a, .sample-caption, .ft-nav a, .ft-meta > div, .ft-legal > *, .map-cover > span").forEach(el => reveal.observe(el));
+    root.current.querySelectorAll(".statement, .mapwide").forEach(el => loops.observe(el));
+    const stop = () => { if (media.matches) { running.forEach(animation => animation.cancel()); running.clear(); } };
+    media.addEventListener("change", stop);
+    return () => { reveal.disconnect(); loops.disconnect(); running.forEach(animation => animation.cancel()); media.removeEventListener("change", stop); };
+  }, []);
+  return root;
+}
+
 export default function Prototype({designPreview = false}: {designPreview?: boolean}) {
   const [mapOpen, setMapOpen] = useState(false);
+  const landing = useLandingMotion();
+  const cover = useRef<HTMLButtonElement>(null);
+  const close = useRef<HTMLButtonElement>(null);
   return (
-    <>
+    <div ref={landing}>
       <AgencyChat designPreview={designPreview}>
       {/* ============================ statement ============================ */}
       <section className="statement is-open">
         <div className="wrap">
           <h2 className="sx-h">
-            <span className="sx-line">It answers from <span className="sx-slot"><img src="/photos/aria.webp" alt="" /></span>our own work.</span>
-            <span className="sx-line">Services. <span className="sx-slot"><img src="/photos/kidicare.webp" alt="" /></span> Client projects.</span>
-            <span className="sx-line">With <span className="sx-slot"><img src="/photos/esther.webp" alt="" /></span> links to the source.</span>
+            <span className="sx-line">It answers from <PhotoReel photos={["/photos/aria.webp", "/clients/fringe/photo-1-sm.webp", "/clients/hoh/photo-1-sm.webp"]} />our own work.</span>
+            <span className="sx-line">Services. <PhotoReel photos={["/photos/kidicare.webp", "/clients/kapara/photo-1-sm.webp", "/clients/royaldairy/photo-1-sm.webp"]} /> Client projects.</span>
+            <span className="sx-line">With <PhotoReel photos={["/photos/esther.webp", "/clients/hilys/photo-1-sm.webp", "/clients/ar26/photo-1-sm.webp"]} /> links to the source.</span>
           </h2>
         </div>
       </section>
@@ -101,12 +144,12 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
       <section className="mapwide">
         <div className="wrap">
           <div className="mapplate">
-            {mapOpen ? <>
-              <iframe src="/map" title="Interactive map of Talkerstein projects across the GTA" />
-              <button className="map-close" onClick={() => setMapOpen(false)}>Close map</button>
-            </> : <button className="map-cover" onClick={() => setMapOpen(true)}><span>Explore the client map ↗</span></button>}
-
+            {mapOpen ? <iframe src="/map" title="Interactive map of Talkerstein projects across the GTA" /> :
+              <button className="map-cover" ref={cover} onClick={() => {setMapOpen(true); requestAnimationFrame(() => close.current?.focus({preventScroll: true}));}}>
+                <BathurstStreet /><span>Explore the client map ↗</span>
+              </button>}
           </div>
+          {mapOpen && <button className="map-close" ref={close} onClick={() => {setMapOpen(false); requestAnimationFrame(() => cover.current?.focus({preventScroll: true}));}}>Close map</button>}
         </div>
       </section>
 
@@ -119,22 +162,22 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
           <div className="row-vis">
               <div className="vis bare">
                 <OrbitImages
-            images={TOOLS}
-            altPrefix="Marketing tool"
-            shape="ellipse"
-            baseWidth={1400}
-            radiusX={430}
-            radiusY={150}
-            rotation={-8}
-            itemSize={82}
-            itemRadius={41}
-            duration={46}
-            depth={0.95}
-            hoverScale={1.14}
-            showPath={false}
-            className="orbit"
-          />
-                <img className="orbit-mark" src="/brand/tcg-icon.svg" alt="Talkerstein Consulting Group" />
+                  images={TOOLS}
+                  altPrefix="Marketing tool"
+                  shape="ellipse"
+                  baseWidth={1400}
+                  radiusX={430}
+                  radiusY={98}
+                  rotation={-8}
+                  itemSize={82}
+                  itemRadius={41}
+                  duration={46}
+                  depth={0.95}
+                  hoverScale={1.14}
+                  showPath={false}
+                  className="orbit"
+                  centerContent={<img className="orbit-mark" src="/brand/tcg-icon.svg" alt="" />}
+                />
               </div>
             </div>
           <div className="row-copy">
@@ -239,6 +282,6 @@ export default function Prototype({designPreview = false}: {designPreview?: bool
         </div>
       </footer>
 
-    </>
+    </div>
   );
 }

@@ -322,7 +322,7 @@ const createEngine = (root, config, setAspect) => {
       const sy = (y - cy) * st.scale + st.height / 2 - half;
       const rot = cfg.alignToPath ? heading(u) : 0;
       let z = depth > 0 ? (d <= 0 ? 10 + Math.round((d + 1) * 80) : 110 + Math.round(d * 80)) : 1;
-      if (i === st.hoverIndex) z += 200;
+      if (i === st.hoverIndex) z = depth > 0 && d <= 0 ? 99 : z + 200;
       write(
         it,
         't',

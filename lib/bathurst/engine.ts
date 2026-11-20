@@ -594,7 +594,7 @@ export function createBathurstEngine(area?: string) {
   // Back to map (in place of the search field): closes whatever is open, clears the chip filter, returns to the overview
   $('backmap').onclick=()=>{ if(fPlace) leaveFPlace(false); resumeY=null; walkTo=null; filter='all'; query=''; q.value=''; markChip('all');
     selected=null; view={type:'list'}; render(); refresh(); if(W<760) setSheet('peek');
-    const y=heroTop() + (PH_A+PH_LEAD*.5)*H; if(Math.abs(scrollY-y)>H*.25) goTo(PH_A+PH_LEAD*.5); else resetView(); };
+    const y=heroTop() + (PH_A+PH_LEAD*.5)*H; if(!standaloneMap && Math.abs(scrollY-y)>H*.25) goTo(PH_A+PH_LEAD*.5); else resetView(); };
   qclear.onclick=()=>{ q.value=''; query=''; qclear.hidden=true; view={type:'list'}; selected=null; render(); refresh(); q.focus(); };
   const PH=["Search “bagels”","Search “website”","Search “brand identity”","Search “menu”","Search “booking”"]; let phI=0;
   const phTimer = setInterval(()=>{ if(!q.value && document.activeElement!==q && view.type!=='place'){ q.placeholder=PH[phI++%PH.length]; } }, 2600);
@@ -1048,7 +1048,8 @@ export function createBathurstEngine(area?: string) {
 
   // ---------- scroll drives everything (in screen heights) ----------
   // A: front page → map · B: one slot per client (focus + sidebar) · C: the cover sheet rises · then the page moves on
-  let target=0, prog=0, lastTs=0, covered=false, sliding=false, winPx=null;   // covered: the reviews sheet is fully over the map, nothing to draw
+  const standaloneMap = !!$('hero').closest('.standalone-map');
+  let target=standaloneMap ? 1 : 0, prog=target, lastTs=0, covered=false, sliding=false, winPx=null;   // covered: the reviews sheet is fully over the map, nothing to draw
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero=$('hero'), stick=$('stick'), coverEl=$('cover');
   // a lead-in before the front page (home only): the question box sits over the playing horizon and slides up on the first scroll
@@ -1059,14 +1060,14 @@ export function createBathurstEngine(area?: string) {
   const phB = () => 0;   // the project-by-project scroll is retired: the map holds, then the reviews sheet
   const DSLOT = () => W<760 ? 1.25 : SLOT;   // route steps: a longer slot on phones, where one swipe covers more of the page
   let coverH=0;
-  function sizeHero(){ coverH = coverEl.offsetHeight || H; hero.style.height = ((LEAD+PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+HOLD+1)*H + Math.max(0, coverH - H))+'px'; }
+  function sizeHero(){ if(standaloneMap){ hero.style.height="100dvh"; return; } coverH = coverEl.offsetHeight || H; hero.style.height = ((LEAD+PH_A+PH_LEAD+phB()+DIR_SLOTS*DSLOT()+PH_C+HOLD+1)*H + Math.max(0, coverH - H))+'px'; }
   let scrollNode=-2;
   function onScroll(){
-    const s=Math.max(0, scrollY - heroTop())/H;
+    const s=standaloneMap ? PH_A+PH_LEAD*.5 : Math.max(0, scrollY - heroTop())/H;
     target=Math.min(1, s/PH_A);
     const nodesEnd=PH_A+PH_LEAD+phB(), dirEnd=nodesEnd+DIR_SLOTS*DSLOT();
     // the cover sheet's images (reviews, reels) start loading once the visitor is a couple of screens from it (components/bathurst/useCoverNear.ts)
-    if(!window.__tcgCoverNear && s > nodesEnd-2){ window.__tcgCoverNear=true; dispatchEvent(new Event('tcg:cover-near')); }
+    if(!standaloneMap && !window.__tcgCoverNear && s > nodesEnd-2){ window.__tcgCoverNear=true; dispatchEvent(new Event('tcg:cover-near')); }
     if(s<nodesEnd){
       if(dirIdx>=0) setDir(-1);
       const n = s < PH_A+PH_LEAD ? -1 : Math.min(NODES.length-1, Math.floor((s-PH_A-PH_LEAD)/SLOT));

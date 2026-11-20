@@ -648,7 +648,7 @@ export default function DomeGallery({
             {items.map((it, i) => (
               <div
                 key={`${it.x},${it.y},${i}`}
-                className="item"
+                className="dome-item"
                 data-src={it.src}
                 data-offset-x={it.x}
                 data-offset-y={it.y}
@@ -689,7 +689,7 @@ export default function DomeGallery({
 
         <div className="viewer" ref={viewerRef}>
           <div ref={scrimRef} className="scrim" />
-          <div ref={frameRef} className="frame" />
+          <div ref={frameRef} className="dome-frame" />
         </div>
       </div>
     </div>
