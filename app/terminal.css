@@ -1,0 +1,168 @@
+/*
+  01 · Canadian Business Terminal (components/terminal/BusinessTerminal.tsx).
+  Brand tokens only (app/globals.css): Sea Breeze ground, Steel Blue ink, Muted Orange for the one action.
+  It is the hero's lead-in (BathurstHero `lead`): it shares the headline's grid cell (.hero-grid), on the window's sky with the
+  horizon playing below, under the site navbar. Two modes: the front door (greeting, question box with examples inside, trust
+  line) and, after the first question, a conversation panel that fills the window, with its own scroll.
+  --lead (0 → 1, set from the scroll): the front door rises and fades out; .is-gone once it has (the headline then rises in).
+*/
+.hero-grid > .term { grid-column: 1; grid-row: 1; align-self: start; position: relative; z-index: 4; pointer-events: auto;
+  display: flex; flex-direction: column; min-height: 0; color: var(--steel);
+  padding: clamp(72px, 18vh, 200px) var(--s3) 0;   /* sits about a third down the sky; no halo: the Steel Blue text reads straight on the poster sky */
+  translate: 0 calc(var(--lead, 0) * -50vh); opacity: calc(1 - var(--lead, 0) * 2); will-change: translate, opacity; }
+.term.is-gone { visibility: hidden; }
+.hero-grid > .term.is-chat { align-self: stretch; padding: var(--s2) var(--s2) var(--s3); text-shadow: none; translate: none; opacity: 1; visibility: visible; }
+
+.term-main { width: 100%; max-width: 880px; margin-inline: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s3); }
+
+/* ---------- front door ---------- */
+.term-intro { display: grid; justify-items: center; text-align: center; gap: var(--s2); }
+.term-h { margin: 0; font-size: clamp(40px, 4.4vw, 72px); line-height: 1.02; }
+.term-sub { margin: 0; max-width: 34em; font-size: 19px; color: var(--steel); font-weight: 500; }
+.term:not(.is-chat) .term-compose { box-shadow: 0 10px 30px rgb(25 37 74 / .18); text-shadow: none; }
+
+.term-panel { width: 100%; overflow: clip; display: flex; flex-direction: column; background: var(--sea); }
+
+.term-fine { margin: 0 auto; max-width: 46em; text-align: center; font-size: 13px; line-height: 1.5; color: var(--steel); }
+.term-fine b { color: var(--steel); font-weight: 600; }
+
+/* ---------- composer (both modes) ---------- */
+.term-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--s1) var(--s2);
+  padding: 10px 10px 10px var(--s3); background: var(--sea); border-radius: 14px; border: var(--outer-stroke) solid var(--steel); }
+.term-compose:focus-within { border-color: var(--orange); }
+.term-compose textarea { overscroll-behavior: contain; display: block; width: 100%; min-height: 48px; max-height: 168px; padding: 12px 0; resize: none; border: 0; outline: none; background: transparent;
+  font: 17px/1.4 var(--body); color: var(--steel); }
+.term-compose textarea::placeholder { color: var(--steel-70); }
+.term-tools { display: flex; align-items: center; gap: var(--s1); }
+/* the question and the send button share one row (the example chips are retired) */
+/* the examples: one sideways row (D06), never stacked; short labels, the full question goes out on press */
+.term-try { list-style: none; margin: 0; padding: 2px; flex: 1; min-width: 0; display: flex; gap: var(--s1); overflow-x: auto; scrollbar-width: none; }
+.term-try::-webkit-scrollbar { display: none; }
+.term-try li { flex: none; }
+.term-try .btn { white-space: nowrap; }
+
+.term-send { margin-left: auto; background: var(--orange); color: #fff; --ink: var(--sea); }   /* solid orange with the inner line in Sea Breeze inside it */   /* always on the right, with or without the examples beside it */
+.term-send[aria-disabled="true"] { cursor: not-allowed; }   /* stays brand orange while empty; a press shows the "Type a question" hint */
+.term-send.is-stop { background: var(--steel); color: var(--sea); }
+.term-send:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.term-hint { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--orange); font-weight: 500; }
+
+/* ---------- conversation ---------- */
+.is-chat .term-panel { flex: 1; min-height: 0; }
+.term-bar { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-bottom: var(--inner-stroke) solid var(--steel-15); }
+.term-bar-t { min-width: 0; font-size: 13px; line-height: 1.3; color: var(--steel-70); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.term-new { padding-inline: 12px 16px; }
+
+.term-log { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); scrollbar-width: thin; }
+.is-chat .term-compose { margin: 0 var(--s2) var(--s2); }
+
+.term-q { align-self: flex-end; max-width: min(80%, 36em); margin: 0; padding: 12px 18px; border-radius: 16px 16px 4px 16px; background: var(--steel); color: var(--sea); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.term-a { display: grid; gap: var(--s2); max-width: 44em; animation: term-in .35s ease both; }
+.term-body { overflow-wrap: anywhere; }
+.term-body > :first-child { margin-top: 0; }
+.term-body p, .term-body ul, .term-body ol { margin: 0 0 12px; }
+.term-body ul, .term-body ol { padding-left: 1.3em; }
+.term-body ul { list-style: disc; }
+.term-body ol { list-style: decimal; }
+.term-body li::marker { color: var(--orange); }
+.term-body li + li { margin-top: 4px; }
+.term-body strong { font-weight: 600; }
+.term-ah { font: 700 22px/1.15 var(--head); margin: var(--s2) 0 6px; }
+.term-cite { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-inline: 1px; vertical-align: 2px;
+  border-radius: 9px; background: var(--orange-15); color: var(--orange); font: 600 11px/1 var(--body); text-decoration: none; }
+a.term-cite:hover, a.term-cite:focus-visible { background: var(--orange); color: #fff; outline: none; }
+.term-caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--orange); animation: term-blink 1s steps(1) infinite; }
+
+.term-wait { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--steel-70); font-size: 15px; }
+/* the logo fills with colour from the bottom up while the answer is being found */
+.term-load { position: relative; width: 32px; height: 32px; flex: none; }
+.term-load img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.term-load img:first-child { filter: grayscale(1); opacity: .25; }
+.term-load img + img { animation: term-fill 1.4s cubic-bezier(.65,0,.35,1) infinite; }
+
+.term-err { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); padding: var(--s2) var(--s3); --ink: var(--orange); }
+.term-err p { margin: 0; flex: 1 1 18em; }
+.term-note { margin: 0; font-size: 14px; color: var(--steel-70); }
+
+.term-src .eyebrow, .term-next .eyebrow { font-size: 11px; color: var(--steel-70); margin: 0 0 var(--s1); }
+.term-src ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s1); }
+.term-src li > * { display: flex; align-items: flex-start; gap: 10px; height: 100%; padding: 10px 12px; border-radius: var(--btn-radius); color: var(--steel); text-decoration: none; }
+.term-src a:hover, .term-src a:focus-visible { --ink: var(--orange); outline: none; }
+.term-src a:hover b, .term-src a:focus-visible b { text-decoration: underline; text-underline-offset: 2px; }
+.term-n { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--steel-08); font: 600 12px/1 var(--body); }
+.term-src-t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.term-src-t b { font-weight: 500; font-size: 14px; line-height: 1.3; }
+.term-src-t small { font-size: 12px; color: var(--steel-70); }
+.term-src .glyph { width: 16px; height: 16px; margin-top: 3px; color: var(--steel-70); }
+
+.term-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.term-acts .is-ok { --ink: var(--orange); color: var(--orange); }
+.term-human .glyph { width: 18px; height: 18px; }
+.term-next ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; justify-items: start; }
+.term-next .btn { white-space: normal; text-align: left; gap: var(--s2); }
+.term-next .btn .glyph { width: 16px; height: 16px; }
+.term-next .btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+
+@keyframes term-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes term-blink { 50% { opacity: 0; } }
+@keyframes term-fill { 0% { clip-path: inset(100% 0 0 0); } 60%, 100% { clip-path: inset(0 0 0 0); } }
+
+/* ---------- phones ---------- */
+@media (max-width: 760px) {
+  .hero-grid > .term { padding: clamp(64px, 12vh, 120px) var(--s2) 0; }   /* clear of the top bar */
+  .hero-grid > .term.is-chat { padding: var(--s1) var(--s1) var(--s1); }
+  .term-main { gap: var(--s2); }
+  /* D10: headings left-aligned on phones */
+  .term-intro { justify-items: start; text-align: left; gap: 12px; }
+  .term-h { font-size: 40px; }
+  .term-sub { font-size: 17px; }
+  .term-compose { padding-left: var(--s2); grid-template-columns: 1fr; }
+  .term-tools { justify-content: space-between; }
+  .term-fine { text-align: left; }
+  .term-bar { padding: 12px; }
+  /* the back control keeps its chevron (and its aria-label) but drops the words, so the header line fits */
+  .term-new { flex: none; width: 44px; padding: 0; justify-content: center; }
+  .term-new .label > span > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* chat on phones: the disclaimer is in the panel header (.term-bar-t), so the panel gets the full screen */
+  .is-chat .term-fine { display: none; }
+  .term-log { padding: var(--s2); }
+  .is-chat .term-compose { margin: 0 8px 8px; }
+  .term-q { max-width: 88%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .term-a { animation: none; }
+  .term-caret { animation: none; }
+  .term-load img + img { animation: none; clip-path: none; opacity: .7; }
+}
+
+/* ---------- full screen: pressing or focusing the box morphs it into the conversation panel (BusinessTerminal `open`) ----------
+   The section goes fixed over the whole page; the hero's text layer (#sv) is lifted above the map chrome and the navbar while
+   it is open. The morph is a view transition between the box (front door) and the panel (full screen), both named term-box. */
+.term:not(.is-full) .term-panel { background: none; overflow: visible; }
+.term:not(.is-full) .term-compose { view-transition-name: term-box; }
+.term.is-full .term-panel { view-transition-name: term-box; }
+#stick:has(.term.is-full) #sv { z-index: 20; }
+.term-open .offer-corner { visibility: hidden; }
+/* edge to edge at every width: nothing of the page shows around it, and the page's scrollbar goes while it is open
+   (the same overflow lock the testimonial and reel dialogs use); the conversation scrolls inside .term-log */
+html.term-open { overflow: hidden; }
+.hero-grid > .term.is-full { position: fixed; inset: 0; z-index: 1; padding: 0; background: var(--sea); }
+.term.is-full .term-main { max-width: none; height: 100%; }
+.term.is-full .term-panel { height: 100%; border-radius: 0; }
+/* the content keeps a readable column inside the full-width panel */
+.term.is-full .term-bar, .term.is-full .term-log { padding-inline: max(var(--s3), calc((100% - 880px) / 2)); }
+.term.is-full .term-compose { width: min(880px, calc(100% - 2 * var(--s2))); margin: 0 auto var(--s2); }
+.term-close { margin-left: auto; flex: none; }
+.term-close .glyph { width: 20px; height: 20px; }
+/* follow-up question buttons wrap: the line system's tumble label (.label, white-space: pre) would otherwise run off a phone's edge */
+.term-next .btn .label { white-space: normal; max-width: 100%; }
+.term-next .btn .label > span > span { min-width: 0; }
+::view-transition-group(term-box) { animation-duration: .45s; animation-timing-function: cubic-bezier(.22,1,.36,1); }
+::view-transition-old(term-box), ::view-transition-new(term-box) { height: 100%; object-fit: none; overflow: clip; }
+@media (max-width: 760px) {
+  .term-bar-name { display: none; }   /* phones: the header keeps just the disclaimer */
+  .term.is-full .term-bar, .term.is-full .term-log { padding-inline: var(--s2); }
+  .term.is-full .term-compose { width: calc(100% - 2 * var(--s1)); margin: 0 auto var(--s1); }
+}

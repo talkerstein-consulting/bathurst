@@ -1,0 +1,182 @@
+/* The sentence over the client map's sheet, and 03 · The Reality's cards stacking over it
+   (components/home/SentenceSection.tsx, components/home/RealityCards.tsx). */
+
+/* ---------- the track and the pinned stage ---------- */
+.sx { padding-top: 0; }
+.sx-track { position: relative; }   /* its height is set inline from the card count */
+.sx-stage { position: relative; z-index: 1; height: 100svh; display: grid; align-items: center; overflow: hidden;
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+/* ---------- the sentence ---------- */
+/* an h2 by rank, set larger than any heading on the page: it is the statement the cards are laid over */
+.sx-h { margin: 0 auto; text-align: center; font-size: clamp(56px, 8vw, 120px); line-height: 1.06; }
+/* desktop: three fixed lines, so the gaps opening spread each line from its centre rather than re-wrapping it */
+.sx-line { display: block; white-space: nowrap; }
+
+/* the picture slot: closed it takes no room; open it is a square one cap height tall with a word space after it.
+   An inline-block with overflow hidden sits its bottom edge on the line's baseline, so the square stands on the
+   same line as the letters and reaches their cap height. Stills only: moving pictures here were distracting. */
+.sx-slot {
+  display: inline-block; vertical-align: baseline; overflow: hidden;
+  height: .7em; height: 1cap; width: 0; margin-inline-end: 0;
+  transition: width .9s cubic-bezier(.22, 1, .36, 1), margin-inline-end .9s cubic-bezier(.22, 1, .36, 1);
+}
+.sx-slot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sx.is-open .sx-slot { width: .7em; width: 1cap; margin-inline-end: .26em; }
+
+/* ---------- 03 · The Reality: the cards ---------- */
+/* every card sits in the same spot, centred over the sentence; the scroll loop sets each one's lift and angle */
+.rc-stack { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none; }
+/* a card is one of the Bathurst interview cards (.tc in app/bathurst-map.css): Steel frame, Sea Breeze panel with an
+   inset hairline, banner row with its number, art window, name, caption, footer with the set badge, and the
+   lenticular foil. Here it is larger, its accents are TCG blue instead of the reels' orange, and the foil also
+   sweeps as the card rises (SentenceSection writes --mx/--my from the card's own progress). */
+.rc { --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  grid-area: 1 / 1; width: min(400px, calc(100vw - 48px)); perspective: 900px;
+  pointer-events: auto; visibility: hidden; will-change: transform; }
+.rc .rc-tc, .rc .rc-tc:hover { cursor: default; max-height: calc(100svh - var(--navh, 72px) - var(--s5));
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px rgb(25 37 74 / .18), 0 30px 56px -18px rgb(25 37 74 / .55); }
+.rc-tc .tc-in { gap: 10px; padding: 12px; }
+.rc-tc .tc-top b { font-size: 20px; }
+.rc-tc .tc-no { color: var(--steel); }
+/* layout only: none of the interview cards' hover (lift, shadow, picture zoom, foil) */
+.rc .rc-tc:hover { transition: none; }   /* .rc-scoped: app/bathurst-map.css loads after this file and would win a tie */
+.rc .rc-tc:hover .tc-art img { transform: none; }
+.rc-tc .tc-name { font-family: var(--head); font-weight: 400; font-size: 30px; line-height: 1.02; white-space: normal; margin: 4px 0 0; }
+.rc-tc .tc-cap { font-size: 14px; display: block; -webkit-line-clamp: unset; overflow: visible; min-height: 0; }
+.rc-tc .tc-foot { padding-top: 8px; }
+/* the lenticular foil: faintly there, catching the light as the card rises; the reels' orange band becomes a blue one */
+.rc .rc-tc .tc-foil, .rc .rc-tc:hover .tc-foil { opacity: .55;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.8), transparent 45%),
+    linear-gradient(115deg, transparent 20%, rgba(92,122,214,.4) 38%, rgba(120,200,220,.35) 52%, rgba(255,255,255,.3) 62%, transparent 80%);
+  background-size: 100% 100%, 220% 220%; background-position: center, var(--mx, 50%) var(--my, 50%); }
+
+/* the art window: the picture, or (head card) the section's preheader and heading, cream on blue */
+/* on desktop the art fills its row of the card (the card's own 63:88 ratio sets the size) */
+.rc-art > img { object-position: 60% 22%; }
+.rc-art .tc-kind { top: 6px; bottom: auto; }   /* top left: the search panel takes the lower left */
+.rc-art.is-empty { display: grid; place-items: center;
+  background: repeating-linear-gradient(135deg, transparent 0 5px, rgb(243 247 243 / .14) 5px 7px), var(--steel); }
+.rc-todo { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--sea); opacity: .8; }
+.rc-art-head { display: grid; align-content: end; padding: var(--s5) var(--s3) var(--s3);
+  background: linear-gradient(145deg, var(--steel) 0%, #2a3a6a 60%, var(--steel) 100%); color: var(--cream); }
+.rc-eyebrow { margin: 0; color: var(--cream); }
+.rc-art-head .rc-t { margin: var(--s4) 0 0; color: var(--cream); }   /* the preheader stands off its heading at double the page rule */
+
+/* monospace, like the ledger type over the reference picture: a search for the owner's trade */
+.rc-ui { position: absolute; left: var(--s2); bottom: var(--s2); width: min(62%, 240px); padding: 10px 12px;   /* lower left: clear of the face */
+  font: 500 11px/1.55 var(--mono); color: var(--steel);
+  background: rgb(237 229 203 / .9); border: 1px solid var(--steel-15); border-radius: 8px;
+  box-shadow: 0 6px 16px rgb(25 37 74 / .18); }
+.rc-ui p { margin: 0; }
+.rc-ui ol { list-style: none; margin: 6px 0 0; padding: 0; }
+.rc-ui li { display: flex; gap: 8px; white-space: nowrap; overflow: hidden; }
+.rc-ui li span { color: var(--steel-50); }
+.rc-ui li em { margin-left: auto; font-style: normal; color: var(--steel-50); }
+.rc-ui-q { color: var(--steel-70); text-transform: uppercase; letter-spacing: .04em; }
+.rc-ui-sep { margin-top: 6px !important; color: var(--steel-50); }
+.rc-ui li.is-you { font-weight: 700; }
+
+/* ---------- phones ---------- */
+@media (max-width: 760px) {
+  .sx-h { font-size: 56px; text-align: left; }   /* D10: headings sit left on phones */
+  .sx-line { display: inline; white-space: normal; }   /* the lines can't hold at this width; the sentence flows */
+  .rc-tc .tc-name { font-size: 26px; }
+  .rc .rc-art, .rc .rc-art-head { aspect-ratio: 4 / 3; }   /* the interview cards go 4:5 on phones; these stay short enough to fit */
+  .rc-ui { width: 56%; padding: 6px 8px; font-size: 9px; left: var(--s1); bottom: var(--s1); }   /* smaller picture: keep the face clear */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-slot { transition: none; }
+}
+
+/* ---------- the last beat: the card that stays turns over ---------- */
+/* The card that stays is mounted in a FlipCard (components/FlipCard.jsx): the problem on the front, the client
+   review on the back, turned by the scroll (SentenceSection), not by the pointer. It takes the stack's own size
+   rather than the component's fixed box, and nothing about the frame or the type changes between the faces. */
+.rc-flip .rc-fc { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; cursor: default; }
+.rc-flip .rc-fc:focus-visible { outline: 2px solid var(--steel); outline-offset: 6px; }
+.rc-flip .flip-card__face { background: none; border-radius: 16px; }
+/* the sentence clears the screen on the same beat as one block: only the wrapper is promoted, so the browser keeps
+   a single layer for the whole sentence instead of one per word. Each word is still its own box for the line to set. */
+.sx-w { display: inline-block; }
+.sx-words { will-change: transform, opacity; }
+
+/* 05 · Testimonials' heading: it waits a half screen below the sentence, rides up as the sentence clears and rests
+   at the top of the stage, over the rail. It never fades: it sits under the stack (z-index 1 against the cards' 2),
+   so the cards cover it until they clear. Out of flow, so nothing moves to make room for it. */
+.sx-head { position: absolute; left: 0; right: 0; top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px));
+  z-index: 1; text-align: center; pointer-events: none;
+  transform: translate3d(0, 115svh, 0); will-change: transform; }
+.sx-head-t { margin: 0 auto; max-width: 20ch; }
+/* on a wide screen the fanned cards sit low in the stage, so the heading drops to meet them and the two read as
+   one block rather than a line stranded under the navbar. On phones the cards already reach the top: it stays put. */
+@media (min-width: 760px) {
+  .sx-head { top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px) + clamp(16px, 12svh, 160px)); }
+}
+
+/* ---------- the rest of what clients say, fanned out behind the card that turned over ---------- */
+/* components/home/ReviewFan.tsx. The same cards as the one on the front — same frame, same slots — so the set reads
+   as one set; the card that turned over stands in this fan's own centre slot and is handed over to it. */
+
+/* the two numbers every card is placed by. `--d` is transitioned on its own when the controller pages, so paging
+   animates while the scroll keeps writing `--fan` straight through without it being interpolated. */
+@property --d { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --away { syntax: "<number>"; inherits: false; initial-value: 0; }
+
+/* nothing of the fan is on screen until the turning card has come to rest on its back and SentenceSection
+   hands over: shown any earlier, the set reads through the card while it is edge-on */
+.rvf-hold { position: absolute; inset: 0; z-index: 1; pointer-events: none; visibility: hidden; }
+.rvf-hold.is-live { visibility: visible; }
+.rvf { position: absolute; inset: 0; z-index: 1; pointer-events: none; --sp: clamp(46px, 7.4vw, 104px); }
+/* the deck takes the sideways drag itself; `pan-y` leaves the up-and-down to the page's own scroll */
+.rvf-deck { position: absolute; inset: 0; display: grid; place-items: center; touch-action: pan-y;
+  -webkit-user-select: none; user-select: none; }   /* a sideways drag pages the fan; it never selects the quotes */
+.rvf-card { grid-area: 1 / 1; width: min(400px, calc(100vw - 48px));
+  transform:
+    translate3d(calc(var(--d) * var(--sp) * var(--fan, 0)), calc(var(--away) * 16px * var(--fan, 0)), 0)
+    rotate(calc(var(--d) * var(--fan, 0) * 6deg))
+    scale(calc(1 - var(--away) * 0.085 * var(--fan, 0)));
+  /* every card in the fan stays at full strength: depth is read from the scale, the offset and the shadow, never
+     from a card being faded out */
+  opacity: 1;
+  transition: --d .55s cubic-bezier(.22, 1, .36, 1), --away .55s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+  /* each card is its own review's video: it is pressable, and only once the fan is out */
+  pointer-events: none; cursor: pointer; }
+/* …and only once the fan has actually opened, so the cards never take a press while they are still stacked
+   behind the one that is turning over (SentenceSection sets .is-out on the same beat it writes --fan) */
+.rvf-hold.is-out .rvf-card { pointer-events: auto; }
+.rvf-card:focus-visible { outline: 2px solid var(--steel); outline-offset: 6px; border-radius: 18px; }
+/* every card below the centre one is stacked in the same spot until the fan opens, so its shadow only comes up as
+   it comes out — seven shadows on one footprint otherwise read as a halo around the card in front */
+.rvf-card .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset,
+  0 2px 6px rgb(25 37 74 / calc(.18 * var(--fan, 0))),
+  0 30px 56px -18px rgb(25 37 74 / calc(.55 * var(--fan, 0))); }
+/* while a card is crossing into 06 · What We Do (components/home/CapabilityPanels.tsx lays one over the page and
+   flies it there), the fan lets go of the one in its centre slot: one card makes the crossing, not two */
+:root.rvf-handoff .rvf-card.is-at { opacity: 0; }
+.rvf-card.is-at .tc { box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px rgb(25 37 74 / .18),
+  0 30px 56px -18px rgb(25 37 74 / .55); }
+
+/* the controller, under the fan: the pair of arrows and one dot per voice */
+.rvf-bar { position: absolute; left: 0; right: 0; bottom: clamp(80px, 13svh, 132px);
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  opacity: var(--fan, 0); pointer-events: auto; }
+.rvf[data-idle] .rvf-bar { pointer-events: none; }
+.rvf-arr { display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  font: 400 22px/1 var(--font-body, inherit); color: var(--steel);
+  background: rgb(255 255 255 / .82); border: 1px solid rgb(25 37 74 / .16); border-radius: 999px;
+  cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.rvf-arr:hover { background: #fff; border-color: rgb(25 37 74 / .34); }
+.rvf-arr:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+.rvf-dots { display: flex; align-items: center; gap: 7px; }
+.rvf-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgb(25 37 74 / .26); transition: background .2s ease, transform .2s ease; }
+.rvf-dot:hover { background: rgb(25 37 74 / .5); }
+.rvf-dot.is-at { background: var(--steel); transform: scale(1.5); }
+.rvf-dot:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rvf-card { transition: none; }
+}

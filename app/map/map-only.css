@@ -1,0 +1,75 @@
+/* The map on its own: everything the reference build wraps around it is hidden here, and the
+   engine is pinned to its map state by MapOnly.tsx. What is left is the map. */
+/* the document stays tall — the engine reads scrollY to know it is on the map — but the bar
+   is hidden and MapOnly parks the page there, so there is nothing to scroll */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+body { background: var(--cream); }
+body::before { display: none; }            /* the page grain belongs to the page, not the map */
+
+/* the reference's front page, navbar, menu, section heading and the sheet that rises over it */
+#sv,
+#stick > .navbar,
+#stick > .menubtn,
+#stick > .brandpin,
+#stick > .proudca,
+#stick > .menu,
+#workhead,
+#cover,
+.offer-corner,
+.assess-strip,
+.thumb-cta { display: none !important; }
+
+/* the map fills the window */
+#stage { position: absolute; inset: 0; }
+
+/* ===========================================================================
+   TCG overrides for the framed map (site/components/tcg/footprint.tsx).
+   The reference build sits this map beside a panel and a navbar; in the
+   section it has the whole frame, so the chrome is repositioned and the
+   controls are brought onto the brand.
+   ========================================================================= */
+
+/* The industry chips: pinned to the top of the container and centred, instead
+   of offset by a side panel that is not here. */
+.chipbar {
+  left: var(--inset) !important;
+  right: var(--inset) !important;
+  top: var(--inset) !important;
+  justify-content: center !important;
+}
+/* The row scrolls itself if it runs long, so the paddles are not needed. */
+.chipbar > .btn { display: none !important; }
+
+/* The operating buttons, bottom right, on the house pattern: Sea Breeze
+   ground, a steel hairline, the button radius, and orange only on hover —
+   orange marks the operable and these are the only operable things here. */
+.ctrls .btn,
+.ctrls .zoomgrp {
+  background: var(--sea) !important;
+  border: var(--hairline) solid var(--steel-20) !important;
+  border-radius: var(--r-btn) !important;
+  box-shadow: none !important;
+  color: var(--steel) !important;
+  transition: color .25s ease, border-color .25s ease;
+}
+.ctrls .btn:hover,
+.ctrls .btn:focus-visible,
+.ctrls .zoomgrp button:hover,
+.ctrls .zoomgrp button:focus-visible {
+  color: var(--orange) !important;
+  border-color: var(--orange-35) !important;
+  outline: none;
+}
+.ctrls .zoomgrp:hover { border-color: var(--orange-35) !important; }
+/* The divider between + and − is the house hairline, not a tinted line. */
+.ctrls .zoomgrp i {
+  background: var(--steel-20) !important;
+  opacity: 1 !important;
+}
+
+/* The checkered neatline border was removed at the client's request ("remove
+   line on the map"). It is the dashed rule that ran around the view, under the
+   coordinates and the scale. Hidden here only, so the reference build that
+   this map is carried over from keeps its own border. */
+.neatline { display: none !important; }

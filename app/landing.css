@@ -1,0 +1,566 @@
+/* ============================================================================
+   Landing sections 03–08. LOW FIDELITY except 05: the copy and the order are real, the grey schematics are not.
+
+   Type and spacing come from the system (app/globals.css), never from a value invented here:
+     headings   .h2 48/38px · .h3 32/26px · a card's own heading 22px/1.1 · .eyebrow 13px uppercase
+     text       body 17px/1.6 · inside a card 16px/1.55 · a control 16px
+     spacing    --s1 8 · --s2 16 · --s3 24 · --s4 32 · --s5 48 · --s6 64 · --s7 96 · --section-gap
+     gutter     24px, the same as .wrap
+     radius     --frame-radius 18 · --btn-radius 10 · --radius-sm
+   The only bare lengths below are hairlines, icon sizes and the heights of the placeholder bars, which are drawing,
+   not layout.
+   ============================================================================ */
+
+/* ---------- one rhythm for every heading and lead on the landing ----------
+   The sheet's older .hs-h / .hs-lead carry margins built for the layout that used to live here — a NEGATIVE top
+   margin on the lead and 19px type, neither of which belongs on this page. Every section below uses these instead,
+   so the step from eyebrow to heading to lead is the same everywhere and nothing has to be fought per section. */
+/* `.hs p { margin: 0 }` in app/home.css beats a single class, so each rule names itself twice — once plainly and
+   once under .hs — rather than reaching for !important. */
+/* ---------- the space between sections ----------
+   ONE gap for the whole landing, set here and used by every section, pinned or not: these are large set pieces, so
+   they stand further apart than the sheet's default --section-gap. Each section carries it as top padding only —
+   nothing on the landing sets a bottom padding — so the space between any two sections is this number and never
+   the sum of one section's bottom and the next one's top. Top padding is safe on a pinned section because the pin
+   measures its own track, not the section box, so this only offsets the track. */
+.cover-body { --lf-gap: var(--s7); }
+@media (max-width: 899px) { .cover-body { --lf-gap: var(--s6); } }
+.cover-body .section, .rp, .cp, .tp { padding-top: var(--lf-gap); }
+
+/* ---------- ONE rule for every preheader -> heading -> body -> action group on this page ----------
+     preheader -> heading   --s2 (16)   the label belongs to the heading, so it stays with it
+     heading -> body        --s3 (24)   a clear break between the claim and the explanation
+     body -> action         --s5 (48)   further again, so the button reads as its own thing
+   This covers the section heads AND every block inside them - the cards, the panel, the items, the names. They
+   each used to carry their own numbers (16/16, 8, 16, 24/24, 16/32), which is exactly what made the page look
+   unrelated to itself. A group's first element always sits at 0 and the rhythm is built from top margins only, so
+   nothing has to be subtracted anywhere. No exceptions: a new block with a label, a heading and a body joins this
+   list rather than inventing a fourth number. */
+/* Nothing on this page carries a label above its heading any more — not the sections, not the h3s — so a heading
+   always opens its group and sits at 0. The rule is kept as one line rather than deleted, because it is what stops
+   a heading inheriting a top margin from somewhere else. */
+.lp-h, .hs .lp-h, .cp-t, .pt-t, .rp-t, .tp-t { margin: 0; }
+/* the body, one step further under the heading */
+/* every one of these is a <p> inside .hs, and `.hs p { margin: 0 }` in app/home.css outranks a single class,
+   so each body names itself under .hs as well — the same reason .lp-lead does */
+.lp-lead, .rp-b, .tp-b, .pt-b,
+.hs .lp-lead, .hs .rp-b, .hs .tp-b, .hs .pt-b { margin: var(--s3) 0 0; }
+.lp-lead, .hs .lp-lead { max-width: 38em; font-size: 17px; line-height: 1.6; color: var(--steel-70); }
+/* and the action, further again */
+.lp-cta, .hs .lp-cta, .hs-final .hs-cta.lp-cta { margin-top: var(--s5); }
+
+/* ---------- shared: section heads and the card rails (06, 07) ---------- */
+.lf-head { max-width: 40em; }
+.lf-head .eyebrow { margin: 0; color: var(--label); }
+.lf .hs-lead { max-width: 44em; }
+
+/* ---------- 05 · the real testimonials (components/bathurst/Testimonials.tsx) ---------- */
+/* The one finished section: it takes this section's head in place of its own title, so the head has to sit in the
+   component's header row beside the ‹ › pair, and the component's wider side padding has to come back to the 24px
+   every other section's heading uses, or the cards would start further in than the words above them. */
+.lf-proof .rv { padding-inline: 24px; padding-top: 0; }
+.lf-proof .rv-reels-h { align-items: flex-end; }
+.lf-proof .lf-head { flex: 1 1 30em; }
+.lf-proof .lf-head .hs-lead { margin-bottom: 0; }
+.cover-body .lf-proof .rv-swipe { --gut: calc((100cqi - min(100cqi, 1200px)) / 2 + 24px); }
+@media (max-width: 900px) { .cover-body .lf-proof .rv-swipe { --gut: 24px; } }
+
+/* ============================================================================
+   03 · The Reality (components/home/RealityPanels.tsx): heading pinned on the left, the three items moving past
+   under it, the diagram pinned on the right. Pinned by hand — the sheet is transformed, so `sticky` has nothing to
+   hold against (same reason as .ls-stage in app/home.css).
+   ============================================================================ */
+
+.rp-track { position: relative; height: 540vh; }   /* four steps now, so the track grows to keep each one a screen and a bit */
+/* The whole stage is centred in the window — heading, list and picture together — so the section sits in the middle
+   of the screen rather than hanging from the top with a column of empty page under it. The padding is still the
+   navbar's height plus the page's own step, which is what holds the heading clear of the bar when the content is
+   tall enough to reach it. */
+.rp-stage { position: relative; height: 100svh; align-content: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s5); align-items: center;
+  max-width: 1200px; margin: 0 auto; padding: calc(var(--navh, 72px) + var(--s4)) 24px var(--s5);
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+.rp-left { display: grid; gap: var(--s3); align-content: center; min-height: 0; }
+.rp-head { display: grid; }
+.rp .lp-h { max-width: 15em; }   /* two lines: wide enough for "Getting attention is only half the job." to break once */
+.rp .lp-lead { max-width: 34em; }
+.rp-eyebrow { margin: 0; color: var(--label); }
+
+/* the items move as one column; only the one being read is at full strength */
+.rp-viewport { overflow: hidden; }
+.rp-list { list-style: none; margin: 0; padding: 0;
+  position: relative;   /* the slide is measured with offsetTop, which needs the list itself as the offset parent */
+  transform: translate3d(0, calc(var(--slide, 0px) * -1), 0);
+  transition: transform .55s cubic-bezier(.22, 1, .36, 1); }
+/* The four steps and the heading have to fit one screen together, so each item is set on the tighter step: at --s3
+   a fourth item pushed the heading up under the navbar. */
+.rp-item { padding: var(--s2) 0; border-top: 1.5px solid var(--steel-15);
+  opacity: .32; transition: opacity .45s ease; }
+.rp-item.is-on { opacity: 1; }
+.rp-t { display: flex; align-items: center; gap: var(--s1);
+  font-family: var(--head); font-size: 22px; line-height: 1.1; font-weight: 400; }   /* a card's heading */
+.rp-i { width: 20px; height: 20px; flex: none; color: var(--label); }
+.rp-b { font-size: 16px; line-height: 1.55; color: var(--steel-70); max-width: 36em; }
+
+/* ---------- the handover: §03's last step carries the phone over to §04 ----------
+   The phone is drawn the same in both sections (components/home/Interfaces.tsx). Here it ends on the RIGHT, and the
+   next section opens with it on the LEFT — so as this step finishes it slides that way and §04's phone arrives from
+   the same side. Nothing is literally shared between the two sections; the match in size, drawing and direction is
+   what makes it read as one device being carried across. */
+.fg.is-hand { max-width: 248px; }
+.rp-fig-in:last-child { transition: opacity .4s ease, translate .6s cubic-bezier(.4, 0, .2, 1); }
+.rp-fig-in:last-child.on { translate: none; }
+
+/* ---------- the drawn interface beside the list (components/home/Interfaces.tsx) ----------
+   The stage carries no fill or frame of its own: the figure brings its own screen, and the cards that break its
+   edge have to be able to hang outside it, so nothing here clips. The padding is that overhang. */
+.rp-right { min-width: 0; align-self: center; }   /* the middle of the screen, whatever the text beside it does */
+.rp-fig { position: relative; aspect-ratio: 4 / 3; padding: var(--s4) var(--s3); }
+.rp-fig-in { position: absolute; inset: var(--s4) var(--s3); display: grid; align-content: center;
+  opacity: 0; transition: opacity .4s ease, translate .5s cubic-bezier(.22, 1, .36, 1); translate: 0 10px; }
+.rp-fig-in.on { opacity: 1; translate: none; }
+
+/* ---------- narrow: no track, no pin, every item in full above its own diagram ---------- */
+@media (max-width: 899px) {
+  .rp-track, .rp-track.is-flat { height: auto; }
+  .rp-stage { position: static; height: auto; transform: none; grid-template-columns: 1fr;
+    gap: var(--s4); padding: 0 24px; }   /* the section above already carries --lf-gap; a second one here doubled it */
+  .rp-viewport { overflow: visible; }
+  .rp-list { transform: none; transition: none; }
+  .rp-item { opacity: 1; padding: var(--s4) 0; }
+  .rp-fig-flat { margin-top: var(--s3); }
+  .rp-fig-flat .rp-fig-in { position: static; opacity: 1; translate: none; }
+  .rp-fig-flat .rp-fig-in:not(.on) { display: none; }
+  .rp .lp-h { max-width: none; }
+}
+
+/* ============================================================================
+   04 · The Transformation (components/home/TransformPanels.tsx): the heading offset into the right-hand column, then
+   a short list of steps held still on the left while their blocks scroll past on the right. Pinned by hand for the
+   same reason as .rp-stage — the sheet is transformed, so `sticky` has nothing to hold against.
+   ============================================================================ */
+
+.tp-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* the heading starts at the half, leaving the left column empty beside it */
+/* The head sits in the right half of the row, but its measure is the heading's, not the column's: at 32em the
+   heading broke to three lines. Every heading on this page sets two lines at most — the measure is widened to fit
+   them rather than the heading being made smaller. */
+/* The head takes the blocks' own column of the grid, so its left edge IS the blocks' left edge — "Get noticed."
+   sits directly under "Make every part of your digital presence work harder." A percentage margin used to stand in
+   for this and left the two 40px apart. */
+.tp-head { grid-column: 2; display: grid; max-width: 44em; margin-bottom: var(--s7); }
+.tp-eyebrow { margin: 0; color: var(--label); }
+.tp .lp-lead { max-width: 34em; }
+
+.tp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--s5);
+  align-items: start; }
+.tp-body > .tp-rail { grid-column: 1; }
+.tp-body > .tp-blocks { grid-column: 2; }
+
+/* ---------- the phone, held still beside the steps ----------
+   The travel is set in TransformPanels.tsx against the blocks, so the phone's foot and the foot of the last step
+   leave the screen together. */
+.tp-rail { align-self: start; justify-self: center; transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+.ph { width: min(272px, 100%); }
+/* §04's phone comes in from the side §03 handed it over on, so the two sections join up */
+@keyframes ph-arrive { from { opacity: 0; translate: 46px 0; } to { opacity: 1; translate: none; } }
+.tp-rail .ph { animation: ph-arrive .7s cubic-bezier(.22, 1, .36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .tp-rail .ph { animation: none; } }
+/* the device: one rounded body with the screen inset, and the speaker bar across its head */
+.ph-body { position: relative; aspect-ratio: 9 / 18.5; padding: 13px 11px 14px; border-radius: 34px;
+  background: var(--sea); border: 1px solid var(--steel-15);
+  box-shadow: 0 2px 0 rgb(25 37 74 / .04) inset, 0 30px 60px -22px rgb(25 37 74 / .34), 0 3px 10px rgb(25 37 74 / .06);
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 11px; }
+.ph-bar { justify-self: center; width: 54px; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--steel) 13%, transparent); }
+
+/* the three screens share one cell; the one being read is the one showing */
+.ph-stack { display: grid; min-height: 0; border-radius: 22px; overflow: hidden;
+  background: color-mix(in srgb, var(--steel) 3.5%, var(--sea)); }
+.ph-slot { grid-area: 1 / 1; min-height: 0; opacity: 0; translate: 0 10px; pointer-events: none;
+  transition: opacity .4s ease, translate .5s cubic-bezier(.22, 1, .36, 1); }
+.ph-slot.is-on { opacity: 1; translate: none; }
+@media (prefers-reduced-motion: reduce) { .ph-slot { transition: none; } }
+
+.ph-screen { display: grid; align-content: start; gap: 11px; padding: 18px 15px; }
+.ph-cap { margin: 0; font: 600 8.5px/1 var(--body); letter-spacing: .13em; text-transform: uppercase; color: var(--steel-50); }
+.ph-h { margin: 0; font: 400 17px/1.2 var(--head); color: var(--steel); }
+.ph-btn { justify-self: start; margin-top: 2px; padding: 9px 15px; border-radius: 8px;
+  background: var(--steel); color: var(--sea); font: 600 11px/1 var(--body); }
+
+.ph-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ph-row { display: flex; align-items: center; gap: 9px; padding: 11px 11px; border-radius: 9px;
+  background: color-mix(in srgb, var(--steel) 5%, transparent);
+  font: 500 12px/1.2 var(--body); color: var(--steel-70); }
+.ph-row > span { flex: none; width: 19px; height: 19px; display: grid; place-items: center; border-radius: 6px;
+  background: color-mix(in srgb, var(--steel) 10%, transparent); font: 600 9px/1 var(--body); color: var(--steel-50); }
+.ph-row.is-mine { background: var(--steel); color: var(--sea); font-weight: 600; }
+.ph-row.is-mine > span { background: color-mix(in srgb, var(--sea) 22%, transparent); color: var(--sea); }
+/* the inbox, answered: the state sits at the end of the line */
+.ph-row.is-done em { margin-left: auto; font: 600 9px/1.2 var(--body); font-style: normal; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--steel-50); }
+
+.tp-blocks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s7); }
+.tp-block { display: grid; align-content: center; min-height: 58vh; }
+.tp-t { font-family: var(--head); font-size: 32px; line-height: 1.05; font-weight: 400; }   /* .h3 */
+.tp-b { font-size: 17px; line-height: 1.6; color: var(--steel-70); max-width: 36em; }
+
+/* ---------- narrow: one column, no pin; the phone leads and the steps follow ---------- */
+@media (max-width: 899px) {
+  /* one column: the explicit grid-column on each child (which is what keeps the head over the blocks on a wide
+     screen) has to be cleared here, or it forces a second column back and squeezes both halves. */
+  .tp-body { grid-template-columns: 1fr; gap: var(--s5); margin-top: var(--s5); }
+  .tp-body > .tp-head, .tp-body > .tp-rail, .tp-body > .tp-blocks { grid-column: 1; }
+  .tp-head { max-width: none; margin-bottom: var(--s5); }
+  .tp-rail { justify-self: start; transform: none; margin-bottom: var(--s5); }
+  .tp-blocks { gap: var(--s6); }
+  .tp-block { min-height: 0; }
+  .tp-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ============================================================================
+   06 · What We Do (components/home/CapabilityPanels.tsx): the heading holds still and the three capabilities cross
+   over in place underneath it. Pinned by hand for the same reason as .rp-stage — the sheet is transformed, so
+   `sticky` has nothing to hold against.
+   ============================================================================ */
+
+/* How long the section holds. The three capabilities are the heart of the page, and at 320vh each one had barely a
+   screen of scroll before it gave way to the next — they went past rather than being read. 540vh gives each a good
+   screen and a half, so the change between them lands as a change rather than as a flicker. */
+.cp-track { position: relative; height: 540vh; }
+/* The head is pinned with the columns (components/home/CapabilityPanels.tsx), so the stage holds two things, one
+   under the other, and packs them up from the top rather than floating one block in the middle: the statement sits
+   just under the navbar and the three capabilities take every row left under it, wherever the section is caught. */
+.cp-stage { position: relative; height: 100svh; align-content: start;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--s4);
+  max-width: 1200px; margin: 0 auto; padding: calc(var(--navh, 72px) + var(--s2)) 24px var(--s4);
+  transform: translate3d(0, var(--pin, 0px), 0); will-change: transform; }
+
+/* The head is the whole top of the screen: one large centred statement whose second half sits right back, so the
+   claim reads first and the qualifier trails it. The two halves are set on their own lines rather than running on,
+   which is what makes the pair read as a title rather than as a sentence. */
+.cp-head { text-align: center; display: grid; justify-items: center; }
+.cp-eyebrow { margin: 0; color: var(--label); }
+.cp .lp-h { max-width: 16em; }
+.cp .lp-lead { max-width: 40em; }
+/* The whole stage has to fit one screen, head and columns together, so the statement is set to the biggest size
+   that still leaves the three capabilities room below it rather than to the largest that looks good on its own. */
+.cp .cp-h { font-size: clamp(30px, 3.4vw, 50px); line-height: 1.04; max-width: 18em; }
+.cp .lp-lead { font-size: 16px; }
+/* the claim, then the qualifier behind it: one ink, two strengths — no new colour */
+.cp-h-lead { display: block; color: var(--steel); }
+.cp-h-trail { display: block; color: rgb(25 37 74 / .32); }
+@media (max-width: 899px) { .cp .cp-h { font-size: 32px; } .cp-h-lead, .cp-h-trail { display: inline; } .cp-h-lead::after { content: " "; } }
+
+/* three columns that hold still: every title on the left where it is, the picture and the explanation changing
+   beside them. Only the middle and right cross over, so the change reads as this section turning over rather than
+   as three sections going past. */
+.cp-cols { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr) minmax(0, .8fr);
+  gap: var(--s5); align-items: center; }
+
+/* left: all three, spread down the column, the one being read in full strength. The three sit far apart and the
+   two that are not being read drop almost out of the page, so the column reads as a place in a list rather than as
+   three headings competing with the one in hand. */
+.cp-names { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s7); align-content: center; }   /* the three stand well apart: it is a list of three things, not a paragraph */
+.cp-names > li { opacity: .16; transition: opacity .5s ease; }
+.cp-names > li.is-on { opacity: 1; }
+.cp-t { display: grid; font-family: var(--head); font-size: clamp(24px, 2.1vw, 30px); line-height: 1.04; font-weight: 400; }
+
+
+/* middle and right: one cell each, the active one showing */
+.cp-figs, .cp-bodies { display: grid; }
+.cp-bodies { align-content: center; }
+.cp-slot { grid-area: 1 / 1; opacity: 0; translate: 0 10px; pointer-events: none;
+  transition: opacity .4s ease, translate .5s cubic-bezier(.22, 1, .36, 1); }
+.cp-slot.is-on { opacity: 1; translate: none; pointer-events: auto; }
+.cp-b { font-size: 16px; line-height: 1.6; color: var(--steel-70); }
+
+/* the picture: a tall frame, so the three columns read as list · picture · note rather than as three text columns
+   (LOW FIDELITY — replace the inside of .cp-fig with the real image) */
+.cp-figs { block-size: min(42vh, 380px); }
+/* The stage keeps a fixed height so the pinned layout never jumps as the three figures cross over, but the figure
+   itself is as tall as it needs to be and sits in the middle of it: these are landscape interfaces, and holding
+   them to a portrait box left most of the column empty under them. */
+.cp-fig { position: relative; block-size: 100%; margin-inline: auto; display: grid;
+  align-content: center; padding-inline: var(--s3); }
+@media (max-width: 899px) { .cp-figs { block-size: auto; } .cp-fig { block-size: auto; aspect-ratio: 4 / 3; } }
+.hs .cp-bodies .cp-b { margin: 0; }   /* it stands alone in its column, with no heading above it to step from */
+
+/* ---------- narrow: no track, no pin, the three simply stacked ---------- */
+@media (max-width: 899px) {
+  .cp-track, .cp-track.is-flat { height: auto; }
+  .cp-stage { position: static; height: auto; transform: none; gap: var(--s5);
+    grid-template-rows: none; align-content: start;   /* the pinned layout's rows mean nothing once it flows */
+    padding: 0 24px; }   /* as .rp-stage: the section's own --lf-gap is the whole gap */
+  .cp-head { text-align: left; justify-items: start; }
+  .cp .lp-h, .cp .lp-lead { max-width: none; }
+  .cp-viewport { overflow: visible; }
+  .cp-list, .cp-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s6); transform: none; transition: none; }
+  .cp-list .cp-row { opacity: 1; }
+  /* the name, then the picture, then the explanation, in that reading order */
+  .cp-row { grid-template-columns: 1fr; gap: var(--s3); }
+  .cp-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ============================================================================
+   07 · Our Process (components/home/ProcessTabs.tsx): a tab strip of icons, the marked one pointing down into the
+   panel it opens. Type and spacing from the system (see the note at the top of this file).
+   ============================================================================ */
+.pt-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.pt-head { text-align: center; display: grid; justify-items: center; }
+.pt-eyebrow { margin: 0; color: var(--label); }
+.pt .lp-lead { max-width: 40em; margin-inline: auto; }
+
+/* the strip */
+.pt-strip { display: flex; align-items: center; justify-content: center; gap: var(--s2); margin-top: var(--s5); }
+.pt-tabs { display: flex; align-items: center; gap: var(--s2); }
+.pt-tab { position: relative; width: var(--icon-btn); height: var(--icon-btn); display: grid; place-items: center;
+  padding: 0; border: 1.5px solid var(--steel-15); border-radius: var(--btn-radius); background: var(--sea);
+  color: var(--steel-50); cursor: pointer; transition: color .25s ease, border-color .25s ease; }
+.pt-tab-i { width: 22px; height: 22px; }
+.pt-tab:hover { color: var(--steel-70); border-color: var(--steel-50); }
+.pt-tab.is-on { color: var(--steel); border-color: var(--steel); }
+/* the marked step points down into its panel */
+.pt-tab.is-on::after { content: ""; position: absolute; top: 100%; left: 50%; translate: -50% 0;
+  border: 8px solid transparent; border-top-color: var(--sea); }
+.pt-tab:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.pt-step-arrow { width: var(--icon-btn); height: var(--icon-btn); display: grid; place-items: center; padding: 0;
+  border: 0; background: none; color: var(--steel-50); cursor: pointer; transition: color .25s ease; }
+.pt-step-arrow:hover { color: var(--steel); }
+.pt-step-arrow:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.pt-step-arrow .glyph { width: 22px; height: 22px; }
+
+/* the panel */
+.pt-panel { margin-top: var(--s3); padding: var(--s6); border-radius: var(--frame-radius); background: var(--sea);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--s5); align-items: center; }
+.pt-panel-l { display: grid; justify-items: start; }
+.pt-t { font-family: var(--head); font-size: 32px; line-height: 1.05; font-weight: 400; }   /* .h3 */
+.pt-b { font-size: 17px; line-height: 1.6; color: var(--steel-70); max-width: 34em; }
+
+/* the picture (LOW FIDELITY placeholder) */
+.pt-fig { aspect-ratio: 16 / 11; display: grid; place-items: center; border-radius: var(--btn-radius);
+  background: color-mix(in srgb, var(--steel) 7%, transparent); }
+.pt-fig-card { width: 72%; display: grid; gap: var(--s2); padding: var(--s3);
+  border-radius: var(--btn-radius); background: var(--sea); }
+.pt-ph { display: block; height: 14px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--steel) 13%, transparent); }
+.pt-ph-h { height: 24px; width: 64%; }
+.pt-ph.is-short { width: 48%; }
+.pt-ph-blk { height: 56px; margin-top: var(--s1); }
+
+@media (max-width: 899px) {
+  .pt-head { text-align: left; justify-items: start; }
+  .pt .lp-h, .pt .lp-lead { max-width: none; margin-inline: 0; }
+  .pt-strip { justify-content: flex-start; margin-top: var(--s4); }
+  .pt-step-arrow { display: none; }   /* phones tap the icons directly */
+  .pt-panel { grid-template-columns: 1fr; gap: var(--s4); padding: var(--s4); margin-top: var(--s2); }
+  .pt-t { font-size: 26px; }   /* .h3 on phones */
+}
+
+/* ---------- 05 · split layout: heading and ratings on the left, cards off the right edge ---------- */
+.rv.rv-split { max-width: 1200px; padding-inline: 24px;
+  display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--s5); align-items: start; }
+.rv-split-l { display: grid; align-content: start; gap: var(--s4); }
+/* The two ratings go one above the other, not side by side: the general .rv-phone rule puts them in two columns,
+   which inside this rail squeezed each box to 162px — the stars broke out past the frame and "12 ratings on Clutch"
+   wrapped onto a second line. Full width each, and both fit on one line. The same holds on a phone. */
+.rv.rv-split .rv-rates { display: grid; grid-template-columns: 1fr; gap: var(--s2); }
+/* In this rail the tile is ~340px wide, so the wall's 95px numeral left the stars and the count crowded into what
+   was left of the line and the tile read as two unrelated halves. A numeral on the .h2 scale, the two lines centred
+   against it and the whole group centred in the box: the score, its stars and its source read as one thing. */
+.rv.rv-split .rv-score { padding: var(--s3); align-items: center; gap: var(--s3); }
+.rv.rv-split .rv-score b { font-size: 56px; }
+.rv.rv-split .rv-score > span { min-width: 0; gap: 4px; }
+.rv.rv-split .rv-score .stars { font-size: 18px; }
+.rv.rv-split .rv-score small { white-space: nowrap; }
+/* the dots and the ‹ › belong together under the ratings, not pushed to opposite edges of the column */
+.rv-split-foot { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.rv-split-foot .row-arrows { margin-left: auto; }
+/* the row runs off the right edge of the sheet and is scrolled, so the last card is never squeezed to fit */
+/* The row starts at its own grid column and runs off the right edge of the sheet. The base rule pads BOTH sides by
+   the sheet's gutter (~380px here), which was pushing the first card far to the right of the column it belongs to —
+   so the left padding and margin are cleared and only the right-hand bleed is kept. */
+.cover-body .rv-split .rv-swipe {
+  margin-inline-start: 0; padding-inline-start: 0; scroll-padding-inline-start: 0;
+  margin-right: calc(50% - 50cqi); padding-right: calc(50cqi - 50%); }
+
+.row-dots { display: flex; align-items: center; gap: var(--s1); }
+.row-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--steel-15); transition: width .3s ease, background .3s ease; }
+.row-dot.is-on { width: 22px; background: var(--steel); }
+.row-dot:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+@media (max-width: 899px) {
+  .rv.rv-split { grid-template-columns: 1fr; gap: var(--s4); padding-inline: 24px; }
+  .rv-split-l { gap: var(--s4); }
+}
+
+/* ---------- 06 · What We Do: the text on the left, the drawn interface pinned on the right ----------
+   components/home/CapabilityPanels.tsx. The right-hand panel never moves: it morphs from one capability's
+   interface into the next as the column on its left steps on, so the section reads as one thing turning over. */
+/* the columns take the row the head leaves and sit in the middle of it */
+.cp-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: var(--s6);
+  align-items: center; align-content: center; min-block-size: 0; }
+
+/* left: one capability in the window at a time. The three are laid out down the column as real rows, each one
+   window tall, and the whole column travels up — it is the same text moving past, not one piece swapped for
+   another. It is translated by whole windows, so it only ever rests on a capability, never between two. */
+/* The window is taller than one block on purpose: the one before and the one after stay on the page, running off
+   into the top and bottom edges. They are not hidden — the mask takes them down to nothing at the edges, so the
+   column reads as a list you are part-way down rather than as one block replaced by another.
+   The height and the mask sit on the window, NOT on the list inside it: a fixed height on the grid itself
+   stretches its three auto rows to a third of it each and the blocks then run over one another. */
+/* The window keeps its height so the pinned layout never moves as the column travels, but it does NOT clip:
+   cutting at the edge sliced the block above and below through the middle of a line of type, which read as
+   broken text rather than as a list carrying on past the edge. The blocks not being read are taken down in
+   strength instead, and are whole wherever they land. */
+.cp-reel { position: relative; block-size: min(62vh, 560px); overflow: visible; }
+.cp-reel-in { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s6); align-content: start;
+  translate: 0 var(--shift, 0px);
+  transition: translate .6s cubic-bezier(.22, 1, .36, 1); }
+/* the two not being read stay where they are and stay whole — they are only taken right down in strength, so the
+   column reads as a list you are part-way down. The block itself carries the strength, one opacity for all of it,
+   rather than the window fading its own edges: a gradient dimmed the live block's own first and last lines too. */
+.cp-item { display: grid; gap: var(--s2); align-content: center;
+  opacity: .14; transition: opacity .5s ease; }
+.cp-item.is-on { opacity: 1; }
+.cp-name { margin: 0; color: var(--label); }
+.cp-items { list-style: none; margin: var(--s1) 0 0; padding: 0; display: grid; gap: 7px; }
+.cp-items li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.45; color: var(--steel); }
+.cp-items li::before { content: ""; position: absolute; left: 2px; top: .58em; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--orange); }
+
+
+/* the diagram's own container: the same trading card the reviews are on (components/home/RealityCards.tsx's
+   Frame, .tc-* in app/bathurst-map.css), settled on the right and widened — it is the card that turned over at
+   the end of the fan, now holding a drawn interface instead of a review. The three interfaces still cross over
+   inside it; only the card holds still. */
+/* the card is width-driven (its aspect ratio sets the height), and the width is capped off the viewport's height
+   too, so the card can never grow taller than the row the head leaves it */
+.cp-card .tc, .cp-card .tc:hover { aspect-ratio: 4 / 3; cursor: default;
+  inline-size: min(100%, 640px, calc(46vh * 4 / 3)); margin-inline: auto; }
+.cp-card { display: grid; justify-items: center; align-content: center; min-block-size: 0; }
+.cp-card .tc-in { grid-template-rows: auto 1fr auto; gap: 10px; padding: 12px; }
+.cp-card .tc-top b { font-size: 20px; }
+.cp-card .tc-no { color: var(--steel); }
+/* the drawn interfaces are light-on-cream, so the art window keeps the sheet's own paper rather than the
+   reviews' Steel Blue still */
+.cp-card .tc-art { background: var(--sea); box-shadow: 0 0 0 1px rgb(25 37 74 / .15); }
+.cp-card .cp-figs { position: absolute; inset: 0; block-size: auto; }
+.cp-card .cp-slot { place-content: center; }
+.cp-card .cp-fig { block-size: 100%; padding: var(--s2); }
+
+@media (max-width: 899px) {
+  .cp-two { grid-template-columns: 1fr; }
+  .cp-reel { block-size: auto; overflow: visible; }
+  .cp-reel-in { translate: none; }
+  .cp-item { translate: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .cp-reel-in, .cp-item { transition: none; } }
+
+/* ---------- the crossing out of the reviews: one card flies into the first diagram ----------
+   components/home/CapabilityPanels.tsx writes --x/--y/--w/--h (where the card is, between the fan's centre slot
+   and where the diagram's card rests) and --face (how far it has turned over) every frame. Laid over the page so
+   neither section's own clipping can cut it, and only while it is actually crossing. */
+.cp-fly { position: fixed; left: 0; top: 0; z-index: 20; visibility: hidden; pointer-events: none;
+  inline-size: var(--w, 400px); block-size: var(--h, 560px); perspective: 1600px;
+  translate: var(--x, 0px) var(--y, 0px); will-change: translate, width, height; }
+/* the review is the card's front and the diagram its back: it turns over on the way, the same move the card at the
+   end of the fan makes, rather than one picture dissolving into another */
+.cp-fly-in { position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: rotateY(calc(var(--face, 0) * 180deg)); will-change: transform; }
+.cp-fly-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.cp-fly-cp { transform: rotateY(180deg); }
+/* the card stretches to whatever the flight asks for: its resting aspect ratio would fight the morph */
+.cp-fly .tc, .cp-fly .tc:hover { inline-size: 100%; block-size: 100%; max-inline-size: none; aspect-ratio: auto;
+  cursor: default; margin: 0; }
+.cp-fly .tc-in { grid-template-rows: auto 1fr auto; gap: 10px; padding: 12px; }
+.cp-fly .tc-top b { font-size: 20px; }
+.cp-fly .tc-no { color: var(--steel); }
+.cp-fly .cp-figs { position: absolute; inset: 0; block-size: auto; }
+.cp-fly .cp-fly-cp .tc-art { background: var(--sea); box-shadow: 0 0 0 1px rgb(25 37 74 / .15); }
+
+/* the card that rests here is covered until the flight lands on it, so one card arrives rather than two */
+.cp-stage.is-handoff .cp-card { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no flight: the card is simply where it belongs, in both places */
+  .cp-fly { display: none; }
+  .cp-stage.is-handoff .cp-card { opacity: 1; }
+}
+
+/* ---------- 07 · The Stack: the tools leave the card and go into orbit ----------
+   components/home/ToolOrbit.tsx. The chips are the same marks lying on 06's last card
+   (components/home/Interfaces.tsx, lib/bathurst/tools.ts), so the two have to look identical. */
+
+/* one chip: the mark in a white circle, never on a coloured ground — the marks carry their own colour */
+.tool-chip { position: absolute; display: grid; place-items: center; width: 44px; height: 44px;
+  margin: -22px 0 0 -22px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .08), 0 2px 8px rgb(25 37 74 / .12); }
+.tool-chip img { width: 56%; height: 56%; object-fit: contain; display: block; }
+.tool-chip.is-flat { position: static; margin: 0; }
+
+/* on the card: the marks lie behind the chain, quiet enough that the chain still reads first. The figure is only
+   as tall as the chain in it, so the scatter is given the whole art window to spread over instead — otherwise the
+   per-cent places collapse into one band across the middle and the marks pile on each other. */
+.fg-stack { position: relative; min-block-size: 100%; align-content: center; }
+.tool-scatter { position: absolute; inset: -14% -6%; opacity: .45; pointer-events: none; }
+.tool-scatter .tool-chip { width: 32px; height: 32px; margin: -16px 0 0 -16px;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .06), 0 1px 5px rgb(25 37 74 / .1); }
+.fg-stack .ch { position: relative; z-index: 1; }
+
+.to-track { position: relative; }
+.to-stage { position: sticky; top: 0; height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  align-content: start; gap: var(--s4); padding-top: calc(var(--navh, 72px) + clamp(8px, 2svh, 24px));
+  transform: translate3d(0, var(--pin, 0px), 0); }
+.to-head { text-align: center; display: grid; justify-items: center; gap: var(--s2); }
+.to-head .lp-h { max-width: 18em; }
+.to-head .lp-lead { max-width: 42em; font-size: 16px; }
+
+.to-field { position: relative; min-block-size: 0; }
+
+/* Every chip is placed from the top-left of the field by one transform the scroll writes each frame: the whole
+   run — off the card, out across the page, into the network — is one interpolation on one element, so there is
+   no point in it where a chip stops being the same chip. The component owns the numbers; the CSS only says what
+   a chip looks like. */
+.to-fly { left: 0; top: 0; margin: 0; will-change: transform; }
+
+/* the network: one line from the mark to each node, under the chips */
+.to-web { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.to-web line { stroke: rgb(25 37 74 / .22); stroke-width: 1.25; }
+
+/* the TCG mark: nothing at the start, the middle of the network by the end */
+.to-mark { position: absolute; left: 0; top: 0; display: grid; place-items: center;
+  width: 136px; height: 136px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1px rgb(25 37 74 / .1), 0 14px 38px -12px rgb(25 37 74 / .45); }
+.to-mark img { width: 64%; height: 64%; object-fit: contain; }
+
+/* ---------- narrow: no track, no pin — the marks simply sit together ---------- */
+@media (max-width: 899px) {
+  .to-track { height: auto; }
+  .to-stage { position: static; height: auto; transform: none; padding-top: 0; }
+  .to-head { text-align: left; justify-items: start; }
+  .to-head .lp-h, .to-head .lp-lead { max-width: none; }
+  .to-grid { list-style: none; margin: var(--s4) 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: var(--s2); justify-items: center; }
+  .to-mark-flat { position: static; width: 72px; height: 72px; margin: var(--s4) auto 0; }
+}
+
+
+
+/* The tools lying on 06's last card need the whole art window to lie on. .fg is a content-sized grid item, so
+   .fg-stack's `min-block-size: 100%` had nothing to resolve against and the marks collapsed into a band across the
+   middle of the card — the very thing lib/bathurst/tools.ts's per-cent places are there to avoid. Giving the
+   figure the card's full height and width spreads them over the card as a desk rather than a row. */
+.cp-card .cp-fig, .cp-fly-cp .cp-fig { align-content: stretch; }
+.cp-card .fg-stack, .cp-fly-cp .fg-stack { block-size: 100%; max-inline-size: none; }
+
+/* No connector down 06's last card. The chain's rule read as an axis ruled across the card — with the tools now
+   scattered over the whole art window, a line through them fought the scatter instead of joining the two boxes,
+   which sit close enough to read as a sequence on their own. §03's broken chain keeps its rule: there the break
+   IS the point, so the line has to be there to be broken (.ch-join.is-broken in app/interfaces.css). */
+.fg-stack .ch-line { display: none; }
+.fg-stack .ch-join { height: 34px; padding-left: 2px; }
