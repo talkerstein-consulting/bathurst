@@ -1,64 +1,57 @@
-/* The map on its own: everything the reference build wraps around it is hidden here, and the
-   engine is pinned to its map state by MapOnly.tsx. What is left is the map. */
-/* the document stays tall — the engine reads scrollY to know it is on the map — but the bar
-   is hidden and MapOnly parks the page there, so there is nothing to scroll */
-html { scrollbar-width: none; }
-html::-webkit-scrollbar { display: none; }
+/* The map on its own.
+   components/tcg/map-stage.tsx renders only the map's own chrome and starts the engine static,
+   so there is nothing here to hide any more — only the sizing that makes the map fill this page
+   and the TCG overrides on the chrome the engine draws itself. */
+
+/* the page is the map: no scroll, no page grain, no page-length hero */
+html, body { height: 100%; overflow: hidden; }
 body { background: var(--cream); }
-body::before { display: none; }            /* the page grain belongs to the page, not the map */
+body::before { display: none; }
 
-/* the reference's front page, navbar, menu, section heading and the sheet that rises over it */
-#sv,
-#stick > .navbar,
-#stick > .menubtn,
-#stick > .brandpin,
-#stick > .proudca,
-#stick > .menu,
-#workhead,
-#cover,
-.offer-corner,
-.assess-strip,
-.thumb-cta { display: none !important; }
-
-/* the map fills the window */
-#stage { position: absolute; inset: 0; }
+#hero { height: 100%; }
+#stick { position: absolute; inset: 0; height: auto; }
 
 /* ===========================================================================
-   TCG overrides for the framed map (site/components/tcg/footprint.tsx).
-   The reference build sits this map beside a panel and a navbar; in the
-   section it has the whole frame, so the chrome is repositioned and the
-   controls are brought onto the brand.
+   TCG overrides for the chrome the engine builds (site/components/tcg/footprint.tsx
+   frames this page in the homepage section, so everything is sized to the frame).
    ========================================================================= */
 
-/* The industry chips: pinned to the top of the container and centred, instead
-   of offset by a side panel that is not here. */
-.chipbar {
+/* The industry chips: the reference offset them by a side panel and dropped them to clear a
+   section heading. Neither is here, so the row sits at the top of the map, and the class is
+   repeated to outrank those #hero #stick.work rules in app/bathurst-map.css. */
+#hero #stick#stick.work .chipbar.chipbar,
+#hero #stick#stick .chipbar.chipbar {
   left: var(--inset) !important;
   right: var(--inset) !important;
   top: var(--inset) !important;
+  /* the .work rule centres the row by translating it half its width; it is laid out edge to edge here */
+  translate: none !important;
+  max-width: none !important;
   justify-content: center !important;
 }
-/* The reference build drops the row 72px to clear the "Our Work" heading, and
-   on wider/narrower screens 108px or 66px for the same heading at its other
-   sizes. #workhead is hidden here (above), so that gap is reserved for nothing
-   and leaves the chips floating over the city. This puts the row back at the
-   top of the map container.
-
-   The class is repeated to outrank those rules: they are #hero #stick.work
-   .chipbar, which carries more weight than a bare .chipbar even with
-   !important on both, and they live in app/bathurst-map.css where the heading
-   they clear does still exist. */
-#hero #stick#stick.work .chipbar.chipbar,
-#hero #stick#stick .chipbar.chipbar {
-  top: var(--inset) !important;
-}
-
 /* The row scrolls itself if it runs long, so the paddles are not needed. */
 .chipbar > .btn { display: none !important; }
 
-/* The operating buttons, bottom right, on the house pattern: Sea Breeze
-   ground, a steel hairline, the button radius, and orange only on hover —
-   orange marks the operable and these are the only operable things here. */
+/* The chips are part of the map, not of a state: they stay up with a place open, at full
+   strength. The reference faded them out whenever the panel or a full sheet came in. */
+#hero #stick .chipbar,
+#hero #stick.work .chipbar,
+#hero #stick:has(.sheet[data-state="full"]) .chipbar {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none;            /* the row itself; its chips take the clicks (below) */
+  transform: none !important;
+}
+#hero #stick .chipbar .chips { pointer-events: auto; }
+
+/* There is no all-clients list any more: the panel exists only while a place is open, so the
+   map is never covered by a sheet nobody asked for. The engine sets .place on #mapui. */
+#mapui:not(.place) .panel,
+#mapui:not(.place) .edgetab { display: none !important; }
+
+/* The operating buttons on the house pattern: Sea Breeze ground, a steel hairline, the button
+   radius, and orange only on hover — orange marks the operable and these are the only
+   operable things here. */
 .ctrls .btn,
 .ctrls .zoomgrp {
   background: var(--sea) !important;
@@ -83,8 +76,149 @@ body::before { display: none; }            /* the page grain belongs to the page
   opacity: 1 !important;
 }
 
-/* The checkered neatline border was removed at the client's request ("remove
-   line on the map"). It is the dashed rule that ran around the view, under the
-   coordinates and the scale. Hidden here only, so the reference build that
-   this map is carried over from keeps its own border. */
+/* The checkered neatline border was removed at the client's request ("remove line on the map"). */
 .neatline { display: none !important; }
+
+/* ===========================================================================
+   Flat: the map is a plan, so nothing on it is lifted off the paper.
+   ========================================================================= */
+
+/* The pins carry a black drop shadow in the reference build, where they stand over the 3D street
+   view and need the lift. On the flat plan it reads as a smudge under every logo. The rings stay
+   — a Sea Breeze knockout, then a hairline in the industry colour — in every state, so nothing
+   rises on hover. */
+.pin .ic,
+.pin.mini .ic,
+#stick.filtered .pin.mini:not(.dim) .ic {
+  box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)) !important;
+}
+.pin.sel .ic,
+.pin.mini:hover .ic,
+.pin.mini:focus-visible .ic {
+  box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--orange) !important;
+}
+
+/* ===========================================================================
+   Edge markers (lib/bathurst/engine.ts, edgeMarkers): a client the view has lost waits on the
+   edge of the map, in its true direction, the way a game marks what is off screen. Nothing is
+   merged: clients on the same stretch of edge are bunched, each its own pin (the same logo,
+   rings and hover as on the map), with one chevron pointing the way and the distance inside.
+   ========================================================================= */
+.offpin { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 250000; }
+.offpin.hide { display: none; }
+.offpin .bunch { position: absolute; left: 0; top: 0; }
+/* bunched icons are a size down and overlap a little, like an avatar stack; the one under the pointer comes to the front */
+.offpin .bunch .pin .ic { width: 30px; height: 30px; left: -15px; top: -15px; }
+.offpin .bunch .pin .ic .glyph { width: 16px; height: 16px; }
+.offpin .bunch .pin:hover,
+.offpin .bunch .pin:focus-visible { z-index: 1; outline: none; }
+.offpin .dir {
+  position: absolute; left: -12px; top: -12px; width: 24px; height: 24px;
+  display: grid; place-items: center; color: var(--steel); pointer-events: none;
+  transition: color .2s ease;
+}
+.offpin .dir svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.offpin:hover .dir,
+.offpin:focus-within .dir { color: var(--orange); }
+.offpin .km {
+  position: absolute; left: 0; top: 0; padding: 1px 6px; border-radius: 6px; white-space: nowrap;
+  background: var(--sea); color: var(--steel); font: 600 11px/16px var(--body); font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 1px var(--steel-15); pointer-events: none;
+}
+/* each pin's name is its tooltip only (the zoomed-in "named" state would print them all), opening toward the middle */
+#stick .offpin .pin .nm { opacity: 0; }
+#stick .offpin .pin:hover .nm,
+#stick .offpin .pin:focus-visible .nm { opacity: 1; z-index: 2; }
+.offpin .pin .nm { left: 20px; }
+.offpin.flip .pin .nm { left: auto; right: 20px; }
+@media (prefers-reduced-motion: reduce) { .offpin .dir { transition: none; } }
+
+/* ===========================================================================
+   The world's names (Natural Earth, lib/bathurst/engine.ts loadWorld): continents in the
+   widest caps, countries in the area caps, cities small with a dot, seas and lakes in italic.
+   ========================================================================= */
+.road.area.continent { font-size: 18px; letter-spacing: .5em; color: var(--steel-70); }
+.road.area.country { font-size: 13px; letter-spacing: .28em; }
+.road.area.lake { font-size: 12px; letter-spacing: .14em; }
+.road.city {
+  font-family: var(--body); font-weight: 600; font-size: 11px; letter-spacing: .02em; text-transform: none;
+  color: var(--steel); display: flex; align-items: center; gap: 4px;
+}
+.road.city::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--steel); box-shadow: 0 0 0 1.5px var(--sea); flex: none; }
+.road.city.capital { font-weight: 700; }
+.road.city.capital::before { width: 6px; height: 6px; background: var(--sea); box-shadow: inset 0 0 0 1.5px var(--steel); }
+
+/* The map's readout shares the class .foot with the site footer (app/globals.css), whose rule (a grunge line on
+   ::before), top margin and padding leaked onto the map as a stray line above the coordinates. */
+#mapui .foot { margin-top: 0; padding-top: 0; }
+#mapui .foot::before { content: none; }
+/* the readout: the country (or sea, or lake) under the middle of the view, in place of the coordinates and scale */
+.fp-place { gap: 6px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: none; }
+.fp-place .glyph { width: 16px; height: 16px; flex: none; }
+
+/* The map takes the gesture: there is no page behind it to scroll. */
+#stage { touch-action: none; }
+
+/* ===========================================================================
+   The place sheet, sized to this container rather than to a phone screen.
+
+   The reference docked it against the whole viewport (a fixed 360px column on desktop, a
+   bottom sheet with a 136px top margin on phones). Here the map is usually a frame inside the
+   homepage section — about 335 x 550 on a phone — so both are measured against the map's own
+   box: the column is a share of it, and the sheet keeps a fixed slice of map visible above it.
+   ========================================================================= */
+#hero { --dock-w: clamp(260px, 38%, 420px); }
+
+/* desktop only: on a phone the panel is the full width of the map, with the sheet at its foot */
+@media (min-width: 761px) {
+  #hero #stick #mapui.dock .panel {
+    left: var(--inset) !important;
+    top: var(--inset) !important;
+    bottom: var(--inset) !important;
+    width: var(--dock-w) !important;
+  }
+}
+#hero #stick #mapui.dock .sheet { margin: 0 !important; }
+/* The reference slides the sheet in from off-screen. The panel only exists while a place is open
+   now, so that animation can start while it is still display:none and stay parked at its first
+   frame — the sheet then sits a full width off the left edge. It simply appears instead. */
+#hero #stick #mapui.dock .sheet { animation: none !important; transform: none !important; }
+#hero #stick #mapui.dock .edgetab { left: calc(var(--inset) + var(--dock-w) - 21px) !important; }
+
+@media (max-width: 760px) {
+  /* The place sheet, inside the map instead of under the fold.
+
+     The reference sizes it to a phone screen: one tall sheet, slid down by a share of its own
+     height for the half and peek states, so most of it hangs below the viewport and the phone's
+     own scroll is what the rest of it needs. In a frame there is no "below" — everything past
+     the map's bottom edge is simply cut off. So each state is a height here, the sheet is
+     anchored to the bottom of the map, and its body scrolls inside it. */
+  .panel { justify-content: flex-end; }
+  .sheet {
+    margin: 0 var(--s1) !important;
+    flex: 0 0 auto !important;
+    align-self: stretch;
+    transform: none !important;
+    transition: height .38s cubic-bezier(.22,1,.36,1) !important;
+  }
+  /* full still leaves the chip row and a band of map showing above it */
+  .sheet[data-state="full"] { height: calc(100% - var(--icon-btn) - var(--s1)) !important; }
+  .sheet[data-state="half"] { height: 56% !important; }
+  .sheet[data-state="peek"] { height: 104px !important; }
+  .sheet.dragging { transition: none !important; }
+
+  /* ---- the chrome, sized for the frame -------------------------------- */
+  /* the control column: one 44px stack, the touch target and nothing more */
+  .ctrls { gap: 8px !important; }
+  .ctrls #compass { width: 44px !important; height: 44px !important; }
+  .ctrls .btn,
+  .ctrls .btn.icon { width: 44px !important; height: 44px !important; }
+  .ctrls .zoomgrp { width: 44px !important; }
+  .ctrls .zoomgrp button { height: 44px !important; }
+
+  /* the industry row: the reference's chips are 48px at 15px, so two and a half fit across the
+     frame and the row reads as a wall. Narrower chips put four in view; 44px stays the touch
+     target and the row still scrolls sideways (D06). */
+  .chip { height: 44px !important; padding: 0 12px !important; font-size: 13px !important; }
+  #hero #stick#stick .chipbar.chipbar { justify-content: flex-start !important; }
+}

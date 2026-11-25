@@ -47,6 +47,8 @@
   --sea:       #F3F7F3;
   --steel:     #19254A;
   --orange:    #B3530E;
+  /* Confirmation only (accepted, booked, paid). White on it is 5.4:1, AA. */
+  --green:     #1E7A4C;
 
   --steel-70:  rgb(25 37 74 / .70);
   --steel-55:  rgb(25 37 74 / .55);
@@ -129,6 +131,23 @@
      sections grows. */
   --col-gap: var(--s6);
 
+  /* The air the masthead sets between its own two rules: the titles row is
+     13px of padding above and below a single small-caps line, which measures
+     46px from the thick rule to the hairline. The hero opens on the same
+     distance below the hairline, so the three bands read as one rhythm
+     instead of the page widening as it goes down. Declared rather than
+     derived because the row's height is padding plus a line box, which CSS
+     cannot hand to another rule — if .pages ul changes, change this with it. */
+  --rule-gap: 46px;
+
+  /* How much of the page is NOT the hero, so the next section breaks the fold.
+     The hero is sized against the window rather than given a share of it: at
+     1440x900 the masthead and the hero's offset take 250px, the gap to the
+     cards 32, and a third of a card is about 172 — so 454 comes off the window
+     and the cards show their top third without a scroll. Px, not vh, because
+     only the peek is a fraction; the two bands above it are fixed. */
+  --fold-peek: 454px;
+
   /* --- CTA -------------------------------------------------------------- */
   --cta-pad:    16px;
   --cta-pad-sm: 12px;
@@ -167,6 +186,7 @@
 
 /* The condensed bar is fixed, so every in-page anchor has to clear it. */
 html {
+  overflow-x: clip;
   scroll-padding-top: calc(var(--topbar-h) + var(--topbar-pages-h) + var(--s3));
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -174,6 +194,10 @@ html {
 }
 
 body {
+  /* The page's width without the scrollbar, for rows that bleed to the screen
+     edge (cqi in .tc-row.cl-row). Inline-size only: it creates no containing
+     block for the fixed bar or the grain. */
+  container: page / inline-size;
   margin: 0;
   background: var(--bg);
   color: var(--fg);
@@ -554,15 +578,21 @@ svg.glyph {
    radius is why it clips — the canvas is square and would otherwise overrun the
    corners. `isolation` keeps the canvas from compositing against the page. */
 .intake {
-  /* The doubled --col-gap is for the air BETWEEN sections. The hero is not a
-     section below the masthead though -- it hangs directly off the masthead's
-     rule, so it pulls that one gap back out. Everything further down the page
-     keeps the full doubled gap. */
-  margin-top: calc(-1 * var(--col-gap));
+  /* The hero used to hang off the masthead's hairline with no air at all. It
+     now opens exactly --rule-gap below it, the same distance the masthead
+     keeps between its thick rule and that hairline. The column's gap is the
+     starting point, so what is left to do here is the difference. */
+  margin-top: calc(var(--rule-gap) - var(--col-gap));
   position: relative; isolation: isolate;
-  display: grid; gap: var(--s5);
-  padding: var(--s7) var(--s5);
-  min-height: 78vh; align-content: center;   /* was 62vh */
+  display: grid; gap: var(--s4);
+  /* Shortened at the client's request so the cards break the first screen.
+     The padding comes down with the block — --s7 was set for a hero that
+     filled most of the window and reads as a hole in a shorter one.
+
+     svh, not vh: on a phone vh is the tallest the window ever gets, so the
+     browser's own chrome would eat the peek this is here to protect. */
+  padding: var(--s5) var(--s5);
+  min-height: calc(100svh - var(--fold-peek)); align-content: center;
   border-radius: var(--r-frame);
   overflow: hidden;
 }
@@ -681,7 +711,15 @@ svg.glyph {
 /* Three feature cards. Nothing is framed: the structure is a hairline centred
    in each gutter, the Monocle way. The whole card is the control, so not one of
    them carries a button. */
-.features { display: grid; gap: var(--s4); }
+.features {
+  display: grid; gap: var(--s4);
+  /* The hero above ends in its own --s7 of padding, so the full column gap on
+     top of that read as a hole rather than as rhythm. The cards come up by
+     half a step; every section below them keeps the undiminished gap. The pull
+     has to be a negative margin because the space is the column's `gap`, which
+     a child cannot shorten any other way. */
+  margin-top: calc(-1 * var(--s4));
+}
 .features-grid {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0;
   overflow: hidden;
@@ -831,6 +869,12 @@ svg.glyph {
   font: 400 var(--t-h4)/1.12 var(--head);
   letter-spacing: var(--track-head); text-wrap: balance;
 }
+/* Two lines are reserved for the headline in a four-up row, whether or not it
+   uses both. One of the four wraps and the other three do not, so without the
+   reserve that card's body copy started a line lower than its neighbours' and
+   the row read as crooked across the middle. The card foot was always level —
+   the grid pins it — which is exactly why the drift was hard to place. */
+.card-row--framed .card-title { min-height: 2.24em; }
 .card-dek { font-size: var(--t-small); line-height: 1.6; color: var(--steel-70); }
 
 /* four to a row, hairline-divided in the gutter the Monocle way */
@@ -845,8 +889,14 @@ svg.glyph {
   content: ""; position: absolute; left: 0; top: 0; bottom: 0;
   width: var(--hairline); background: var(--steel-20); filter: url(#grunge);
 }
-.card-row > *:first-child { padding-left: 0; }
-.card-row > *:last-child  { padding-right: 0; }
+/* The outer columns bleed to the page gutter so the row's content aligns with
+   everything above it. Scoped away from the FRAMED row, which it was silently
+   reaching into: those four cards each draw their own box, so dropping the
+   outer padding made the first and last 24px wider than the middle two, and
+   their art slots measured 307px against 283px. Four boxes in a row are the
+   one place every edge has to agree. */
+.card-row:not(.card-row--framed) > *:first-child { padding-left: 0; }
+.card-row:not(.card-row--framed) > *:last-child  { padding-right: 0; }
 /* The row that follows the lead carries no rule above it: the client asked for
    nothing between the lead case study and the four under it, only air. */
 .card-row--ruled { padding-top: var(--s4); }
@@ -862,6 +912,410 @@ svg.glyph {
 .card--lead .card-body { grid-column: 1; grid-row: 1; align-content: start; }
 .card--lead .card-act { grid-column: 1; grid-row: 2; }
 .card--lead .card-title { font: 400 var(--t-h3)/1.06 var(--head); }
+
+/* ------------------------------------------------------ cards you hand -- */
+/* The four modules are not articles to open, they are pieces to hand to the
+   assistant. They wear the double stroke because that is what this page puts
+   around the one other operable box, the intake field: a visitor who has
+   learned the orange-lined frame at the top of the page already knows this
+   shape answers a press.
+
+   The row therefore drops the Monocle gutter hairline. Two dividers between
+   the same two cards -- a frame and a rule -- is one too many. */
+.card-row--framed {
+  gap: var(--s3);
+}
+.card-row--framed > * { padding: 0; }
+.card-row--framed > * + *::before { content: none; }
+
+/* The feature row: full-size cards on a full-bleed rail, driven by chevrons
+   (components/tcg/feature-rail.tsx).
+
+   The cards keep the size four of them had across the column — they are not
+   squeezed to fit five. The row runs out to both screen edges instead, so a
+   card leaving it is cut by the screen, never by the content column; its
+   padding puts the first card on the column's left edge. Two in view under
+   1080px. Phones keep their one-card tray (further down) and the same
+   chevrons.
+
+   The padding-block (and matching negative margin) leaves room for the
+   frame's outer stroke and the hover sprout, which sit just outside each card
+   and the scroller would otherwise clip. */
+/* The heading and its chevrons share one row, the clients section's .cl-head. */
+@media (min-width: 561px) {
+  .features .card-row--framed {
+    --rail-n: 4;
+    --bleed: calc(50vw - 50%);
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--rail-n) - 1) * var(--s3)) / var(--rail-n));
+    overflow-x: auto;
+    /* No snap: the bleed padding is a percentage of the PARENT, and
+       scroll-padding cannot say that (its % is of the scroller), so a snap
+       pulled the first card off the column edge on load. The chevrons step
+       a card at a time instead. */
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin: -6px calc(-1 * var(--bleed));
+    padding: 6px var(--bleed);
+  }
+  .features .card-row--framed::-webkit-scrollbar { display: none; }
+}
+@media (min-width: 561px) and (max-width: 1080px) {
+  .features .card-row--framed { --rail-n: 2; }
+}
+
+.card--drag {
+  padding: var(--s3);
+  /* The press is a drag, so it must not start a text selection across the
+     title and the dek on its way. */
+  user-select: none;
+  border-radius: var(--r-frame);
+  gap: var(--s3);
+  /* The frame's outer stroke sits 1.5px outside the padding box, so nothing
+     here may clip (see Frame in components/tcg/frame.tsx). */
+  overflow: visible;
+  transition: transform .25s var(--ease-out), opacity .2s ease;
+}
+/* The grab target, over the whole card, the way the CTA used to stretch over
+   it. No fill and no border: the frame is the button's face.
+
+   Selected as a child of the card, not on its own: .frame > :not(.lines) puts
+   every frame child in flow at z-index 1, which collapsed this button to no
+   height at all. The child selector matches that weight and comes later. */
+.card--drag > .card-grab {
+  position: absolute; inset: 0; z-index: 2;
+  width: 100%; border: 0; background: none; padding: 0;
+  border-radius: var(--r-frame);
+  cursor: grab;
+}
+.card-grab:active { cursor: grabbing; }
+.card-grab:focus-visible {
+  outline: var(--outer-stroke) solid var(--orange); outline-offset: 4px;
+}
+/* The card hovers like every other control on the page: the same seeded
+   outline sprouts in from several points and closes (components/tcg/sprout.tsx,
+   .sprout above). It had a one-off travelling-arc animation of its own, which
+   was the whole problem — one page answering the same gesture two ways.
+
+   The layer sits over the frame the card already wears, so the resting double
+   stroke is untouched and what arrives on hover is the heavy orange line. */
+/* Out of flow, and said loudly enough to be heard: `.frame > :not(.lines)`
+   above sets every other child to position: relative, and it outranks a bare
+   class. While it won, this layer counted as a GRID CHILD of the card — it
+   took the first row, pushed the art into the 1fr row meant for the body, and
+   added a 24px gap. That is what bent the row: the art row then absorbed
+   whatever height the shorter card bodies left over, so two cards carried
+   their picture in a 284px row and two in a 260px one, and every line of copy
+   below drifted with it. */
+.sprout-layer,
+.frame > .sprout-layer,
+.card > .sprout-layer {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 3;
+  border-radius: inherit;
+}
+.sprout-layer > .stroke {
+  position: absolute;
+  top: calc(-1 * var(--outer-stroke)); left: calc(-1 * var(--outer-stroke));
+  width: calc(100% + 2 * var(--outer-stroke));
+  height: calc(100% + 2 * var(--outer-stroke));
+  overflow: visible;
+}
+.sprout-layer > .stroke path { fill: none; stroke: var(--ink); }
+.sprout-layer > .stroke .inner { stroke-width: var(--inner-stroke); }
+.sprout-layer > .stroke .outer {
+  stroke-width: var(--outer-stroke);
+  stroke-dasharray: 0 1; stroke-dashoffset: calc(-1 * var(--seed));
+  transition: stroke-dasharray var(--cta-draw) var(--ease) var(--delay),
+              stroke-dashoffset var(--cta-draw) var(--ease) var(--delay),
+              stroke .3s ease;
+}
+/* The card's own layer inherits the frame's radius, and draws orange: the
+   whole card is the operable thing, which is what orange marks. */
+.card--drag > .card-sprout { border-radius: var(--r-frame); }
+.card--drag > .card-sprout > .stroke .outer { stroke: var(--orange); }
+/* At rest the card wears only the inner line, like every CTA: the frame's own
+   outer stroke is hidden, and the outer line exists only as the sprout that
+   draws in on hover — never stacked over a resting double border. */
+.card--drag > .lines .o { stroke: transparent; }
+/* Loaded (added to the brief): the outer line comes back, in the confirmation
+   green, and stays — the card's finished state, said by its border. */
+.card--drag.is-held > .lines .o { stroke: var(--green); transition: stroke .3s ease; }
+
+/* One hover, both outlines: the card's and the plus's sprout together, because
+   they are one control and a pointer crossing it made one gesture. */
+.card--drag:hover .sprout-layer > .stroke .outer,
+.card--drag:has(.card-grab:focus-visible) .sprout-layer > .stroke .outer {
+  stroke-dasharray: var(--len) var(--rest);
+  stroke-dashoffset: calc(-1 * var(--from));
+}
+/* Held is a finished state: nothing left to invite, so nothing sprouts. */
+.card--drag.is-held:hover .sprout-layer > .stroke .outer {
+  stroke-dasharray: 0 1;
+  stroke-dashoffset: calc(-1 * var(--seed));
+}
+
+/* While a drag is running the other three step back, so the one in the hand
+   reads as the one in the hand. */
+.card--drag[data-dragging="true"]:not(:hover) { opacity: .55; }
+
+/* D07: held is the result state. The card is NOT dimmed for it — the check and
+   "Added" on the bottom edge are the report, and dimming the card would fade
+   the very mark that carries it. Only the cursor stops inviting a drag. */
+.card--drag.is-held .card-grab { cursor: default; }
+
+/* The plus on the bottom edge: the standing affordance, there before any
+   hover, because a drag nobody knows about is not an affordance at all. It
+   turns into a check once the card is in the brief — D04's success icon.
+
+   A child selector for the same reason as .card-grab above: .frame >
+   :not(.lines) would otherwise set this row's position and stacking. */
+.card--drag > .card-add {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--steel-55);
+  transition: color .2s ease;
+}
+/* An outlined icon button, orange at rest and not only on hover: adding the
+   card is the operable thing on it, and the brand puts orange on exactly that.
+   Outline only, per the CTA rule — no fill, equal clearance inside the stroke
+   on all four sides, which also makes it a 44px target in its own right even
+   though the whole card is the real one. */
+.card-add-mark {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--icon-btn); height: var(--icon-btn);
+  border-radius: var(--r-btn);
+  color: var(--orange);
+  transition: color .3s ease;
+}
+.card--drag > .card-add .glyph { width: 20px; height: 20px; }
+/* Drawn through the grunge filter like every other line here, not bordered:
+   a CSS border is the one clean-edged rectangle the system does not have.
+   The resting hairline is orange because the plus is the operable mark. */
+.card-add-stroke > .stroke .inner { stroke: var(--orange); }
+.card-add-stroke > .stroke .outer { stroke: var(--orange); }
+/* Held is the receipt, not an invitation: it drops out of orange and keeps
+   only the quiet resting line. */
+.card--drag.is-held > .card-add .card-add-mark { color: var(--steel-55); }
+.card--drag.is-held .card-add-stroke > .stroke .inner { stroke: var(--steel-20); }
+
+/* ---------------------------------------------------------- drag ghost -- */
+/* What is under the cursor between a card and the box. One element for the
+   whole page, owned by BriefProvider, moved by writing `transform` on it --
+   so `transform` is the one thing here that must never be transitioned.
+
+   It starts as the card's title in the card's own setting and folds into the
+   chip it is about to become once it is over the box. The same object
+   throughout: a visitor should see what they are carrying turn into what they
+   will get, not watch one thing swap for another. */
+.brief-ghost {
+  position: fixed; left: 0; top: 0; z-index: 90;
+  pointer-events: none; opacity: 0; visibility: hidden;
+  max-width: 260px;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-card);
+  background: var(--sea);
+  border: var(--hairline) solid var(--steel-35);
+  box-shadow: 0 18px 36px -18px rgb(25 37 74 / .45);
+  font: 400 var(--t-h5)/1.1 var(--head); letter-spacing: var(--track-head);
+  color: var(--steel);
+  transition:
+    opacity .12s ease, padding .18s var(--ease-out),
+    border-radius .18s var(--ease-out), background-color .18s ease,
+    color .18s ease, font-size .18s var(--ease-out);
+}
+.brief-ghost[data-live="true"] { opacity: 1; visibility: visible; }
+/* The chip version: inside the box, it is already the thing it will become. */
+.brief-ghost[data-chip="true"] {
+  padding: 6px var(--s2);
+  border-radius: 999px;
+  background: var(--steel);
+  border-color: var(--steel);
+  color: var(--sea);
+  font: 500 var(--t-micro)/1.4 var(--body);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.brief-ghost-in { display: block; }
+
+/* ---------------------------------------------------------- brief chips -- */
+/* What landed, inside the box, above the typing. Not D05 chips: those are
+   read-only verifiers and must never look pressable. These are the visitor's
+   own input and each carries a remove, so they are allowed their control. */
+.intake-chips {
+  display: flex; flex-wrap: wrap; gap: var(--s1);
+  margin-bottom: var(--s2);
+}
+/* NAMED brief-chip, not chip: .chip is the map's industry filter, set in
+   app/bathurst-map.css and carrying its own height, padding, type size and
+   per-industry pin colour. A second global .chip here reached straight into
+   that row and restyled it. */
+.brief-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px var(--s2);
+  border-radius: 999px;
+  background: var(--steel); color: var(--sea);
+  font: 500 var(--t-micro)/1.4 var(--body);
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.brief-chip-x {
+  display: inline-flex; border: 0; background: none; padding: 0;
+  color: inherit; cursor: pointer; opacity: .7;
+}
+.brief-chip-x:hover, .brief-chip-x:focus-visible { opacity: 1; color: var(--orange); }
+.brief-chip-x:focus-visible {
+  outline: var(--hairline) solid var(--orange); outline-offset: 2px;
+}
+.brief-chip-x .glyph { width: 13px; height: 13px; }
+
+/* D07: the box answers the drag before the drop, so the visitor knows it will
+   be taken. The band already carries the fill, so the signal is the orange the
+   page reserves for the operable. */
+.intake-band[data-over="true"] {
+  outline: var(--outer-stroke) solid var(--orange);
+  outline-offset: 3px;
+}
+/* The drop-here state: while any card is in the air, the field gives way to a
+   dashed slot that names the action. Over the box the dash closes to a solid Steel Blue line (orange stays on the operable). */
+.intake-field { position: relative; }
+.intake-field > .intake-drop {
+  position: absolute; inset: var(--s1); z-index: 2;
+  display: grid; place-items: center;
+  border: var(--hairline) dashed var(--steel-35);
+  border-radius: inherit; background: var(--sea);
+  font: 400 var(--t-lede)/1.3 var(--body); color: var(--steel);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s var(--ease-out), border-color .2s var(--ease-out);
+}
+.intake-band[data-drag="true"] .intake-drop { opacity: 1; }
+.intake-band[data-over="true"] .intake-drop { border-color: var(--steel); border-style: solid; }
+@media (prefers-reduced-motion: reduce) { .intake-drop { transition: none; } }
+
+
+/* --------------------------------------------------------------- clients -- */
+/* Their logo, their words, their video (components/tcg/clients.tsx). The row
+   scrolls sideways — D06, and D01's one allowed exception — driven by a pair
+   of chevrons at the right of the heading. */
+.cl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); }
+.cl-head h2 { min-width: 0; }
+.cl-nav { display: flex; gap: var(--s1); flex: none; padding-bottom: 6px; }
+/* Phones: no chevrons. The heading takes the full width, and the row shows
+   the next card peeking in at the edge (below), which is the cue to swipe. */
+/* min-width 0: as a grid item it would otherwise size to the row's whole
+   scrolling width and push the page wide */
+.rail-wrap { position: relative; min-width: 0; }
+@media (max-width: 560px) {
+  .rail-nav--head { display: none; }
+}
+.cl-chev {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex: none;
+  border: var(--hairline) solid var(--steel-20); border-radius: 999px;
+  background: none; color: var(--steel); cursor: pointer;
+  transition: color .25s ease, border-color .25s ease, opacity .25s ease;
+}
+.cl-chev:hover { color: var(--orange); border-color: var(--orange-35); }
+.cl-chev:focus-visible { outline: var(--hairline) solid var(--orange); outline-offset: 3px; }
+/* D04: a chevron at the end of the row says so rather than vanishing, and it
+   is aria-disabled, so the press is still there to be felt. */
+.cl-chev[aria-disabled="true"] { opacity: .3; cursor: default; }
+.cl-chev[aria-disabled="true"]:hover { color: var(--steel); border-color: var(--steel-20); }
+
+/* Each client is a collectible card (.tc, below) with the Bathurst
+   interview cards' slots filled in (.tc-full). Larger than the guide's
+   252px, because these cards carry a logo, a quote and a foot as well. */
+/* Uncropped, like the feature rail: the row runs out to both screen edges, so
+   a card leaving it is cut by the screen, never by the content column, and
+   its inline padding puts the first card on the column's left edge (html
+   clips the overflow, so the bleed never scrolls the page). The block
+   padding holds the whole hover shadow (22px down, a 40px blur, -16px
+   spread: 46px under the card, about 24px to either side) and the tilt, and
+   the negative margins hand that room back, so the layout does not move. */
+.tc-row.cl-row {
+  /* From the column edge to the screen edge, in lengths only: the gutter,
+     plus half of whatever the page is wider than .shell's 1460px. Page width
+     is 100cqi (body is the `page` container), not 100vw, which counts the
+     scrollbar; and no %, which scroll-padding would take of the row itself. */
+  --bleed: calc(var(--gut) + (100cqi - min(100cqi, 1460px)) / 2);
+  scroll-snap-type: x mandatory;
+  margin: calc(var(--s4) - 28px) calc(-1 * var(--bleed)) -60px;
+  padding: 28px var(--bleed) 60px;
+  scroll-padding-inline: var(--bleed);
+}
+.tc-row.cl-row > li { flex-basis: clamp(300px, 30vw, 360px); scroll-snap-align: start; }
+@media (max-width: 560px) { .tc-row.cl-row > li { flex-basis: min(82vw, 320px); } }
+.cl-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
+/* The client's own mark in white (components/tcg/clients.tsx, WHITE), at the
+   far right of the name. Sized by its shape, so the seven carry the same
+   weight: the height falls as the logo widens (58px over the root of its
+   ratio), between 22px for a long wordmark and 50px for a square badge. */
+.cl-mark {
+  display: block; width: auto; max-width: 104px;
+  height: clamp(22px, calc(58px / sqrt(var(--r, 3))), 50px);
+  object-fit: contain; object-position: right center;
+}
+/* The play mark, as on the Bathurst cards: a Sea Breeze disc with an orange
+   glyph, because the card opens a video. */
+.cl-play {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 999px;
+  background: var(--sea); color: var(--orange);
+  box-shadow: 0 6px 16px -6px rgb(25 37 74 / .5);
+  transition: transform .25s var(--ease-out);
+}
+.cl-play .glyph { width: 20px; height: 20px; margin-left: 2px; fill: currentColor; }
+.tc:hover .cl-play { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .cl-play { transition: none; } }
+/* The logo identifies the client in the modal, so it is given a consistent
+   height and left alignment rather than a box. */
+.cl-logo {
+  width: auto; height: 28px; max-width: 160px;
+  object-fit: contain; object-position: left center;
+}
+.cl-who {
+  font: 400 var(--t-h5)/1.1 var(--head); letter-spacing: var(--track-head);
+  color: var(--steel);
+}
+.cl-role {
+  font: 500 var(--t-micro)/1.4 var(--body); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--steel-55);
+}
+
+/* ---------------------------------------------------------- client modal -- */
+.cl-modal {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-items: center; padding: var(--s4);
+  background: rgb(25 37 74 / .55);
+  overscroll-behavior: contain;
+}
+.cl-panel {
+  position: relative; width: min(760px, 100%); max-height: 100%;
+  overflow-y: auto; display: grid; gap: var(--s3);
+  padding: var(--s3); border-radius: var(--r-frame);
+  background: var(--sea);
+  box-shadow: 0 40px 80px -32px rgb(25 37 74 / .5);
+}
+.cl-panel:focus { outline: none; }
+.cl-panel-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.cl-video {
+  width: 100%; display: block; border-radius: var(--r-art);
+  background: var(--steel); aspect-ratio: 16 / 9; object-fit: contain;
+  /* The panel must fit the window with its bar and the quote still in it. A
+     portrait clip in a 460px panel is over 800px tall on its own, which pushed
+     the words off the bottom of a laptop screen; the cap letterboxes against
+     the panel's own Steel Blue instead. */
+  max-height: 58svh;
+}
+/* The three portrait clips, flagged `tall` in the data, get a portrait box
+   instead of letterboxing inside a landscape one. */
+.cl-panel.is-tall { width: min(460px, 100%); }
+.cl-panel.is-tall .cl-video { aspect-ratio: 9 / 16; }
+.cl-said { margin: 0; display: grid; gap: var(--s2); }
+.cl-said blockquote {
+  margin: 0; font-size: var(--t-small); line-height: 1.6; color: var(--steel-70);
+}
+.cl-said figcaption { display: grid; gap: 2px; }
 
 /* ---------------------------------------------------------- collectible -- */
 /* Ported from the guide: the one card in the system with a fill. */
@@ -903,12 +1357,43 @@ svg.glyph {
   height: var(--hairline); background: var(--sea-45); filter: url(#grunge);
 }
 .tc-series { font: 400 var(--t-pre)/1 var(--head); letter-spacing: 0; text-transform: uppercase; }
-.tc-n { margin-left: auto; font: 400 var(--t-pre)/1 var(--head); font-variant-numeric: tabular-nums; }
-.tc-mark { flex: none; width: 17px; height: 17px; border-radius: 50%; background: var(--orange); }
+.tc-mark { flex: none; width: 17px; height: 17px; border-radius: 50%; }
 .tc-title { padding: 10px 0 12px; display: grid; gap: 3px; }
 .tc-title b { font: 700 19px/1.05 var(--head); letter-spacing: var(--track-head); }
 .tc-title small { font: 400 12px/1.3 var(--body); color: var(--sea-70); }
 .tc-art { position: relative; min-height: 0; border-radius: var(--r-inner); overflow: hidden; background: var(--sea); }
+/* The optional slots (components/tcg/collectible.tsx), from the Bathurst
+   interview cards: the set number at the end of the series line, a logo over
+   the title, a caption under the art, and a foot line under a rule. */
+.tc-n { margin-left: auto; font: 400 var(--t-pre)/1 var(--head); font-variant-numeric: tabular-nums; color: var(--sea-70); }
+/* with a logo, the name and role hold the left column and the logo stands at
+   the far right, centred on the pair */
+.tc-title--logo { grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; align-items: center;
+  /* room for a name and a role on two lines each, so a long one ("Mendel,
+     Cayman Islands") does not shorten its poster against the rest of the row */
+  min-height: calc(2 * 1.05 * 22px + 2 * 1.3 * 12px + 3px); align-content: start; box-sizing: content-box; }
+.tc-title--logo b, .tc-title--logo small { grid-column: 1; }
+.tc-logo { grid-column: 2; grid-row: 1 / span 2; display: flex; justify-content: flex-end; }
+/* no series line: the title leads, so it drops the gap the rule left above it */
+.tc-in > .tc-title:first-child { padding-top: 2px; }
+/* A column, so the art takes what is left whichever slots are filled. */
+.tc-full .tc-in { display: flex; flex-direction: column; }
+.tc-full .tc-art { flex: 1 1 0; }
+.tc-full .tc-title b { font-size: 22px; }
+.tc-cap {
+  margin-top: 12px; font: 400 13px/1.5 var(--body); color: var(--sea-70);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.tc-foot {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding-top: 10px;
+  font: 400 var(--t-pre)/1 var(--head); text-transform: uppercase; color: var(--sea-70);
+}
+.tc-foot::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  height: var(--hairline); background: var(--sea-45); filter: url(#grunge);
+}
+.tc-foot .glyph { width: 13px; height: 13px; }
 .tc-foil {
   position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   mix-blend-mode: soft-light; opacity: 0; transition: opacity .3s ease;
@@ -918,6 +1403,10 @@ svg.glyph {
   background-position: center, var(--mx, 50%) var(--my, 50%);
 }
 .tc:hover .tc-foil, .tc:focus-visible .tc-foil { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .tc, .tc:hover { transform: none; transition: none; }
+  .tc-foil { transition: none; }
+}
 
 /* --------------------------------------------------------------- footer -- */
 .foot {
@@ -975,13 +1464,77 @@ svg.glyph {
   padding-left:  max(var(--gut), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gut), env(safe-area-inset-right, 0px));
 }
-.foot--bleed::before { display: none; }
+
+/* The client asked for the header's rule above the footer. It is the same
+   3px --rule-sec in Steel Blue under the same grunge filter the masthead and
+   every section head use, so there is one thick rule on the page, not two that
+   merely look alike.
+
+   The footer's ground is full bleed but its content holds the page column, so
+   the rule holds that column too: edge to edge it would read as a band of its
+   own rather than as the line that closes the page. Restored on ::before
+   rather than as a child, which would take another --s6 of the footer's gap
+   and push the whole band down. */
+.foot--bleed::before {
+  display: block;
+  left: 50%; right: auto; transform: translateX(-50%);
+  width: calc(min(100%, 1460px) - 2 * var(--gut));
+}
 
 /* The brand column is given the room instead of the links: the lockup takes
    the full width of its column rather than sitting small in a corner. */
 .foot--bleed .foot-in { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
 .foot--bleed .foot-brand { justify-items: stretch; }
 .foot-lockup { display: block; width: 100%; max-width: 420px; height: auto; }
+
+/* The animated lockup (components/tcg/footer-lockup.tsx): the full horizontal
+   logo, whose globe turns as a wireframe before settling onto its own
+   graticule. The hairline is the endcard's 2.32 at r 377.6, held to the same
+   proportion at this logo's r 111.5, so it matches the graticule it becomes. */
+.fl-wire path { fill: none; stroke: var(--ink); stroke-width: 0.685; }
+
+/* ------------------------------------------------------- foot accordion -- */
+/* The phone footer: one titled row per section, one open at a time
+   (components/tcg/foot-tabs.tsx). Vertical, because the footer is the end of
+   the page and the whole list should be readable without a scroll of its own.
+   Only rendered below 560px, so there is no desktop state to undo here. */
+.foot-acc { display: grid; }
+.foot-fold { position: relative; }
+/* The hairline between folds, and under the last one, so the stack reads as a
+   list rather than as loose rows. The same rule the page bar uses. */
+.foot-fold::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: var(--hairline); background: var(--steel-20); filter: url(#grunge);
+}
+.foot-fold-h { margin: 0; }
+.foot-fold-btn {
+  width: 100%; border: 0; background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s2); padding: var(--s3) 0; text-align: left;
+  font: 400 var(--t-pre)/1.2 var(--head); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--steel);
+  transition: color .25s ease;
+}
+.foot-fold-btn:hover { color: var(--orange); }
+.foot-fold-btn:focus-visible {
+  outline: var(--hairline) solid var(--orange); outline-offset: 2px;
+}
+/* The chevron is the state: down closed, up open. One rotation, no second
+   icon, so there is nothing to keep in step. */
+.foot-fold-mark {
+  flex: none; width: 18px; height: 18px; color: var(--steel-55);
+  transition: transform .25s var(--ease-out), color .25s ease;
+}
+.foot-fold-btn:hover .foot-fold-mark { color: var(--orange); }
+.foot-fold[data-open="true"] .foot-fold-mark { transform: rotate(180deg); }
+.foot-fold-panel { padding: 0 0 var(--s3); }
+.foot-fold-panel ul { display: grid; gap: 7px; }
+.foot-fold-panel a, .foot-fold-panel .foot-soon {
+  font-size: var(--t-small); line-height: 1.6;
+}
+.foot-fold-panel a { color: var(--steel-70); transition: color .25s ease; }
+.foot-fold-panel a:hover,
+.foot-fold-panel a:focus-visible { color: var(--orange); outline: none; }
 
 /* ----------------------------------------------------------------- slot -- */
 /* An empty image slot. The plate the cards already sit on, with a hairline so
@@ -1163,11 +1716,10 @@ svg.glyph {
      hairline under them is part of the bar's own box. */
   .mast-block { display: none; }
   .col { padding-top: calc(var(--topbar-h) + var(--topbar-pages-h) + var(--s3)); }
-  /* The hero pulls one --col-gap back out so it can hug the masthead's rule.
-     There is no masthead here, so that negative margin would drag it up under
-     the fixed bar instead. */
+  /* The hero's --rule-gap offset is measured against the masthead's rules, and
+     there is no masthead here. Left in, the negative half of that calc would
+     drag the hero up under the fixed bar, so the offset goes. */
   .intake { margin-top: 0; }
-
   /* D06: the titles stay on one row and scroll sideways rather than stacking,
      which is the one place a sideways scroll is allowed (D01). */
   .pages ul {
@@ -1230,7 +1782,17 @@ svg.glyph {
   .mast-mark img { width: 40px; height: 40px; }
 
   :root { --stage-h: 260px; --col-gap: calc(var(--s6) * 2); }   /* doubled with the desktop gap */
-  .foot-in { grid-template-columns: minmax(0, 1fr); }
+  /* .foot--bleed .foot-in sets the two-column split and out-specifies a bare
+     .foot-in, so this override has to carry the same weight — otherwise the
+     footer stays two columns on a phone, the lockup in a narrow left column
+     with the links squeezed beside it. */
+  .foot--bleed .foot-in { grid-template-columns: minmax(0, 1fr); }
+  /* One column, so the lockup is no longer a column beside the links: it is the
+     thing at the top of the footer, and it is centred. The cap keeps it from
+     filling a phone's whole width, which the desktop stretch would otherwise
+     have it do. */
+  .foot--bleed .foot-brand { justify-items: center; }
+  .foot-lockup { margin-inline: auto; max-width: 260px; }
   .work-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
   .intake { padding: var(--s6) var(--s3); }
 }
@@ -1310,16 +1872,19 @@ svg.glyph {
   .card-row {
     grid-template-columns: none;
     grid-auto-flow: column;
+    /* 85%, so the next card peeks in at the screen edge — the cue to swipe,
+       in place of chevrons. The tray bleeds to both screen edges. */
     grid-auto-columns: 85%;
-    gap: 0;
+    gap: var(--s3);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
     /* vertical swipes still scroll the page */
     touch-action: pan-x pan-y;
     scrollbar-width: none;
-    margin-inline: calc(-1 * var(--gut));
-    padding-inline: var(--gut);
+    margin: -6px calc(-1 * var(--gut));
+    padding: 6px var(--gut);
+    scroll-padding-inline: var(--gut);
   }
   .card-row::-webkit-scrollbar { display: none; }
   .card-row > * {
@@ -1331,8 +1896,39 @@ svg.glyph {
      they take the same inner padding as the rest and the hairlines stay even */
   .card-row > *:first-child { padding-left: var(--rule-x); }
   .card-row > *:last-child  { padding-right: var(--rule-x); }
+
+  /* SPACING, phones. --rule-x is the DESKTOP row's column padding: it is what
+     keeps the hairlines between four columns evenly inset. In the tray there
+     are no columns beside each other -- the row shows one card at a time --
+     so that 32px was being paid twice on every card, inside a row that is
+     already held off the screen edge by the page gutter. At 375px it took
+     about 100px off the card: a 219px art slot in a 375px screen, with the
+     body copy breaking a word at a time underneath.
+
+     The tray keeps the page gutter (--gut, on .card-row) and the card takes
+     the smaller step inside it. D01: the margins are the same on both sides
+     and come from the scale, not from a number typed here. */
+  .card-row > *,
+  .card-row > *:first-child,
+  .card-row > *:last-child { padding-inline: var(--s2); }
+
+  /* The art goes square, which is the shape the reference diagram panel is and
+     the shape these figures are drawn for. A ratio is wrong on desktop,
+     because the four columns are not the same width and the extra width of the
+     outer ones would come back as extra height -- but every card in the tray
+     is exactly 85% of the row, so here a ratio is the safe way to say it. */
+  .card-row > * .card-art { height: auto; aspect-ratio: 1; }
+
+  /* The two lines reserved for the headline keep a four-up row level across
+     the middle. The tray shows one card at a time, so there is nothing to be
+     level with, and the reserve was showing up as a blank band above the CTA
+     on every card whose headline runs to one line. */
+  .card-row--framed .card-title { min-height: 0; }
   .cap { padding-inline: 0; }
   :root { --card-art-h: 260px; }   /* phones: one card per row, so it takes the same height as the desktop slot */
+  /* The columns are tabs here (components/tcg/foot-tabs.tsx), so the stacked
+     one-column fallback only applies to a no-JS visitor, who gets the columns
+     the server rendered. */
   .foot-cols { grid-template-columns: minmax(0, 1fr); }
   .cap + .cap::before {
     left: 0; right: 0; top: 0; bottom: auto;
@@ -1343,6 +1939,9 @@ svg.glyph {
   .sec--final { justify-items: start; text-align: left; }
   /* D10: headings are left-aligned on mobile whatever they do on desktop. */
   .intake-head { justify-items: start; text-align: left; }
+  /* FLAGGED, D10: the hero h1 is centred on phones at the client's
+     instruction, against the left-on-mobile default. The lede stays left. */
+  .intake-head h1 { justify-self: center; text-align: center; }
   /* D01: a phone cannot hold either line, and a horizontal page scroll is not
      an option, so both wrap at this width and only at this width. */
   .intake-head h1, .intake-head p { white-space: normal; }
@@ -1354,6 +1953,15 @@ svg.glyph {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Reduced motion is a request for less movement, not for fewer features: the
+     cards still drag, the ghost still follows the pointer (it has to, or there
+     is nothing in your hand), but nothing eases, lifts or grows. */
+  .brief-ghost,
+  .card--drag,
+  .card--drag > .card-add { transition: none !important; }
+  .card--drag:hover { transform: none; }
+  .foot-fold-mark { transition: none !important; }
+
   .sprout > .stroke .outer,
   .label > span,
   .burger span,
@@ -1381,3 +1989,5 @@ svg.glyph {
   --color-rb-accent: var(--rb-accent);
   --color-rb-accent-fg: var(--rb-accent-fg);
 }
+
+

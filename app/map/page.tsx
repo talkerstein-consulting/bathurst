@@ -1,20 +1,18 @@
 import { preload } from "react-dom";
-import BathurstHero from "@/components/bathurst/BathurstHero";
-import MapOnly from "./MapOnly";
+import MapStage from "@/components/tcg/map-stage";
 import MapFullscreen from "./MapFullscreen";
 import "./map-only.css";
 
 /**
- * /map is the client map, nothing else. The engine (lib/bathurst/engine.ts, three.js) binds
- * to BathurstHero's markup by element id, so that markup has to be here; map-only.css hides
- * every part of it that is not the map, and MapOnly pins the engine to its map state.
+ * /map is the client map and nothing else. components/tcg/map-stage.tsx holds the markup
+ * lib/bathurst/engine.ts binds to, started in its static mode; map-only.css sizes that map to
+ * this page (and so to the frame the homepage's "Our Global Footprint" puts it in).
  */
 export default function MapPage() {
   preload("/map/bathurst-osm.tcgm.gz", { as: "fetch", crossOrigin: "anonymous", fetchPriority: "low" });
   return (
     <>
-      <BathurstHero headingLevel="h1" />
-      <MapOnly />
+      <MapStage headingLevel="h1" />
       <MapFullscreen />
     </>
   );

@@ -24,7 +24,10 @@ export const GLOBE = {
    *  puts the arc through the top corners of a wide screen and just under the top edge of a phone's. Dev: ?globe=<slope>. */
   slope: 2.6,
   minR: 4000,
-  maxR: 150000,
+  /** Earth itself (111 km per degree, the engine's own scale). Zoomed all the way out the paper planet IS the planet: the
+   *  world layer (lib/bathurst/world.ts) is an azimuthal equidistant map round Toronto, which this bend wraps back into
+   *  the true globe when the camera is over Toronto. Reached at an altitude of about 2,450 km. */
+  maxR: (111000 * 180) / Math.PI,
 };
 
 export const uniforms = {
@@ -48,7 +51,7 @@ varying float vFace; varying float vShade;
 vec3 globeBend( vec3 w, out float face, out float shade ) {
   vec2 d = w.xz - cameraPosition.xz;
   float dist = length( d );
-  float th = dist / uRe;
+  float th = min( dist / uRe, 3.14159 );   // past the far pole a point would come round the front again: park it there
   vec2 dir = dist > 1e-3 ? d / dist : vec2( 0.0 );
   float s = sin( th ), c = cos( th );
   vec3 n = vec3( dir.x * s, c, dir.y * s );
@@ -168,7 +171,7 @@ export function setGlobe(altitude: number) {
  *  default to what is drawn now; a camera fit for another altitude passes kAt() and rAt(that altitude). */
 export function bendPoint(out: Vector3, w: { x: number; y: number; z: number }, cam: Vector3, K = uniforms.uK.value, R = uniforms.uRe.value): Vector3 {
   if (K <= 0) return out.set(w.x, w.y, w.z);
-  const dx = w.x - cam.x, dz = w.z - cam.z, dist = Math.hypot(dx, dz), th = dist / R;
+  const dx = w.x - cam.x, dz = w.z - cam.z, dist = Math.hypot(dx, dz), th = Math.min(dist / R, Math.PI);
   const ux = dist > 1e-3 ? dx / dist : 0, uz = dist > 1e-3 ? dz / dist : 0;
   const s = Math.sin(th), c = Math.cos(th), r = R + w.y;
   const sx = cam.x + ux * s * r, sy = -R + c * r, sz = cam.z + uz * s * r;
@@ -179,7 +182,7 @@ const _n = new Vector3(), _p = new Vector3();
 /** Facing cosine of the bent surface at a world point toward the camera: below zero it is round the back of the planet. */
 export function facing(w: { x: number; y: number; z: number }, cam: Vector3, K = uniforms.uK.value, R = uniforms.uRe.value): number {
   if (K <= 0) return 1;
-  const dx = w.x - cam.x, dz = w.z - cam.z, dist = Math.hypot(dx, dz), th = dist / R;
+  const dx = w.x - cam.x, dz = w.z - cam.z, dist = Math.hypot(dx, dz), th = Math.min(dist / R, Math.PI);
   const ux = dist > 1e-3 ? dx / dist : 0, uz = dist > 1e-3 ? dz / dist : 0, s = Math.sin(th), c = Math.cos(th);
   _n.set(ux * s * K, 1 - K + c * K, uz * s * K).normalize();
   bendPoint(_p, w, cam, K, R); _p.subVectors(cam, _p);

@@ -1,11 +1,9 @@
+import { BriefProvider } from "@/components/tcg/brief";
+import { Clients } from "@/components/tcg/clients";
 import { Features } from "@/components/tcg/features";
 import { Footprint } from "@/components/tcg/footprint";
 import { Footer } from "@/components/tcg/footer";
-import {
-  SelectedWork,
-  Testimonials,
-  WhatWeDo,
-} from "@/components/tcg/sections";
+import { SelectedWork, WhatWeDo } from "@/components/tcg/sections";
 import { Intake } from "@/components/tcg/intake";
 import { Masthead } from "@/components/tcg/masthead";
 import { Nav } from "@/components/tcg/nav";
@@ -24,9 +22,13 @@ export default function Home() {
             <Nav />
           </div>
 
-          <Intake />
+          {/* The cards are dragged into the intake box, and the two are
+              siblings here, so the state they share lives above both. */}
+          <BriefProvider>
+            <Intake />
 
-          <Features />
+            <Features />
+          </BriefProvider>
 
           <Footprint />
 
@@ -34,7 +36,7 @@ export default function Home() {
 
           <SelectedWork />
 
-          <Testimonials />
+          <Clients />
         </main>
       </div>
 

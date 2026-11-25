@@ -140,7 +140,7 @@ export function Testimonials() {
       <ul className="tc-row">
         {COLLECTION.map(([title, sub, n]) => (
           <li key={n}>
-            <Collectible series="Clients" n={n} title={title} sub={sub} />
+            <Collectible series="Clients" title={title} sub={sub} />
           </li>
         ))}
       </ul>

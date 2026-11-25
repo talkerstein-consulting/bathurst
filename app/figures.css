@@ -1,0 +1,665 @@
+/* ===========================================================================
+   The feature-card art (components/tcg/figures.tsx).
+
+   One shape, after Calendly: a dithered ground filling the slot, and a small
+   piece of interface floating on it. The ground is static and costs one draw;
+   only the interface moves, and only enough to show the one thing happening
+   that the card is about.
+
+   SIZING. The snippet is set in em off a single base taken from the slot's
+   HEIGHT, which is the one fixed dimension every card shares (--card-art-h).
+   So the interface is the same size on a phone as on a desktop, and the
+   ground takes up whatever width it is given.
+   =========================================================================== */
+
+.card-art--fig {
+  position: relative;
+  container-type: size;
+  overflow: hidden;
+  padding: 0;
+  /* The ground reaches the slot's edge, so the plate and the hairline that
+     stood in for art are no longer doing any work. */
+  background: var(--steel);
+  border-color: transparent;
+}
+
+/* --- the ground ---------------------------------------------------------- */
+
+/* Half as large again as the slot, slid to a different corner per card: one
+   set of settings, four different crops of the same field. figures.tsx has the
+   reasoning. The slot already clips (overflow: hidden). */
+.card-art--fig .scene-crop {
+  position: absolute;
+  left: var(--gx, 0);
+  top: var(--gy, 0);
+  width: 155%;
+  height: 155%;
+}
+.card-art--fig .scene-ground {
+  position: absolute;
+  inset: 0;
+}
+
+/* --- the floating interface ---------------------------------------------- */
+
+.scene-card {
+  position: absolute;
+  /* Anchored by the sides and centred on the cross axis, with its HEIGHT left
+     to the content. Stretched to the slot it left a field of empty white under
+     every snippet, which made each one look like it had lost something. A card
+     that hugs what is on it is also what the reference actually does. */
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: 84%;
+  overflow: hidden;
+  z-index: 1;
+  font-size: clamp(9px, calc(100cqh / 26), 11px);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  color: var(--steel);
+
+  background: #fff;
+  border-radius: var(--r-card);
+  padding: 1.5em 1.6em;
+  display: grid;
+  align-content: start;
+  gap: 1em;
+
+  /* FLAGGED, brand: the system has no shadow token, because nothing in it
+     floats. This one does — it is what makes the snippet read as a card ON
+     the weather rather than a hole cut INTO it — so the value is set here,
+     from the brand ink, and is not offered to the rest of the page. */
+  box-shadow:
+    0 1px 2px rgb(25 37 74 / 0.14),
+    0 10px 24px -8px rgb(25 37 74 / 0.3);
+
+  user-select: none;
+}
+
+/* The picture's own title: the heading face, so the snippet still sounds like
+   this brand and not like a screenshot of somebody else's product. */
+.sc-h {
+  font: 400 1.7em/1 var(--head);
+  letter-spacing: -0.01em;
+  color: var(--steel);
+}
+
+/* --- the build: one part added at a time, nothing cleared ---------------
+   After Calendly's diagram panel, which grows a line at a time and keeps the
+   lines already in it. `.sc-add` is any part of a snippet that arrives on its
+   own; `--k` is its place in the order.
+
+   HOVER ONLY. The declarations here are the STILL state, and the still state
+   is the FINISHED panel — every part present, the job complete — because a
+   half-built quote is not a sensible thing for a card to sit on at rest. The
+   cycle below also OPENS on that same finished state and holds it, so
+   starting it is seamless; it then unwinds, rebuilds a part at a time, and
+   ends finished again. Leaving the card drops the animation and the parts
+   transition back to the finished picture rather than snapping to it.
+   ------------------------------------------------------------------------ */
+
+.scene-card {
+  /* 12s, and a 0.35s stagger down the parts. Every percentage below is off
+     these two. */
+  --sc-cycle: 12s;
+  --sc-lag: 0.35s;
+}
+
+.sc-add {
+  margin: 0;
+  transition:
+    opacity 0.3s ease,
+    transform 0.4s var(--ease-out);
+}
+
+.card:hover .sc-add,
+.card:focus-within .sc-add {
+  animation: sc-add var(--sc-cycle) var(--ease-out) infinite;
+  /* POSITIVE, so at the first frame no part has started and every one of them
+     is still showing its finished base state. The clear then ripples down the
+     parts in order, and so does the rebuild. */
+  animation-delay: calc(var(--k) * var(--sc-lag));
+}
+
+@keyframes sc-add {
+  /* holding the finished panel */
+  0%, 4% { opacity: 1; transform: none; }
+  /* cleared, and waiting its turn */
+  6%, 20% { opacity: 0; transform: translateY(0.45em); }
+  /* added back, and holding for the rest of the loop */
+  26%, 100% { opacity: 1; transform: none; }
+}
+
+/* --- 3 · portals: every app, through one portal ------------------------
+   The client's 580-unit canvas, with 1em = one of their pixels: the font size
+   is the slot's height over 580 (a touch less, for a margin), so every number
+   below is theirs, unchanged, and the square scales with the slot.
+   At rest: the finished frame. On hover or focus: their 15s timeline.
+   ----------------------------------------------------------------------- */
+
+.sp {
+  position: absolute; z-index: 1;
+  left: 50%; top: 50%;
+  width: 580em; height: 580em;
+  margin: -290em 0 0 -290em;
+  font-size: calc(100cqh / 620);
+}
+
+.sp-link {
+  position: absolute; top: 289.4em; left: 290em;
+  width: calc(var(--len) * 1em); height: 5em;
+  transform: rotate(var(--ang)); transform-origin: 0 50%;
+}
+.sp-line {
+  position: absolute; top: 1.9em; left: 0;
+  width: 100%; height: 2.4em;
+  background: var(--sea-70);
+  transform-origin: left;
+}
+.sp-signal {
+  position: absolute; top: -3em; left: 0;
+  width: 11em; height: 11em; border-radius: 50%;
+  background: var(--sea);
+  opacity: 0;
+}
+
+.sp-tile {
+  position: absolute; z-index: 2;
+  left: calc(var(--x) * 1em); top: calc(var(--y) * 1em);
+  width: calc(var(--size) * 1em); height: calc(var(--size) * 1em);
+  display: grid; place-items: center;
+  border: 5em solid var(--sea-45); border-radius: calc(var(--size) * 0.245em);
+  background: #fff; background-clip: padding-box;
+  box-shadow: 0 12em 28em rgb(25 37 74 / 0.25);
+}
+.sp-tile img { width: 47%; height: 47%; }
+/* The far ring sits back: a touch smaller (set in figures.tsx) and lighter on
+   the line, so the six near apps stay the subject. */
+.sp-link.far .sp-line { background: var(--sea-45); }
+
+.sp-hub {
+  position: absolute; z-index: 3;
+  left: 220em; top: 220em; width: 140em; height: 140em;
+  border-radius: 50%;
+  box-shadow: 0 14em 24em rgb(25 37 74 / 0.35);
+}
+.sp-hub img { display: block; width: 100%; height: 100%; }
+
+/* --- on hover: a ~1s reveal, then signals flowing in --------------------
+   The reveal runs once and holds (both). After it, the drift, the inward
+   signals and the hub's pulse loop on a 2.4s beat for as long as the pointer
+   stays. */
+.card:hover .sp-tile,
+.card:focus-within .sp-tile {
+  animation:
+    sp-arrive 0.6s var(--d) cubic-bezier(0.22, 1, 0.36, 1) both,
+    sp-drift 6s calc(var(--d) + 0.6s) ease-in-out infinite;
+}
+.card:hover .sp-line,
+.card:focus-within .sp-line { animation: sp-draw 0.5s calc(var(--d) + 0.1s) ease-out both; }
+.card:hover .sp-signal,
+.card:focus-within .sp-signal { animation: sp-in 2.4s var(--s) ease-in infinite; }
+.card:hover .sp-hub,
+.card:focus-within .sp-hub {
+  animation:
+    sp-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+    sp-pulse 0.8s 0.9s ease-in-out infinite;
+}
+
+@keyframes sp-arrive {
+  from { opacity: 0; transform: translate(calc(var(--fx) * 1em), calc(var(--fy) * 1em)) scale(0.82); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sp-drift {
+  0%, 100% { transform: none; }
+  25% { transform: translate(-3em, 4em); }
+  50% { transform: translate(3em, -4em); }
+  75% { transform: translate(-2em, 2.8em); }
+}
+@keyframes sp-draw {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+/* From the app's end of the line to the hub's: the travel is the first 60% of
+   the beat, then the signal waits out of sight for its next turn. */
+@keyframes sp-in {
+  0% { opacity: 0; transform: translateX(calc(var(--len) * 1em - 11em)); }
+  6% { opacity: 1; }
+  55% { opacity: 1; }
+  60%, 100% { opacity: 0; transform: translateX(60em); }
+}
+@keyframes sp-pop {
+  from { transform: scale(0.85); }
+  to { transform: scale(1); }
+}
+@keyframes sp-pulse {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.04); }
+}
+
+/* --- 4 · intelligence: meeting recall -----------------------------------
+   The client's typing-and-answer diagram. The declarations are the FINISHED
+   frame (answer open, bar at the bottom, every word in); the client's 10.5s
+   timeline, with their percentages, runs only on hover or focus.
+   ----------------------------------------------------------------------- */
+
+.sm {
+  --cycle: 10.5s;
+  position: absolute; inset: 0; z-index: 1;
+  font-size: clamp(9px, min(calc(100cqh / 25), calc(100cqw / 26)), 11px);
+  font-family: var(--body);
+  color: var(--steel);
+  user-select: none;
+}
+.sm p { margin: 0; }
+.sm svg { width: 1.2em; height: 1.2em; flex: none; stroke-width: 1.75; }
+.sm-mark { display: block; width: 1.8em; height: 1.8em; flex: none; }
+
+.sm-answer {
+  position: absolute; left: 5%; right: 5%; top: 5%; bottom: calc(5% + 4.2em);
+  display: grid; align-content: start; gap: 0.55em;
+  padding: 0.95em 1.3em;
+  background: #fff; border-radius: var(--r-card);
+  box-shadow: 0 1px 2px rgb(25 37 74 / 0.14), 0 10px 24px -8px rgb(25 37 74 / 0.3);
+  overflow: hidden;
+  transform-origin: bottom center;
+}
+.sm-head { display: flex; align-items: center; justify-content: space-between; }
+.sm-head .sq-h { font-size: 1.5em; }
+.sm-copy { line-height: 1.45; }
+.sm-more { display: grid; gap: 0.5em; }
+.sm-more i { display: block; height: 0.55em; border-radius: 99px; background: var(--steel-06); }
+.sm-more i:nth-child(1) { width: 62%; }
+.sm-more i:nth-child(2) { width: 88%; }
+.sm-more i:nth-child(3) { width: 96%; }
+.sm-next { display: grid; justify-items: start; gap: 0.45em; margin-top: 0.2em; }
+.sm-next p { color: var(--steel-70); }
+.sm-next span {
+  max-width: 100%; padding: 0.45em 0.75em;
+  border-radius: 0.6em; background: var(--steel); color: var(--sea);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 0.95em;
+}
+
+.sm-bar {
+  position: absolute; left: 4%; right: 4%; bottom: 5%; height: 3.6em;
+  display: flex; align-items: center; gap: 0.6em;
+  padding: 0 0.4em 0 1em;
+  background: #fff; border-radius: 999px;
+  box-shadow: 0 1px 2px rgb(25 37 74 / 0.14), 0 10px 24px -8px rgb(25 37 74 / 0.3);
+}
+.sm-typed { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 1.1em; }
+.sm-caret { display: block; width: 1px; height: 1.5em; background: var(--steel-35); opacity: 0; }
+.sm-send {
+  display: grid; place-items: center; margin-left: auto;
+  width: 2.8em; height: 2.8em; border-radius: 50%;
+  background: var(--steel); color: var(--sea);
+}
+
+/* --- the cycle: their percentages --- */
+.card:hover .sm-answer, .card:focus-within .sm-answer { animation: sm-answer var(--cycle) linear infinite; }
+.card:hover .sm-head, .card:focus-within .sm-head { animation: sm-content var(--cycle) linear infinite; }
+.card:hover .sm-copy span, .card:focus-within .sm-copy span {
+  animation: sm-word var(--cycle) linear infinite;
+  animation-delay: calc(var(--w) * 78ms);
+}
+.card:hover .sm-more i:nth-child(1), .card:focus-within .sm-more i:nth-child(1) { animation: sm-more-1 var(--cycle) linear infinite; }
+.card:hover .sm-more i:nth-child(2), .card:focus-within .sm-more i:nth-child(2) { animation: sm-more-2 var(--cycle) linear infinite; }
+.card:hover .sm-more i:nth-child(3), .card:focus-within .sm-more i:nth-child(3) { animation: sm-more-3 var(--cycle) linear infinite; }
+.card:hover .sm-next, .card:focus-within .sm-next { animation: sm-next var(--cycle) linear infinite; }
+.card:hover .sm-typed, .card:focus-within .sm-typed { animation: sm-type var(--cycle) linear infinite; }
+.card:hover .sm-caret, .card:focus-within .sm-caret { animation: sm-caret var(--cycle) linear infinite; }
+.card:hover .sm-send, .card:focus-within .sm-send { animation: sm-send var(--cycle) linear infinite; }
+
+/* The answer comes OUT OF the bar: it is unclipped upward from the bar's top
+   edge and rises off it, while the bar holds still at the bottom. Clip, not
+   scale, so the type is never squashed on the way. */
+@keyframes sm-answer {
+  0%, 38.1% { opacity: 0; clip-path: inset(100% 0 0 0 round var(--r-card)); transform: translateY(1.5em); }
+  39.24% { opacity: 1; }
+  44.29%, 90.48% { opacity: 1; clip-path: inset(0 0 0 0 round var(--r-card)); transform: none; }
+  94.29% { opacity: 0; }
+  96.19%, 100% { opacity: 0; clip-path: inset(100% 0 0 0 round var(--r-card)); transform: translateY(1.5em); }
+}
+@keyframes sm-content { 0%, 45.24% { opacity: 0; } 47.33%, 90.48% { opacity: 1; } 92.86%, 100% { opacity: 0; } }
+@keyframes sm-word { 0%, 48.1% { opacity: 0; } 56%, 90.48% { opacity: 1; } 92.86%, 100% { opacity: 0; } }
+@keyframes sm-more-1 { 0%, 55.71% { opacity: 0; } 57.81%, 90.48% { opacity: 1; } 92.86%, 100% { opacity: 0; } }
+@keyframes sm-more-2 { 0%, 57.14% { opacity: 0; } 59.24%, 90.48% { opacity: 1; } 92.86%, 100% { opacity: 0; } }
+@keyframes sm-more-3 { 0%, 58.29% { opacity: 0; } 60.38%, 90.48% { opacity: 1; } 92.86%, 100% { opacity: 0; } }
+@keyframes sm-next {
+  0%, 59.81% { opacity: 0; transform: translateY(0.6em); }
+  63.14%, 90.48% { opacity: 1; transform: none; }
+  92.86%, 100% { opacity: 0; transform: none; }
+}
+/* Typing is the text's width growing, so the caret rides its end. */
+@keyframes sm-type {
+  0%, 8.57% { max-width: 0; opacity: 1; }
+  32.38%, 90.48% { max-width: 18em; opacity: 1; }
+  92.86%, 100% { max-width: 18em; opacity: 0; }
+}
+@keyframes sm-caret { 0%, 32.38% { opacity: 1; } 34.29%, 100% { opacity: 0; } }
+@keyframes sm-send { 0%, 35.24% { transform: scale(1); } 36.38% { transform: scale(0.82); } 37.9%, 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sm *, .sm *::after { animation: none !important; }
+}
+
+/* --- 0 · chief of staff: the agent writes to you ----------------------
+   The client's 100-unit square, 1em = one unit, sized off the slot's height.
+   At rest: still, no signals. On hover: tiles float, signals run in (14s,
+   four passes, staggered like theirs).
+   ----------------------------------------------------------------------- */
+
+.cs {
+  position: absolute; z-index: 1;
+  left: 50%; top: 50%;
+  width: 100em; height: 100em;
+  margin: -54em 0 0 -50em;
+  /* off the height, or the width when the card is narrow (five-up), so the
+     message is never cut at the sides */
+  font-size: min(calc(100cqh / 82), calc(100cqw / 92));
+  font-family: var(--body);
+  color: var(--steel);
+  user-select: none;
+}
+.cs svg:not(.cs-lines) { width: 1em; height: 1em; flex: none; stroke-width: 1.75; }
+
+.cs-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.cs-lines polyline {
+  fill: none; stroke: var(--sea-70); stroke-width: 1px;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round;
+}
+
+.cs-tile {
+  position: absolute; top: var(--ty); left: var(--tx);
+  width: 15.8em; height: 15.8em;
+  display: grid; place-items: center;
+  border: 0.9em solid var(--sea-45); border-radius: 3.9em;
+  background: #fff; background-clip: padding-box;
+  box-shadow: 0 2em 5em rgb(25 37 74 / 0.25);
+}
+.cs-tile img { width: 48%; height: 48%; }
+.cs-tile.cs-a { --tx: 16em; --ty: 66.3em; }
+.cs-tile.cs-b { --tx: 42.2em; --ty: 69.6em; }
+.cs-tile.cs-c { --tx: 67.5em; --ty: 65.9em; }
+
+.cs-mail {
+  position: absolute; top: 16.2em; left: 12em; width: 76em; height: 38.7em;
+  display: grid; align-content: start; gap: 1.8em;
+  padding: 3.2em 4.4em;
+  background: #fff; border-radius: var(--r-card);
+  box-shadow: 0 1px 2px rgb(25 37 74 / 0.14), 0 10px 24px -8px rgb(25 37 74 / 0.3);
+  overflow: hidden;
+}
+.cs-from { display: flex; align-items: center; gap: 2.6em; }
+.cs-from img { width: 8.6em; height: 8.6em; flex: none; }
+.cs-from span { display: grid; gap: 0.6em; }
+.cs-from b { font: 400 5.6em/1 var(--head); letter-spacing: -0.01em; }
+.cs-from small {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  font-size: 3.2em; color: var(--steel-70);
+}
+.cs-msg { margin: 0; font-size: 3.5em; line-height: 1.35; }
+.cs-acts { display: flex; gap: 1.2em; }
+.cs-acts span {
+  display: inline-flex; align-items: center; gap: 0.5em;
+  height: 2.1em; padding: 0 0.7em;
+  border: 1px solid var(--steel-20); border-radius: 0.6em;
+  font-size: 3.2em; color: var(--steel-70);
+}
+
+/* the signal: a dot that leaves the app and climbs its line into the message */
+.cs-sig {
+  position: absolute; z-index: 1;
+  width: 1.6em; height: 1.6em; margin: -0.8em 0 0 -0.8em;
+  border-radius: 50%; background: var(--sea);
+  opacity: 0;
+}
+.cs-sig.cs-a { left: 23.9em; top: 66.3em; --x1: 0em; --y1: -1.8em; --x2: 3.7em; --y2: -5.5em; --x3: 24.4em; --y3: -11.5em; }
+.cs-sig.cs-b { left: 50em; top: 69.6em; --x1: 0em; --y1: -1.8em; --x2: 0em; --y2: -5.5em; --x3: 0em; --y3: -14.8em; --lag: 0.55s; }
+.cs-sig.cs-c { left: 75.4em; top: 65.9em; --x1: 0em; --y1: -1.4em; --x2: -3.7em; --y2: -5.1em; --x3: -23.7em; --y3: -11.1em; --lag: 1.1s; }
+
+.card:hover .cs-sig,
+.card:focus-within .cs-sig { animation: cs-sig 3.5s var(--lag, 0s) linear infinite; }
+.card:hover .cs-tile.cs-a, .card:focus-within .cs-tile.cs-a { animation: cs-float-a 14s ease-in-out infinite; }
+.card:hover .cs-tile.cs-b, .card:focus-within .cs-tile.cs-b { animation: cs-float-b 14s ease-in-out infinite; }
+.card:hover .cs-tile.cs-c, .card:focus-within .cs-tile.cs-c { animation: cs-float-c 14s ease-in-out infinite; }
+
+@keyframes cs-sig {
+  0% { opacity: 0; transform: none; }
+  4% { opacity: 1; }
+  10% { transform: translate(var(--x1), var(--y1)); }
+  24% { transform: translate(var(--x2), var(--y2)); }
+  72% { opacity: 1; transform: translate(var(--x3), var(--y3)); }
+  78%, 100% { opacity: 0; transform: translate(var(--x3), var(--y3)); }
+}
+@keyframes cs-float-a { 0%, 100% { transform: none; } 25% { transform: translate(-0.53em, 0.7em); } 50% { transform: translate(0, 0.98em); } 75% { transform: translate(0.53em, 0.42em); } }
+@keyframes cs-float-b { 0%, 100% { transform: none; } 25% { transform: translate(0.35em, 1.05em); } 50% { transform: translate(0, 1.48em); } 75% { transform: translate(-0.35em, 0.63em); } }
+@keyframes cs-float-c { 0%, 100% { transform: none; } 25% { transform: translate(-0.53em, 0.88em); } 50% { transform: translate(0, 1.23em); } 75% { transform: translate(0.53em, 0.53em); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cs * { animation: none !important; }
+}
+
+/* --- 1 · quoting: quote, book, pay ---------------------------------------
+   The client's Smart Quote diagram, in brand. Three white panels on one track,
+   slid across a window as the stage changes; the pills above say where it is.
+   Timing lives in figures.tsx (the client's eleven beats); the slide, the new
+   line and the receipt's arrival are the client's own transitions, kept.
+   ----------------------------------------------------------------------- */
+
+/* Larger than the other figures' snippets, at the client's instruction: 5%
+   side margins, and a type base off the slot's height that tops out at 12px. */
+.sq {
+  position: absolute; z-index: 1;
+  left: 5%; right: 5%; top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(9px, min(calc(100cqh / 22), calc(100cqw / 23)), 12px);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  color: var(--steel);
+  user-select: none;
+}
+
+/* No window of its own: the panels slide out to the edge of the dither slot,
+   which is what clips them (.card-art--fig, overflow hidden). The gap between
+   panels is the slot's two side margins (5% + 5% of its width, in cqw off the
+   slot's container), so the next panel waits just past the slot's edge and
+   arrives from it, instead of being cut off at the panel's own border. */
+.sq-track {
+  --sq-gap: 10cqw;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 100%;
+  column-gap: var(--sq-gap);
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sq[data-stage="book"] .sq-track { transform: translateX(calc(-1 * (100% + var(--sq-gap)))); }
+.sq[data-stage="pay"] .sq-track,
+.sq[data-stage="paid"] .sq-track { transform: translateX(calc(-2 * (100% + var(--sq-gap)))); }
+
+/* Each panel is the snippet card every other figure floats: white, the brand
+   radius, the same lifted shadow. Fixed height, so the slide never jumps. */
+.sq-panel {
+  position: relative;
+  height: 19.5em;
+  background: #fff;
+  border-radius: var(--r-card);
+  padding: 1.3em 1.4em;
+  display: grid; align-content: start; gap: 0.75em;
+  box-shadow:
+    0 1px 2px rgb(25 37 74 / 0.14),
+    0 10px 24px -8px rgb(25 37 74 / 0.3);
+}
+.sq p { margin: 0; }
+.sq svg { width: 1.15em; height: 1.15em; flex: none; stroke-width: 1.75; }
+
+.sq-h {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font: 400 1.7em/1 var(--head); letter-spacing: -0.01em;
+}
+.sq-h small {
+  display: inline-flex; align-items: center; gap: 0.35em;
+  font: 400 0.55em/1 var(--body); letter-spacing: 0; color: var(--steel-70);
+}
+
+/* quote */
+.sq-table { border: 1px solid var(--steel-12); border-radius: 0.6em; overflow: hidden; }
+.sq-table p {
+  display: flex; justify-content: space-between;
+  padding: 0.45em 0.8em; color: var(--steel-70);
+  border-top: 1px solid var(--steel-12);
+}
+.sq-table p:first-child { border-top: 0; }
+.sq-table p span + span { color: var(--steel); }
+.sq-new {
+  opacity: 0; transform: translateY(-0.5em);
+  transition: opacity 0.22s ease-out, transform 0.32s ease-out;
+}
+.sq-new.on { opacity: 1; transform: none; }
+.sq-total { display: flex; align-items: baseline; justify-content: space-between; color: var(--steel-70); }
+.sq-total b { font: 400 2.2em/1 var(--head); letter-spacing: -0.01em; color: var(--steel); }
+
+/* the drawn button: Steel Blue, never orange — nothing in a figure is operable */
+.sq-btn {
+  position: absolute; left: 1.4em; right: 1.4em; bottom: 1.3em;
+  height: 2.9em; display: flex; align-items: center; justify-content: center; gap: 0.5em;
+  border-radius: var(--r-btn, 0.6em);
+  background: var(--steel); color: var(--sea);
+  font-weight: 500;
+  transition: background 0.22s ease;
+}
+
+/* Confirmation is green: Accepted, Booked, and the Paid badge. */
+.sq-btn.done { background: var(--green); color: #fff; }
+
+/* book */
+.sq-month { font-weight: 500; }
+.sq-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.45em; }
+.sq-days p, .sq-times p {
+  display: grid; place-items: center;
+  border-radius: 0.6em;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.sq-days p { background: var(--steel-06); padding: 0.45em 0; line-height: 1.15; }
+.sq-days small { font-size: 0.8em; color: var(--steel-70); text-transform: uppercase; }
+.sq-days b { font-size: 1.45em; font-weight: 500; }
+.sq-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45em; }
+.sq-times p { height: 2.4em; border: 1px solid var(--steel-12); color: var(--steel-70); }
+.sq-days p.on, .sq-times p.on { background: var(--steel); border-color: var(--steel); color: var(--sea); }
+.sq-days p.on small { color: var(--sea-70); }
+
+/* pay */
+.sq-due {
+  display: grid; gap: 0.3em;
+  padding: 0.9em 1em; border-radius: 0.8em;
+  background: var(--steel-06); color: var(--steel-70);
+}
+.sq-due b { font: 400 2.4em/1 var(--head); letter-spacing: -0.01em; color: var(--steel); }
+.sq-cardno {
+  display: flex; align-items: center; gap: 0.8em;
+  height: 3.2em; padding: 0 1em;
+  border: 1px solid var(--steel-12); border-radius: 0.6em;
+  font-weight: 500;
+}
+
+/* the receipt */
+.sq-receipt {
+  display: grid; justify-items: center; gap: 0.55em; text-align: center;
+  padding-top: 0.4em;
+  animation: sq-in 0.4s ease-out both;
+}
+.sq-badge {
+  display: grid; place-items: center;
+  width: 4.6em; height: 4.6em; border-radius: 50%;
+  background: var(--green); color: #fff;
+  animation: sq-pop 0.55s ease-out both;
+}
+.sq-badge svg { width: 2em; height: 2em; }
+.sq-receipt > b { font-size: 1.4em; font-weight: 500; color: var(--steel-70); }
+.sq-when {
+  display: flex; align-items: center; gap: 0.7em; justify-self: stretch;
+  height: 3.2em; padding: 0 1em; border-radius: 0.8em;
+  background: var(--steel-06); color: var(--steel-70);
+}
+@keyframes sq-in { from { opacity: 0; transform: translateY(0.7em); } }
+@keyframes sq-pop { 0% { transform: scale(0.8); } 65% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sq-track, .sq-new, .sq-btn, .sq-days p, .sq-times p { transition: none; }
+  .sq-receipt, .sq-badge { animation: none; }
+  .sp > *, .sp > * > * { animation: none !important; }
+}
+
+
+/* --- 2 · journeys: automated reminders ------------------------------------
+   The client's reminder card on the quote card's track (.sq-track), driven by
+   --i rather than a stage name. Each panel runs their 2s curve once on arrival
+   (.run) and holds the finished state; .done is that state standing still.
+   ----------------------------------------------------------------------- */
+
+.sr .sq-track { transform: translateX(calc(-1 * var(--i, 0) * (100% + var(--sq-gap)))); }
+
+.sr-panel { justify-items: center; text-align: center; gap: 0.6em; padding-top: 1.6em; }
+.sr-ico { position: relative; display: grid; place-items: center; width: 3.4em; height: 3.4em; border-radius: 50%; background: var(--steel-06); }
+.sr-ico svg { width: 1.6em; height: 1.6em; }
+.sr-badge {
+  position: absolute; top: -0.2em; right: -0.35em;
+  display: grid; place-items: center;
+  width: 1.7em; height: 1.7em; border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--green); color: #fff;
+  font: 600 0.9em/1 var(--body); font-style: normal;
+  opacity: 0; transform: scale(0.7);
+}
+.sr-h { justify-content: center; font-size: 1.55em; }
+
+.sr-step { position: relative; justify-self: stretch; height: 2.9em; }
+.sr-step--act { margin-inline: 1.4em; }
+.sr-step > p {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 0.5em;
+  border-radius: 0.6em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sr-when, .sr-act { border: 1px solid var(--steel-20); color: var(--steel-70); background: #fff; }
+.sr-on { background: var(--steel); border-color: var(--steel); color: var(--sea); opacity: 0; }
+.sr-past { background: var(--steel-06); border-color: transparent; color: var(--steel-55); opacity: 0; }
+.sr-sent { background: var(--green); border-color: var(--green); color: #fff; opacity: 0; transform: translateY(0.5em); }
+.sr-link { display: block; width: 1px; height: 1.2em; margin-block: -0.6em; background: var(--steel-20); }
+
+/* The client's curve, run once and held at its finished frame. */
+.sr-panel.run .sr-on    { animation: sr-on 2s 0.7s both; }
+.sr-panel.run .sr-past  { animation: sr-past 2s 0.7s both; }
+.sr-panel.run .sr-sent  { animation: sr-sent 2s 0.7s both; }
+.sr-panel.run .sr-badge { animation: sr-badge 2s 0.7s both; }
+.sr-panel.done .sr-past,
+.sr-panel.done .sr-sent,
+.sr-panel.done .sr-badge { opacity: 1; transform: none; }
+
+@keyframes sr-on { 0%, 16.5% { opacity: 0; } 28.5%, 71.4% { opacity: 1; } 83.5%, 100% { opacity: 0; } }
+@keyframes sr-past { 0%, 71.5% { opacity: 0; } 83.5%, 100% { opacity: 1; } }
+@keyframes sr-sent {
+  0%, 71.5% { opacity: 0; transform: translateY(0.5em); }
+  83.5%, 100% { opacity: 1; transform: none; }
+}
+@keyframes sr-badge {
+  0%, 71.5% { opacity: 0; transform: scale(0.7); }
+  82.5% { opacity: 1; transform: scale(1.12); }
+  91.5%, 100% { opacity: 1; transform: scale(1); }
+}
+
+/* --- motion -------------------------------------------------------------- */
+/* Reduced motion rests every snippet in its FINISHED state, not its empty
+   one: the picture still has to say what it says standing still. */
+@media (prefers-reduced-motion: reduce) {
+  .scene-card *,
+  .scene-card *::after {
+    animation: none !important;
+  }
+  /* 1 and 4 need nothing: their still state IS the default, and the cycle
+     only ever existed inside a :hover rule the blanket above disarms. */
+  /* 4 needs nothing: its still state IS the default, and the cycle only ever
+     existed inside a :hover rule the blanket above already disarms. */
+}
