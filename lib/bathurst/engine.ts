@@ -226,7 +226,10 @@ export function createBathurstEngine(area?: string) {
       ground: new THREE.Color(0xD3CBC5), haze: new THREE.Color(0xDCDDD9),
       roof: new THREE.Color(0xF4EEE2), wallLit: new THREE.Color(0xEADFCB), wallShade: new THREE.Color(0xA2948F), ink: new THREE.Color(0x5B4E5C),
       roads: [0xF1EBDF, 0xF1EBDF, 0xF4EEE3, 0xF6F1E7, 0xF8F4EC, 0xF4EEE3].map(h => new THREE.Color(h)),   // local, tertiary, secondary, primary, motorway, link
-      park: new THREE.Color(0xBBC4A6), water: new THREE.Color(0x93AEC6), footprint: new THREE.Color(0xDDD5CD),
+      // water carries the one clearly saturated blue in this palette: against the warm grey land and sage
+      // parks it is the only cool note, so the lake and the rivers read as water at a glance rather than as
+      // another grey area. Deepened from 0x93AEC6, which sat too close to the land in value to separate.
+      park: new THREE.Color(0xBBC4A6), water: new THREE.Color(0x6D9AC4), footprint: new THREE.Color(0xDDD5CD),
       inkK: .45,
       sky: [0xDCDDD9, 0xB3C4D3, 0x7F9FBE],   // horizon, low, overhead
     },
@@ -604,7 +607,7 @@ export function createBathurstEngine(area?: string) {
   layersEl.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{ layer=b.dataset.layer; layersEl.querySelectorAll('[data-layer]').forEach(x=>x.setAttribute('aria-pressed',x===b)); refresh(); });
   $('mvclose').onclick=()=>{ setLayers(false); layerBtn.focus(); };
   // Map view settings: view (3D / 2D), style (poster / paper), what to show
-  const mapView = {view:'3d', style:'print', show:{buildings:true, blocks:true, nature:true}};
+  const mapView = {view:'2d', style:'print', show:{buildings:true, blocks:true, nature:true}};
   const pressGroup = (attr, val) => layersEl.querySelectorAll(`[data-${attr}]`).forEach(x=>x.setAttribute('aria-pressed', x.dataset[attr]===val));
   layersEl.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mapView.view=b.dataset.view; pressGroup('view', mapView.view); applyView(); });
   layersEl.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{ mapView.style=b.dataset.style; pressGroup('style', mapView.style); applyStyle(); });
@@ -612,7 +615,7 @@ export function createBathurstEngine(area?: string) {
   function applyView(){
     if(target<1) scrollToProg(1);
     mapDirty=true;
-    setGoal(mapView.view==='2d' ? {pitch:0} : {pitch:defaultView().pitch});
+    setGoal(mapView.view==='2d' ? {pitch:0} : {pitch:TILT_PITCH});
   }
   function applyStyle(){
     const pal = PALETTES[mapView.style];
@@ -996,6 +999,9 @@ export function createBathurstEngine(area?: string) {
     }
     v.dist=Math.max(1400, v.dist); return v;
   }
+  /** The plan view's tilt (none) and the tilt the 3D toggle restores. Kept apart because the default is now
+   *  flat: reading defaultView().pitch for the 3D case would hand 3D a pitch of zero and do nothing. */
+  const PLAN_PITCH = 0, TILT_PITCH = .3;
   // the bearing that fills the screen best: north need not be up. Tries headings within ±80° (never upside down)
   // and keeps the one that frames the points closest, so a tall spread of pins lies along a wide screen.
   function bestViewOf(list, ...a){ let best=null;
@@ -1007,7 +1013,41 @@ export function createBathurstEngine(area?: string) {
   // the side and the railway below, so each pin can be seen and picked
   // an area page frames only that area's clients, so the overview opens on the area instead of the whole region
   const FOCUS = area ? LOCAL.filter(p=>p.pos && inArea(p, area)) : null;
-  const routeView = () => bestViewOf(FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])], .3, W<760 ? 170 : 215, W<760 ? 90 : 80, W<760 ? 84 : 140);   /* phones: 84px clears the control column on the left */
+  // The overview opens as a plan: flat, north up, the way a printed transit map is drawn. viewOf with an
+  // explicit bearing of 0 rather than bestViewOf, which rotates the frame up to +-80 deg to pack the pins in
+  // tighter -- that packs well but leaves north pointing somewhere different on every screen width.
+  /**
+   * Phones only: the clients span roughly 40 km east to west (Mississauga out
+   * to Scarborough) while most of them sit in one band along Bathurst. Framing
+   * the full spread on a narrow screen sets the scale by those few outliers,
+   * and everything else collapses into one clump in the middle of the map.
+   *
+   * So the phone's opening view frames the core and lets the outliers sit off
+   * screen: points are kept when they are within 1.6x the MEDIAN distance from
+   * the median centre. The median is the point here -- a mean would be dragged
+   * out by the very outliers this is meant to ignore. Nothing is hidden: the
+   * outlying pins are still on the map a pan away, and the chips, All clients
+   * and the zoom-out limit (zoomAllView) all still frame every client.
+   */
+  function core(pts){
+    if(pts.length < 4) return pts;
+    const mid = a => { const b=[...a].sort((x,y)=>x-y), h=b.length>>1; return b.length%2 ? b[h] : (b[h-1]+b[h])/2; };
+    const cx = mid(pts.map(p=>p.x)), cz = mid(pts.map(p=>p.z));
+    const d  = pts.map(p=>Math.hypot(p.x-cx, p.z-cz));
+    const md = mid(d) || 0;
+    if(!md) return pts;
+    const keep = pts.filter((p,i)=> d[i] <= md*1.6);
+    return keep.length >= 3 ? keep : pts;   /* never frame on one or two pins */
+  }
+
+  const routeView = () => {
+    const all = FOCUS?.length ? FOCUS.map(p=>p.pos)
+      : [START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P, ...(DIR?.pts?.filter((_,i)=>i%8===0) ?? [])];
+    /* phones: frame the core so the pins separate; 56px clears the control column on the left */
+    return W<760
+      ? viewOf(core(all), PLAN_PITCH, 120, 80, 56, 0)
+      : viewOf(all, PLAN_PITCH, 215, 80, 140, 0);
+  };
   const allView = () => viewOf(FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...LOCAL.map(p=>p.pos), OFFICE_P]);
   // the zoom-out limit: every client in view, with room for the chips, the heading, the pins' heads and the controls
   const zoomAllView = () => viewOf([START, ...LOCAL.filter(p=>p.pos).map(p=>p.pos), OFFICE_P], goal.pitch, W<760 ? 240 : 200, W<760 ? 90 : 70, W<760 ? 64 : 110, goal.bearing);
@@ -1121,7 +1161,7 @@ export function createBathurstEngine(area?: string) {
     if(i===dirIdx) return;
     const was=dirIdx; dirIdx=i;
     stick.classList.toggle('dirs', i>=0);
-    if(i<0){ stick.classList.remove('finale'); nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
+    if(i<0){ stick.classList.remove('finale'); nav.visible=false; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : TILT_PITCH}); /* leave the route's south-facing tilt behind */ dirCard.classList.remove('on'); scrollNode=-2; onScroll(); return; }
     DIR ??= buildDir(); nav.visible=false;
     if(was<0){ selected=null; nodeIdx=-1; filter='all'; view={type:'list'}; render(); refresh(); setCollapsed(true); markChip('all'); dirD=DIR?DIR.off:0; mapDirty=true; }
     if(fPlace) leaveFPlace(false);
@@ -1310,7 +1350,7 @@ export function createBathurstEngine(area?: string) {
     btn.onclick=()=>{
       if(dragged){ dragged=false; return; }
       if(!mapReady()) return scrollToProg(1);
-      mapDirty=true; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : defaultView().pitch});
+      mapDirty=true; setGoal({bearing:0, pitch: mapView.view==='2d' ? 0 : TILT_PITCH});
       toast('Facing north');
     };
     btn.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ e.preventDefault(); if(mapReady()) turn(e.key==='ArrowLeft' ? .15 : -.15, 0); } });

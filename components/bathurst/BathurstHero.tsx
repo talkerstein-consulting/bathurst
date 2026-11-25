@@ -197,8 +197,8 @@ export default function BathurstHero({ area, headingLevel = "h1", lead }: { area
               <div className="mv-h"><h3>Map view</h3><CtaButton variant="icon" id="mvclose" label="Close map view settings"><Glyph g="close" /></CtaButton></div>
               <fieldset><legend className="eyebrow">View</legend>
                 <div className="seg">
-                  <button type="button" className="sprout btn sm" data-view="3d" aria-pressed="true">3D</button>
-                  <button type="button" className="sprout btn sm" data-view="2d" aria-pressed="false">2D</button>
+                  <button type="button" className="sprout btn sm" data-view="3d" aria-pressed="false">3D</button>
+                  <button type="button" className="sprout btn sm" data-view="2d" aria-pressed="true">2D</button>
                 </div>
               </fieldset>
               <fieldset><legend className="eyebrow">Style</legend>

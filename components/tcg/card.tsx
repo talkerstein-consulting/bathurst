@@ -1,5 +1,3 @@
-import { Cta } from "./cta";
-
 /**
  * The card: the art on top at a fixed height, the headline and body inside the
  * card's own padding, then a CTA sitting on the bottom edge.
@@ -41,9 +39,9 @@ export function Card({
       </div>
 
       <div className="card-act">
-        <Cta as="a" href={href} label={cta} small className="cta--light">
+        <a className="card-cta" href={href}>
           {cta}
-        </Cta>
+        </a>
       </div>
     </article>
   );

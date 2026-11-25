@@ -12,6 +12,11 @@ type DitherProps = {
   waveColor?: number[];
   backgroundColor?: number[];
   colorNum?: number;
+  ditherMode?: string;
+  scale?: number;
+  contrast?: number;
+  brightness?: number;
+  mouseEffect?: string;
   pixelSize?: number;
   enableMouseInteraction?: boolean;
   clickRipple?: boolean;
@@ -57,41 +62,36 @@ const linear = (hex: string): [number, number, number] => {
   return [chan(16), chan(8), chan(0)];
 };
 
-/** Brand ink laid over brand paper at `amount`, so the wave is a tint of a
- *  token rather than a grey picked by eye. */
-const tint = (amount: number): [number, number, number] => {
-  const paper = linear(PAPER);
-  const ink = linear(STREAK);
-  return [0, 1, 2].map((i) => paper[i] + (ink[i] - paper[i]) * amount) as [
-    number,
-    number,
-    number,
-  ];
-};
-
-const PAPER = "#F3F7F3";
-const INK = "#19254A";
-
-/** TRIAL, at the client's request: the wave runs through Muted Orange instead
- *  of Steel Blue, which puts orange on a decorative surface — the one thing the
- *  brand reserves for operable elements. Swap INK back in to undo it. */
-const STREAK = "#B3530E";
-
-/** How much colour the wave carries. .12 is a whisper, .20 reads clearly, .35
- *  is loud. Raised so the texture is actually obvious. */
-const WAVE = 0.42;
-
-/**
- * Sea Breeze waved through Steel Blue at WAVE strength, so the texture is
- * legible while the block stays light, and both ends are brand tokens rather
- * than a grey chosen by eye.
+/** The ground takes the client map's own palette, so the hero and the map
+ *  further down the page are printed on the same paper.
  *
- * The ground answers the pointer at the client's instruction: the dither
- * erases under the cursor and a click sends a ripple. That makes a decorative
- * surface interactive, which the brand otherwise reserves for controls, so the
- * wrapper takes pointer events back while everything above it keeps its own. It
- * still takes no tab stop: there is nothing here to operate, only to disturb.
- */
+ *  Both values are lifted from PALETTES.paper in lib/bathurst/engine.ts, the
+ *  palette the map actually renders with: WAVE_INK is its `ground` (the warm
+ *  grey land) and GROUND is its lightest road fill (the paper the streets are
+ *  drawn on). Nothing in between is invented -- the dither simply quantises
+ *  from one to the other.
+ *
+ *  They sit on the same side of neutral (red highest, blue lowest in both), so
+ *  every step between them stays warm. That is what went wrong with Sea Breeze
+ *  before: its green channel was the highest, and it was mixing toward a blue
+ *  wave, so the middle steps landed on green.
+ *
+ *  D02: the land measures 9.3:1 against the Steel Blue headline -- more
+ *  headroom than the blue ground it replaces, which sat at 8.2:1.
+ *
+ *  FLAGGED, D00.3: the two hex values are duplicated here because the palette
+ *  is read in JS by a component that has no access to the engine's internals.
+ *  If PALETTES.paper is retuned, these follow it by hand. */
+/* The map's `ground` -- the warm grey land it paints Toronto on, so the hero
+   and the map are printed on the same paper.
+
+   Leave this alone. Two alternatives were tried and both rejected: a blue dark
+   end (#A4B7D6) and a higher-chroma ochre (#CDBB9C, which measured "less
+   muddy" at chroma 70 but read gold on screen). The low chroma here is the
+   point, not a fault to be corrected. */
+const WAVE_INK = "#D3CBC5";
+const GROUND = "#F8F4EC";
+
 export function HeroGround() {
   return (
     /* The canvas is wrapped rather than given .hero-bg directly. Dither.css
@@ -102,18 +102,26 @@ export function HeroGround() {
        the wrapper is positioned, and the container fills a real height. */
     <div className="hero-bg" aria-hidden="true">
       <Dither
-        backgroundColor={linear(PAPER)}
-        waveColor={tint(WAVE)}
+        /* The BG Studio settings, with the two colours swapped for brand
+           tokens. Palette is None there, so the wave is a single colour
+           quantised into `colorNum` steps rather than a ramp of its own. */
+        waveColor={linear(WAVE_INK)}
+        backgroundColor={linear(GROUND)}
         colorNum={6}
-        waveAmplitude={0.32}
-        waveFrequency={2.4}
-        waveSpeed={0.02}
-        pixelSize={2}
+        ditherMode="bayer"
+        pixelSize={1}
+        scale={1}
+        waveSpeed={0.04}
+        waveFrequency={0.7}
+        waveAmplitude={0.6}
+        contrast={1}
+        brightness={0}
+        mouseEffect="ripple"
+        mouseRadius={0.24}
+        mouseStrength={0.55}
+        trail={0.5}
         enableMouseInteraction
         clickRipple
-        mouseRadius={1.2}
-        mouseStrength={0.9}
-        trail={0.5}
         intro={false}
       />
     </div>

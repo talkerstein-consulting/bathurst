@@ -42,10 +42,10 @@ export function Masthead() {
         </div>
 
         <div className="mast-acct">
-          <Cta as="a" href="/sign-in" variant="icon" underline label="Sign in">
+          <Cta as="a" href="/sign-in" variant="icon" label="Sign in">
             <User className="glyph" aria-hidden="true" />
           </Cta>
-          <Cta as="a" href="/book" underline label="Book appointment">
+          <Cta as="a" href="/book" label="Book appointment">
             Book appointment
           </Cta>
         </div>

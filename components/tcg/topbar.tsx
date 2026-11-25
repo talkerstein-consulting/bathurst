@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Search, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Cta } from "./cta";
 import { NAV } from "./nav-data";
@@ -31,9 +31,7 @@ import { NAV } from "./nav-data";
 export function TopBar() {
   const [stuck, setStuck] = useState(false);
   const [open, setOpen] = useState(false);
-  const [seeking, setSeeking] = useState(false);
   const bar = useRef<HTMLElement | null>(null);
-  const seek = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const mark = document.getElementById("mast-block");
@@ -43,10 +41,7 @@ export function TopBar() {
         const condensed = !e.isIntersecting && e.boundingClientRect.bottom <= 0;
         setStuck(condensed);
         // Nothing may stay open behind a bar that has gone back off screen.
-        if (!condensed) {
-          setOpen(false);
-          setSeeking(false);
-        }
+        if (!condensed) setOpen(false);
       },
       { threshold: 0 },
     );
@@ -55,16 +50,14 @@ export function TopBar() {
   }, []);
 
   useEffect(() => {
-    if (!open && !seeking) return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOpen(false);
-      setSeeking(false);
     };
     const away = (e: PointerEvent) => {
       if (bar.current?.contains(e.target as Node)) return;
       setOpen(false);
-      setSeeking(false);
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", away);
@@ -72,7 +65,7 @@ export function TopBar() {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", away);
     };
-  }, [open, seeking]);
+  }, [open]);
 
   return (
     <header
@@ -110,29 +103,6 @@ export function TopBar() {
             </span>
           </Cta>
 
-          {/* D06: the search starts as a magnifying glass and animates open
-              into a field. NOT WIRED — there is no index behind it yet. */}
-          <div className={`seek${seeking ? " is-open" : ""}`}>
-            <Cta
-              variant="icon"
-              label={seeking ? "Close search" : "Search"}
-              onActivate={() => {
-                const next = !seeking;
-                setSeeking(next);
-                if (next) requestAnimationFrame(() => seek.current?.focus());
-              }}
-            >
-              <Search className="glyph" aria-hidden="true" />
-            </Cta>
-            <input
-              ref={seek}
-              type="search"
-              className="seek-field"
-              placeholder="Search"
-              aria-label="Search"
-              tabIndex={seeking ? undefined : -1}
-            />
-          </div>
         </div>
 
         <Image
@@ -144,10 +114,10 @@ export function TopBar() {
         />
 
         <div className="topbar-r">
-          <Cta as="a" href="/sign-in" variant="icon" underline label="Sign in">
+          <Cta as="a" href="/sign-in" variant="icon" label="Sign in">
             <User className="glyph" aria-hidden="true" />
           </Cta>
-          <Cta as="a" href="/book" underline label="Book appointment">
+          <Cta as="a" href="/book" label="Book appointment">
             Book appointment
           </Cta>
         </div>

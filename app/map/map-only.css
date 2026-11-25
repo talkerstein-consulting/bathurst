@@ -38,6 +38,21 @@ body::before { display: none; }            /* the page grain belongs to the page
   top: var(--inset) !important;
   justify-content: center !important;
 }
+/* The reference build drops the row 72px to clear the "Our Work" heading, and
+   on wider/narrower screens 108px or 66px for the same heading at its other
+   sizes. #workhead is hidden here (above), so that gap is reserved for nothing
+   and leaves the chips floating over the city. This puts the row back at the
+   top of the map container.
+
+   The class is repeated to outrank those rules: they are #hero #stick.work
+   .chipbar, which carries more weight than a bare .chipbar even with
+   !important on both, and they live in app/bathurst-map.css where the heading
+   they clear does still exist. */
+#hero #stick#stick.work .chipbar.chipbar,
+#hero #stick#stick .chipbar.chipbar {
+  top: var(--inset) !important;
+}
+
 /* The row scrolls itself if it runs long, so the paddles are not needed. */
 .chipbar > .btn { display: none !important; }
 

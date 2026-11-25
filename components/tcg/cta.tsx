@@ -144,7 +144,7 @@ export function Cta({
     variant === "icon" && "icon",
     small && "sm",
     block && "block",
-    underline && "rule",
+    underline && "underlined",
     primary && "primary",
     disabled && "is-off",
     on && "on",

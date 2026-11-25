@@ -115,15 +115,19 @@
   --rule-x: 32px;
   --rule-y: calc(var(--rule-lead) + var(--rule-trail));
   --gut: 28px;
-  /* the one height every photo slot in a row takes */
-  --card-art-h: 184px;
+  /* the one height every photo slot in a row takes. Raised from 184px at the
+     client's instruction: every card in every row follows from here, so the
+     rows stay level with each other by construction. */
+  --card-art-h: 260px;
   --topbar-h: 62px;
   /* The titles row the sticky bar keeps below its controls. */
   --topbar-pages-h: 40px;
-  /* The air above and below the hero block. Kept tight on purpose: the block
-     itself fills the band between the masthead rule and the cards, so the air
-     lives inside its padding rather than around it. */
-  --col-gap: var(--s3);
+  /* The air between the page's blocks -- the one gap .col puts between every
+     section, so the rhythm down the page comes from here and nowhere else.
+     Doubled at the client's instruction, from --s3 (24px) to --s6 (64px);
+     the hero block's own padding is unchanged, so only the air between
+     sections grows. */
+  --col-gap: var(--s6);
 
   /* --- CTA -------------------------------------------------------------- */
   --cta-pad:    16px;
@@ -319,24 +323,6 @@ img { display: block; max-width: 100%; }
 }
 .topbar-l { justify-self: start; display: flex; align-items: center; gap: var(--s1); }
 
-/* D06: a magnifying glass that animates open into a field. The field is always
-   in the DOM so the width can transition; it is clipped, silent to the tab
-   order and has no caret until the glass is pressed. */
-.seek { display: flex; align-items: center; }
-.seek-field {
-  width: 0; min-width: 0; padding: 0; border: 0; background: transparent;
-  font: 400 var(--t-small)/1 var(--body); color: var(--steel);
-  outline: none; opacity: 0;
-  transition: width .32s var(--ease-out), opacity .2s ease, padding .32s var(--ease-out);
-}
-.seek.is-open .seek-field {
-  width: clamp(120px, 18vw, 240px);
-  padding: 0 var(--s2) 0 6px;
-  opacity: 1;
-}
-.seek-field::placeholder { color: var(--steel-35); }
-/* the rule the field sits on, drawn only while it is open */
-.seek.is-open .seek-field { border-bottom: var(--hairline) solid var(--steel-20); }
 .topbar-r {
   justify-self: end;
   display: flex; align-items: center; gap: var(--s2);
@@ -509,10 +495,25 @@ img { display: block; max-width: 100%; }
 .cta--light:hover .stroke .outer,
 .cta--light:focus-visible .stroke .outer { stroke: var(--orange); }
 
+/* The card CTA: plain small caps. No box, no rule, no tracking — the label is
+   the whole control. It is operable, so it still comes up orange on hover and
+   focus, which is the one signal left to it. */
+.card-cta {
+  font: 500 var(--t-caption)/1 var(--body);
+  text-transform: uppercase;
+  color: var(--steel-55); text-decoration: none;
+  transition: color .3s ease;
+}
+.card-cta:hover, .card-cta:focus-visible { color: var(--orange); }
+
+
 /* The underline variant. No box, so the label keeps only the air it needs to
    clear the line, and the resting state draws nothing at all. */
-.btn.rule { padding-inline: 2px; }
-.btn.rule.icon { width: auto; min-width: var(--icon-btn); }
+/* Named .underlined, not .rule: .rule is the global printed-hairline utility
+   above, and a control carrying both got that hairline painted across its top
+   — the broken line that showed over "Book appointment" and the account icon. */
+.btn.underlined { padding-inline: 2px; }
+.btn.underlined.icon { width: auto; min-width: var(--icon-btn); }
 
 svg.glyph {
   display: block; width: 18px; height: 18px; fill: none; stroke: currentColor;
@@ -553,10 +554,15 @@ svg.glyph {
    radius is why it clips — the canvas is square and would otherwise overrun the
    corners. `isolation` keeps the canvas from compositing against the page. */
 .intake {
+  /* The doubled --col-gap is for the air BETWEEN sections. The hero is not a
+     section below the masthead though -- it hangs directly off the masthead's
+     rule, so it pulls that one gap back out. Everything further down the page
+     keeps the full doubled gap. */
+  margin-top: calc(-1 * var(--col-gap));
   position: relative; isolation: isolate;
   display: grid; gap: var(--s5);
   padding: var(--s7) var(--s5);
-  min-height: 62vh; align-content: center;
+  min-height: 78vh; align-content: center;   /* was 62vh */
   border-radius: var(--r-frame);
   overflow: hidden;
 }
@@ -582,7 +588,13 @@ svg.glyph {
 }
 .intake-head p {
   font-size: var(--t-lede); line-height: 1.55;
-  color: var(--steel-70);
+  /* D02: full Steel Blue, not --steel-70. This line sits on the dithered
+     ground, and at 70% it composited to 4.15:1 against the ground's darkest
+     tone -- under the 4.5:1 AA floor for body text. At full strength it reads
+     at 8.2:1, the same as the headline above it. The 70% tint is still right
+     for this size on a flat page; it is the moving ground underneath that it
+     cannot hold up against. */
+  color: var(--steel);
   max-width: none; white-space: nowrap;
 }
 
@@ -793,9 +805,21 @@ svg.glyph {
    sits on the bottom edge and every card in a row ends on the same line.
    No border, no fill and no padding of its own: the card sits on the page's
    own ground, as approved in the style guide. */
+/* The whole card is the click target. The CTA stays the one real link and its
+   ::after spans the card, so there is still a single tab stop with a single
+   accessible name — no nested interactives, no duplicate link in the tab order.
+   The card is that ::after's positioning context, and the focus ring moves onto
+   the card so keyboard focus shows the area that actually responds. */
 .card {
   display: grid; grid-template-rows: auto 1fr auto;
   gap: var(--s3); min-width: 0; height: 100%;
+  position: relative;
+}
+.card-cta::after { content: ""; position: absolute; inset: 0; }
+.card:hover .card-cta { color: var(--orange); }
+.card-cta:focus-visible { outline: none; }
+.card:has(.card-cta:focus-visible) {
+  outline: var(--outer-stroke) solid var(--orange); outline-offset: 4px;
 }
 /* A fixed height, not a ratio: the columns are not all the same width, and a
    ratio turns the extra width of the outer ones into extra height. */
@@ -986,7 +1010,14 @@ svg.glyph {
 .sec-head--bare { padding-top: var(--rule-sec); }
 .sec-head h2 {
   font: 700 var(--t-h2)/1 var(--head);
-  letter-spacing: var(--track-head); max-width: 24ch;
+  /* FLAGGED, brand: --track-head is a flat -1px, and the brand sets -1px for
+     headings. A flat pixel value is not a tracking value though -- it is
+     -0.018em at this heading's 56px and -0.053em on the 19px cuts, so the
+     smaller a heading gets the tighter it is set. At 700 weight on the
+     condensed cut this one was closing up between round letters. -0.01em
+     holds the brand's intent (slightly negative, optically tight) while
+     staying proportional at every size this heading takes. */
+  letter-spacing: -0.01em; max-width: 24ch;
 }
 .sec-lede {
   font-size: var(--t-lede); line-height: 1.55;
@@ -1125,19 +1156,48 @@ svg.glyph {
      which is the one place a sideways scroll is allowed (D01). */
   .pages ul {
     justify-content: flex-start; flex-wrap: nowrap;
+    /* A grid/flex item's min-width is auto, so without this the row grows to
+       fit its items and pushes the PAGE sideways instead of scrolling inside
+       itself (D01) -- which is why CONTACT was being clipped unreachably. */
+    min-width: 0; max-width: 100%;
     overflow-x: auto; scrollbar-width: none;
+    overscroll-behavior-x: contain; touch-action: pan-x pan-y;
     padding-inline: 2px;
   }
   .pages ul::-webkit-scrollbar { display: none; }
 
-  /* The bar gets tight: the appointment drops to the masthead and the
-     megamenu, and the profile stays, because signing in has nowhere else. */
-  .topbar-r .btn:not(.icon) { display: none; }
+  /* The bar carries three things and in this order: the TCG icon, the wordmark
+     beside it, and the menu on the right. The appointment already dropped to
+     the masthead and the megamenu here; the profile now goes with it, so
+     .topbar-r empties out entirely. Signing in stays reachable from the
+     megamenu behind the burger.
+
+     .topbar-l becomes `display: contents` so the icon and the burger stop
+     being a pair on the left and become grid items in their own right -- that
+     is what lets the burger cross to the far side without moving in the
+     markup, which would cost it its place in the tab order. */
+  .topbar-r { display: none; }
+  /* The profile goes from the masthead too -- "remove the profile on mobile"
+     applies wherever it appears. The appointment stays: it is the page's
+     conversion CTA and this is now the only place it is visible (D04). */
+  .mast-acct > a[href="/sign-in"] { display: none; }
+  .topbar-in { grid-template-columns: auto 1fr auto; gap: var(--s2); }
+  .topbar-l { display: contents; }
+  /* grid-row: 1 on all three is load-bearing. With an explicit column but an
+     auto row, the placement cursor advances past column 3 once the burger is
+     placed, and the next item (the wordmark) starts a SECOND ROW -- which is
+     what put the wordmark under the bar and doubled its height. Pinning the
+     row keeps them on one line. */
+  .topbar-icon { grid-column: 1; grid-row: 1; justify-self: start; }
+  .topbar-word { grid-column: 2; grid-row: 1; justify-self: start; }
+  .burger      { grid-column: 3; grid-row: 1; justify-self: end; }
 
   /* D06: the titles stay on one row and scroll sideways rather than stacking. */
   .topbar-pages ul {
     justify-content: flex-start; flex-wrap: nowrap;
+    min-width: 0; max-width: 100%;
     overflow-x: auto; scrollbar-width: none;
+    overscroll-behavior-x: contain; touch-action: pan-x pan-y;
   }
   .topbar-pages ul::-webkit-scrollbar { display: none; }
 
@@ -1153,7 +1213,7 @@ svg.glyph {
   .mast-word { grid-column: 1 / -1; order: -1; }
   .mast-mark img { width: 40px; height: 40px; }
 
-  :root { --stage-h: 260px; --col-gap: var(--s6); }
+  :root { --stage-h: 260px; --col-gap: calc(var(--s6) * 2); }   /* doubled with the desktop gap */
   .foot-in { grid-template-columns: minmax(0, 1fr); }
   .work-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
   .intake { padding: var(--s6) var(--s3); }
@@ -1161,13 +1221,102 @@ svg.glyph {
 
 /* D10: headings are left-aligned on mobile regardless of desktop alignment. */
 @media (max-width: 560px) {
+  /* A real phone type scale.
+     Every clamp above bottoms out at this width -- 6.4vw of 375px is 24px, so
+     --t-h1 lands on its 42px floor and the rest likewise. The "fluid" scale
+     therefore never engages on a phone: what ships is the desktop minimum,
+     which is why the headings read oversized. These are the phone steps,
+     pitched where ChatGPT and Gemini pitch theirs: a 16px body, a lede barely
+     above it, and headings that step down in even ratios instead of shouting.
+     The h1 also loses its .96 display leading, which closes up badly once a
+     heading wraps to two or three lines at this width. */
+  :root {
+    --t-h1: 30px;
+    --t-h2: 24px;
+    --t-h3: 20px;
+    --t-h4: 18px;
+    --t-h5: 16px;
+    --t-lede: 17px;
+    --t-body: 16px;
+    --t-small: 15px;
+  }
+  .intake-head h1 { line-height: 1.1; }
+  .sec-head h2 { line-height: 1.15; }
+
+  /* Spacing follows the type down. --col-gap was doubled to 128px here along
+     with the desktop gap; at this scale that is most of a screen of blank
+     paper between sections, so the phone keeps the single 64px step. */
+  :root { --col-gap: var(--s6); }
+
   .mast-word { justify-items: start; }
-  .mast-top { grid-template-columns: minmax(0, 1fr); }
+  /* The masthead takes the condensed bar's arrangement: the roundel and the
+     wordmark side by side at a readable size, rather than a wordmark running
+     the full width with the roundel orphaned beneath it.
+
+     The appointment then takes the row under them at full width, which is what
+     D04 asks for of a single CTA in its container on mobile -- and it has to
+     be its own row anyway: roundel, wordmark and button together come to more
+     than this width. */
+  .mast-top {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; gap: var(--s2);
+  }
+  .mast-mark { grid-column: 1; grid-row: 1; justify-self: start; }
+  .mast-word { grid-column: 2; grid-row: 1; order: 0; }
+  /* The masthead borrows the bar's ARRANGEMENT, not its size. At 38px and
+     190px it had become the condensed bar twice over, so scrolling changed
+     nothing: the hero state and the stuck state read identically. The
+     masthead is the full statement of the name and is set well above the
+     bar's 34px roundel and 150px wordmark; the bar is the compact echo of it
+     once the masthead has gone. */
+  .mast-word .wordmark { width: auto; max-width: min(250px, 100%); }
+  .mast-mark img { width: 58px; height: 58px; }
+  .mast-acct { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
+  .mast-acct .btn { width: 100%; }
   :root { --stage-h: 220px; }
   /* Single column for everything, and the dividers lie down with the rows. */
-  .cap-grid, .card-row { grid-template-columns: minmax(0, 1fr); }
+  .cap-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* Phones: a card row becomes a swipeable tray rather than a tall stack.
+     Four stacked cards at the full art height ran to several screens of
+     scrolling before the next section; side by side they stay one gesture
+     apart, which is how the chip row on the map already behaves (D06) and the
+     one case D01 allows a sideways row.
+
+     The cards are full size and the row slides sideways. Monocle's own trays
+     run about 45% so two fit side by side, and that was tried here and
+     reverted: our cards carry a headline, a dek and a CTA where theirs carry a
+     name and a role, so at 45% the dek broke to six lines a word at a time.
+     At 85% the card is effectively full width with the next one showing at the
+     edge -- that sliver is the affordance, so the tray still needs no arrows
+     or dots. The row snaps to each card, and bleeds to both screen edges while
+     its padding keeps the first and last card on the page gutter. */
+  .card-row {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 85%;
+    gap: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    /* vertical swipes still scroll the page */
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gut));
+    padding-inline: var(--gut);
+  }
+  .card-row::-webkit-scrollbar { display: none; }
+  .card-row > * {
+    scroll-snap-align: start;
+    padding-inline: var(--rule-x);
+  }
+
+  /* the bled edges mean first/last no longer sit against the column edge, so
+     they take the same inner padding as the rest and the hairlines stay even */
+  .card-row > *:first-child { padding-left: var(--rule-x); }
+  .card-row > *:last-child  { padding-right: var(--rule-x); }
   .cap { padding-inline: 0; }
-  :root { --card-art-h: 200px; }
+  :root { --card-art-h: 260px; }   /* phones: one card per row, so it takes the same height as the desktop slot */
   .foot-cols { grid-template-columns: minmax(0, 1fr); }
   .cap + .cap::before {
     left: 0; right: 0; top: 0; bottom: auto;
