@@ -1152,6 +1152,22 @@ svg.glyph {
 @media (max-width: 900px) {
   :root { --gut: 20px; --topbar-h: 56px; }
 
+  /* Phones and small tablets carry ONE header, in every instance: the fixed
+     bar. The full masthead block below it is hidden rather than restyled --
+     it holds the same wordmark and the same section row the bar already
+     carries, so leaving both in would print the navigation twice and give the
+     page two headers that only differ in size.
+
+     The bar is position: fixed, so the column takes its height back as
+     padding: the two rows are --topbar-h and --topbar-pages-h, and the
+     hairline under them is part of the bar's own box. */
+  .mast-block { display: none; }
+  .col { padding-top: calc(var(--topbar-h) + var(--topbar-pages-h) + var(--s3)); }
+  /* The hero pulls one --col-gap back out so it can hug the masthead's rule.
+     There is no masthead here, so that negative margin would drag it up under
+     the fixed bar instead. */
+  .intake { margin-top: 0; }
+
   /* D06: the titles stay on one row and scroll sideways rather than stacking,
      which is the one place a sideways scroll is allowed (D01). */
   .pages ul {

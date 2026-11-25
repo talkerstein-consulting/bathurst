@@ -30,8 +30,27 @@ import { NAV } from "./nav-data";
  */
 export function TopBar() {
   const [stuck, setStuck] = useState(false);
+  /* On phones this bar is not a scrolled state at all: it IS the header, in
+     every instance, and the full masthead below is hidden (globals.css). So it
+     shows from the first paint rather than waiting for the masthead to pass,
+     and it must not be inert -- the burger behind it is the only navigation on
+     the page. Tracked in JS rather than CSS because `inert` and `aria-hidden`
+     are attributes, not styles, and CSS cannot reach them. */
+  const [compact, setCompact] = useState(false);
   const [open, setOpen] = useState(false);
   const bar = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  /* The bar is shown when it is the header (phones) or once the masthead has
+     gone (wider screens). Everything below keys off this, not off `stuck`. */
+  const shown = stuck || compact;
 
   useEffect(() => {
     const mark = document.getElementById("mast-block");
@@ -71,11 +90,11 @@ export function TopBar() {
     <header
       className="topbar"
       ref={bar}
-      data-stuck={stuck ? "true" : "false"}
+      data-stuck={shown ? "true" : "false"}
       // Out of the tab order and out of the tree while off screen: the masthead
       // below is the same navigation, and two copies would both be read out.
-      aria-hidden={stuck ? undefined : "true"}
-      inert={!stuck}
+      aria-hidden={shown ? undefined : "true"}
+      inert={!shown}
     >
       <div className="topbar-in">
         <div className="topbar-l">

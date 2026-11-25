@@ -2,6 +2,7 @@ import { ChevronLeft } from "lucide-react";
 import { Cta } from "./cta";
 import { Masthead } from "./masthead";
 import { Nav } from "./nav";
+import { TopBar } from "./topbar";
 
 /**
  * The shell every placeholder route shares: the masthead and page bar exactly
@@ -19,8 +20,13 @@ export function Stub({
 }) {
   return (
     <div className="shell">
+      {/* The same header the home page carries. On phones it is the only one:
+          the masthead block below is hidden there, so without this a stub
+          route would have no header and no way into the menu at all. */}
+      <TopBar />
+
       <main className="col">
-        <div className="mast-block">
+        <div className="mast-block" id="mast-block">
           <Masthead />
           <Nav />
         </div>
