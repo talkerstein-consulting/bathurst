@@ -27,8 +27,12 @@ import { NAV } from "./nav-data";
  * is not reliably reported as intersecting.
  *
  * The roundel and the wordmark are inert — the paper's name, not controls.
+ *
+ * `always` shows the bar from the first paint at every width. The campaign landing page
+ * (app/check/page.tsx) passes it, because that page has no full masthead for the bar to
+ * replace — the bar IS its header, as it already is on a phone.
  */
-export function TopBar() {
+export function TopBar({ always = false }: { always?: boolean }) {
   const [stuck, setStuck] = useState(false);
   /* On phones this bar is not a scrolled state at all: it IS the header, in
      every instance, and the full masthead below is hidden (globals.css). So it
@@ -50,7 +54,7 @@ export function TopBar() {
 
   /* The bar is shown when it is the header (phones) or once the masthead has
      gone (wider screens). Everything below keys off this, not off `stuck`. */
-  const shown = stuck || compact;
+  const shown = stuck || compact || always;
 
   useEffect(() => {
     const mark = document.getElementById("mast-block");

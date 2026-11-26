@@ -1163,6 +1163,90 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
   const smooth = (e0,e1,x) => { const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t); };
   // screen position of a flat world point, where the globe puts it; ok is false past the camera or round the back of the planet
   function project(world){ bendPoint(v, world, camera.position).project(camera); return {x:(v.x+1)/2*W, y:(1-v.y)/2*H, ok:v.z<1 && facing(world, camera.position)>=0}; }
+
+  // ---------- phones: pin clustering ----------
+  // The spread solver in the frame loop only guarantees that two pins do not
+  // OVERLAP. On a 375px screen that is not enough: 55 icons at 44px (the
+  // smallest target a finger hits reliably) cannot all be on screen at once
+  // however they are spread, and the result is a blob that fills the viewport
+  // and answers a tap with whichever pin happens to be on top.
+  //
+  // So below 760px the pins that fall within one bubble of each other collapse
+  // into a count, and a tap frames that group (fitTo). Every target stays 44px
+  // at every zoom, and the map reads as a map instead of a pile of logos.
+  //
+  // Scope, deliberately narrow:
+  //  - phones only. The desktop spread is hand-tuned and stays exactly as it was.
+  //  - plan view only. In street mode (alt < 60) the pins are already apart.
+  //  - unfiltered only. A filter draws each pin as a logo-plus-name box with its
+  //    own solver (`big`); clustering those would fight it for no gain, since a
+  //    filter leaves few enough pins to show whole.
+  //  - never the selected pin: it owns the open callout.
+  const CLUSTER_R = 46;   // px between bubble centres: the 44px target plus air
+  const clusterPool = [];
+  function clusterBubble(i){
+    if(clusterPool[i]) return clusterPool[i];
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'pin-cluster hide';
+    el.innerHTML = '<span class="pc-n" aria-hidden="true"></span>';
+    // stopPropagation: the stage's own click handler reads a plain click as
+    // "close the open sidebar and go back", which would undo the zoom.
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const m = el._members;
+      if(!m || m.length < 2) return;
+      touched(); mapDirty = true; fitTo(m);
+    });
+    labels.appendChild(el);
+    clusterPool[i] = el;
+    return el;
+  }
+  const hideClusters = () => { for(const el of clusterPool){ if(el._hid!==true){ el.classList.add('hide'); el._hid=true; el._members=null; } } };
+  /**
+   * Greedy screen-space grouping, in the order the frame loop already sorted.
+   *
+   * Greedy rather than k-means or a quadtree because the input is at most ~55
+   * points and this runs inside the frame loop: one pass over an already sorted
+   * list is cheaper than any structure that would have to be rebuilt every frame
+   * as the camera moves, and the fixed order keeps the same pins grouping the
+   * same way, so bubbles do not flicker while panning.
+   *
+   * Returns the set of pins a bubble has swallowed; the caller hides those.
+   */
+  function clusterPins(order){
+    const swallowed = new Set(), taken = new Set();
+    const live = order.filter(o => o.sp.ok && o.p.id !== selected
+      && o.sp.x > -40 && o.sp.x < W + 40 && o.sp.y > -40 && o.sp.y < H + 40);
+    let n = 0;
+    for(const a of live){
+      if(taken.has(a.p)) continue;
+      const group = [a];
+      for(const b of live){
+        if(b === a || taken.has(b.p)) continue;
+        if(Math.hypot(b.sp.x - a.sp.x, b.sp.y - a.sp.y) < CLUSTER_R) group.push(b);
+      }
+      if(group.length < 2) continue;              // a pin on its own stays a pin
+      for(const g of group){ taken.add(g.p); swallowed.add(g.p); }
+      // the bubble sits on the group's centroid, not on its first member
+      const cx = group.reduce((t,g)=>t+g.sp.x,0)/group.length;
+      const cy = group.reduce((t,g)=>t+g.sp.y,0)/group.length;
+      const el = clusterBubble(n++);
+      el._members = group.map(g=>g.p);
+      const label = `${group.length} clients here. Zoom in to see them.`;
+      if(el._label !== label){ el.setAttribute('aria-label', label); el._label = label; }
+      const txt = String(group.length);
+      if(el._n !== txt){ el.firstChild.textContent = txt; el._n = txt; }
+      setStyle(el, 'transform', `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`);
+      if(el._hid !== false){ el.classList.remove('hide'); el._hid = false; }
+    }
+    // retire the bubbles this frame did not need, without destroying them
+    for(let i=n; i<clusterPool.length; i++){
+      const el = clusterPool[i];
+      if(el._hid !== true){ el.classList.add('hide'); el._hid = true; el._members = null; }
+    }
+    return swallowed;
+  }
   const setStyle = (el, key, val) => { if(el['_'+key]!==val){ el.style[key]=val; el['_'+key]=val; } };   // skip no-op writes
   let wasReady=false;
 
@@ -1255,7 +1339,14 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
     // cluster settles once and stays still instead of being re-solved from scratch every frame (which jittered).
     // Zoomed in, the overlaps go away and every icon eases back onto its own address.
     const big = filter!=='all';   // filtered: logo 56px with its name underneath, so each pin is a box, not a circle
-    if(!streetMode){ const GAP=38, live=order.filter(o=>o.sp.ok && (!big || matches(o.p)));
+    // GAP is the clear distance the solver keeps between two icon pins. On a phone
+    // the icon is 44px (Fitts), so 38 left the circles touching and a tap landed on
+    // whichever happened to be on top; 52 gives every target its own air. Desktop
+    // keeps 38 -- the pins are smaller there and 52 would scatter the street.
+    // phones, plan view, no filter: bubbles instead of a spread (see clusterPins above)
+    const CLUSTERING = W<760 && !streetMode && !big;
+    const swallowed = CLUSTERING ? clusterPins(order) : (hideClusters(), null);
+    if(!streetMode && !CLUSTERING){ const GAP = W<760 ? 52 : 38, live=order.filter(o=>o.sp.ok && (!big || matches(o.p)));
       if(big) live.forEach(o=>{ if(!o.p.nw){ const n=o.p.el.querySelector('.nm'); o.p.nw=n?.offsetWidth||0; } o.hw=Math.max(64, o.p.nw+12)/2; });
       live.forEach(o=>{ o.ox=(o.p._ox||0)*.9; o.oy=(o.p._oy||0)*.9; });   // the .9 is the gentle pull home
       for(let it=0; it<(big?150:40); it++){ let moved=false;
@@ -1275,7 +1366,7 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
           if(cx||cy){ o.ox+=cx; o.oy+=cy; moved=true; } });
         if(!moved) break; }
       live.forEach(o=>{ if(Math.abs(o.ox)<.3) o.ox=0; if(Math.abs(o.oy)<.3) o.oy=0; o.p._ox=o.ox; o.p._oy=o.oy; }); }
-    else LOCAL.forEach(p=>{ p._ox=p._oy=0; });
+    else LOCAL.forEach(p=>{ p._ox=p._oy=0; });   // street view, and clustered: every pin sits on its own address
     order.forEach(({p, sp, dist, ox=0, oy=0})=>{
       // walking the clients: only the one in focus is on screen; on the route, none (the dot is the focus)
       // the project in focus gets the full callout; every other pin is a small service icon (none while driving the directions)
@@ -1284,7 +1375,8 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
       // every client stays on the map at every camera view (front page, tour, route, filters: a filter only fades the others, .dim)
       // front page (the hero window): only the clients near the camera, along the stretch being travelled; they fade in and out
       // between 1.2 and 1.6 km rather than popping. The map views show every client.
-      const visible = sp.ok && sp.x>-260 && sp.x<W+260 && sp.y>-160 && sp.y<H+200;
+      const visible = sp.ok && sp.x>-260 && sp.x<W+260 && sp.y>-160 && sp.y<H+200
+        && !(swallowed && swallowed.has(p));   // inside a bubble: the count stands for it
       if(p._vis!==visible){ p.el.classList.toggle('hide', !visible); p._vis=visible; }
       const passing = streetMode && Math.abs(camera.position.z-p.pos.z)<180; if(p._near!==passing){ p.el.classList.toggle('near', passing); p._near=passing; }
       if(!visible) return;

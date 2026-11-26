@@ -1,11 +1,31 @@
+import type { ReactNode } from "react";
 import { FootTabs, type FootSection } from "./foot-tabs";
 import { NAV } from "./nav-data";
 import FooterLockup from "./footer-lockup";
+import { FootNews } from "./foot-news";
+import { FootReveal } from "./foot-reveal";
 
 /**
- * The footer: light, full bleed across the window, with the vertical lockup
+ * The footer: light, full bleed across the window.
+ *
+ * The shape is React Bits Pro's `footer-13`, rebuilt on the brand's own
+ * tokens: a recessed letter panel across the top, then the vertical lockup
  * given the whole of its column, then columns of links, then the line of
- * record. It was briefly inverted; the client asked for the light theme back.
+ * record. Each band fades up once as it comes into view (./foot-reveal.tsx).
+ * It was briefly inverted; the client asked for the light theme back.
+ *
+ * What came from the block and what did not:
+ *  - Kept: the letter panel on a recessed card, the brand column, the link
+ *    columns that fold on a phone, the closing legal band, and the one
+ *    scroll-reveal that plays on each.
+ *  - Dropped: the block's own accordion, because ./foot-tabs.tsx already does
+ *    that job on brand tokens and opens one section at a time; shipping both
+ *    would be two answers to one question.
+ *  - Dropped: the "All systems normal" pill, which asserts an uptime this site
+ *    cannot measure, and the language menu, which changed nothing.
+ *  - Dropped: the row of social icons. We have no account URLs, and the
+ *    convention here (see .foot-soon) is that a thing with no destination is
+ *    not rendered as a control. Add the row back with the real links.
  *
  * The lockup is the real one, and it now assembles itself: ./footer-lockup.tsx
  * plays the endcard animation the agency already uses on its social work
@@ -51,16 +71,25 @@ const SECTIONS: FootSection[] = [
   { label: "Legal & privacy", items: LEGAL.map((label) => ({ label })) },
 ];
 
-export function Footer() {
+/**
+ * `news` replaces the letter panel in the envelope. The campaign landing page puts its
+ * closing ask there instead of a newsletter sign-up (components/tcg/check-ask.tsx);
+ * everywhere else the envelope holds the letter, as it always has.
+ */
+export function Footer({ news }: { news?: ReactNode }) {
   return (
     <footer className="foot foot--bleed" id="footer">
-      <div className="foot-in">
+      <FootReveal className="foot-news">
+        {news ?? <FootNews />}
+      </FootReveal>
+
+      <FootReveal className="foot-in" delay={0.06}>
         <div className="foot-brand">
           <FooterLockup className="foot-lockup" />
         </div>
 
         <FootTabs sections={SECTIONS} />
-      </div>
+      </FootReveal>
 
       <p className="foot-rule">
         <span>© {YEAR} Talkerstein Consulting Group</span>

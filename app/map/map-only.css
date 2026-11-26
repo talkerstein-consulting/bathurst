@@ -30,7 +30,11 @@ body::before { display: none; }
   justify-content: center !important;
 }
 /* The row scrolls itself if it runs long, so the paddles are not needed. */
+/* Desktop: the row is centred and fits, so the chevrons are two dead controls.
+   Phones: 3 of the 9 industries fit a 375px screen, so the chevrons are the only
+   advertised way to reach the other 6 -- a swipe on an unmarked row is not one. */
 .chipbar > .btn { display: none !important; }
+@media (max-width: 760px) { .chipbar > .btn { display: inline-flex !important; } }
 /* The chips sit in the middle of the map, not against its left edge: the row is as wide as its
    chips and centred in the bar, and it still scrolls sideways when it runs longer than the map
    ("safe" keeps the first chip reachable instead of overflowing off the left). */
@@ -186,7 +190,8 @@ body::before { display: none; }
 @media (min-width: 761px) {
   #hero #stick #mapui.dock .panel {
     left: var(--inset) !important;
-    top: var(--inset) !important;
+    /* the sidebar starts below the industry rail, so the rail reads as its own band */
+    top: calc(var(--inset) + var(--icon-btn) + var(--s2)) !important;
     bottom: var(--inset) !important;
     width: var(--dock-w) !important;
   }

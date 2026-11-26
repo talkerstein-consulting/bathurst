@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { completeDomain } from "@/lib/domain";
+import { assessHref } from "@/lib/book";
 import { useRouter } from "next/navigation";
 import RiseHeading from "@/components/style/RiseHeading";
 import { CtaButton } from "@/components/style/Cta";
@@ -13,25 +15,12 @@ import "@/app/home.css";
  * #terminal / .term positioning and scroll lead-in), so the map engine's hero timing is unchanged.
  * Until the assessment itself is built, "Assess My Website" carries the URL to /book (?website=), which pre-fills the form.
  */
-export const assessHref = (website = "", email = "") =>
-  `/book?${new URLSearchParams({ service: "Website assessment", ...(website ? { website } : {}), ...(email ? { email } : {}) })}`;
+export { assessHref } from "@/lib/book";
 
-/**
- * The rest of the domain, offered as the visitor types: "acme" → ".com", "acme.c" → ".ca" or ".com".
- * It only ever offers a top-level domain, never a name, so it cannot put words in anyone's mouth; it stays quiet
- * once a known one is complete, and on anything with a space or a path in it.
- */
-const TLDS = [".ca", ".com", ".co", ".net", ".org"];   // a Toronto agency: .ca and .com first
-export function completeDomain(value: string) {
-  const v = value.trim().replace(/^https?:\/\//i, "");
-  if (!v || /[\s/?#]/.test(v) || v.length < 3) return "";
-  const dot = v.lastIndexOf(".");
-  if (dot < 0) return ".com";                                  // no dot yet: the commonest ending
-  const tail = v.slice(dot);                                   // ".c", ".co", ".com"
-  if (TLDS.includes(tail)) return "";                          // already a whole one: say nothing
-  const hit = TLDS.find((t) => t.startsWith(tail));
-  return hit ? hit.slice(tail.length) : "";
-}
+/* The domain completer now lives in lib/domain.ts, because the campaign landing page
+   (components/tcg/check-lead.tsx) uses the same field behaviour. Re-exported here so
+   existing imports of `completeDomain` from this module keep working. */
+export { completeDomain } from "@/lib/domain";
 
 export default function AssessLead() {
   const section = useRef<HTMLElement>(null);

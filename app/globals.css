@@ -592,7 +592,20 @@ svg.glyph {
      svh, not vh: on a phone vh is the tallest the window ever gets, so the
      browser's own chrome would eat the peek this is here to protect. */
   padding: var(--s5) var(--s5);
-  min-height: calc(100svh - var(--fold-peek)); align-content: center;
+  /* Sized against the window, but no longer ONLY against it.
+     
+     The block's content measures about 460px (headline, lede, box, padding).
+     On a 1250px-tall window `100svh - --fold-peek` asked for 797, so 340px of
+     it was slack. End-aligning that slack put the whole of it above the
+     headline, which left the hero reading as an empty field with the content
+     jammed along its bottom edge; centring it split the hole either side.
+     Neither is a layout -- the fault was the slack, not where it went.
+     
+     So the height is capped: the window still sets it on a laptop (where
+     100svh - --fold-peek lands near the content height anyway, which is what
+     --fold-peek was tuned for), and on a tall window the block stops growing
+     instead of inventing air. Centred, as it was. */
+  min-height: min(calc(100svh - var(--fold-peek)), 620px); align-content: center;
   border-radius: var(--r-frame);
   overflow: hidden;
 }
@@ -718,6 +731,16 @@ svg.glyph {
      half a step; every section below them keeps the undiminished gap. The pull
      has to be a negative margin because the space is the column's `gap`, which
      a child cannot shorten any other way. */
+  /* The client asked for this row to sit close under the intake box: the rule
+     and its label read as the intake's alternative ("Or ..."), not as the top
+     of a new section.
+     
+     Most of that distance belonged to the hero's own slack, and is gone now
+     that .intake's height is capped (see above). What is left here is the
+     original half-step pull off the column's --s6 gap. It was briefly -72px,
+     which closed the gap by dragging this row 24px INSIDE the hero's rounded
+     panel -- the panel has a radius, a ground canvas and `overflow: hidden`,
+     so a sibling pulled over it reads as a mistake, not as tightening. */
   margin-top: calc(-1 * var(--s4));
 }
 .features-grid {
@@ -1451,7 +1474,6 @@ svg.glyph {
   gap: var(--s6) var(--s5);
 }
 .foot-brand { display: grid; gap: var(--s3); align-content: start; justify-items: start; }
-.foot-mark { width: 100%; max-width: 240px; height: auto; }
 /* The strapline and the footer CTAs were removed at the client's request. */
 .foot-cols {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1522,6 +1544,126 @@ svg.glyph {
    proportion at this logo's r 111.5, so it matches the graticule it becomes. */
 .fl-wire path { fill: none; stroke: var(--ink); stroke-width: 0.685; }
 
+/* ------------------------------------------------------------ foot news -- */
+/* The letter panel that opens the footer: React Bits Pro's `footer-13` card,
+   drawn in the quiet end of the palette so it reads as a recess in the ground
+   rather than as a second ground. The copy and the control live in
+   components/tcg/foot-news.tsx; the form behind them is a placeholder. */
+/* The panel is a letter, so it holds a letter's column: capped and centred in
+   the footer's own column instead of running the full 1460px. Its contents
+   are centred with it -- the heading, the line under it, the form and the
+   note all sit on one centre line. */
+.foot-news-card {
+  width: min(100%, 760px); margin-inline: auto;
+  text-align: center;
+  border-radius: var(--r-card);
+}
+/* The card's edge is the envelope's: the airmail chevron, drawn in the
+   brand's own inks rather than the postal red and blue, because the border is
+   decoration and decoration is never orange here.
+
+   The stripe runs at 45 degrees on a 34px period -- a heavy Steel Blue bar, a
+   Sea Breeze gap, a half-strength bar, another gap. At the band's 9px it
+   reads as the chevron and not as a pattern with a size of its own. The flat
+   Steel Blue stays underneath, so nothing shows through at the gaps.
+
+   The outer element is now only the border: --band of padding all round and
+   no content of its own. Everything that was in it moved to the sheet. */
+.foot-news-card {
+  padding: var(--band);
+  background-color: var(--steel);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--steel)    0    10px,
+    var(--sea)      10px 17px,
+    var(--steel-35) 17px 27px,
+    var(--sea)      27px 34px
+  );
+}
+/* The card inside the envelope: the recess the panel used to be, now set in
+   from the chevron by the band's own width. */
+.foot-news-sheet {
+  display: grid; gap: var(--s2); justify-items: center;
+  padding: var(--s5);
+  /* The plate, not --steel-06: that tint is 6%% navy, which read as a recess
+     against the page but goes transparent over the chevron and lets the
+     stripes run under the words. The plate is opaque and is the ground every
+     other card on the page sits on. */
+  background: var(--plate);
+  border-radius: calc(var(--r-card) - var(--band));
+}
+/* The hand on the card. Slowly Signature carries a much smaller x-height than
+   the body face, so it takes the --t-h3 step rather than the --t-h4 the
+   printed cut sat on, and keeps its natural tracking: --track-head is a
+   condensed-serif correction and closes a script up where it should breathe.
+   One weight exists in this face, so there is no bold to ask for. */
+/* --t-sig, not --t-script: the display script step is set for a word or two
+   on its own, and a whole line of this face at that size still measures
+   smaller than the lede under it -- Slowly Signature carries a very small
+   x-height for its point size, so the printed steps all under-set it. This
+   step is the same scale run up one, and it tops out under --t-h1 so the
+   page keeps one largest line and it is not this one. */
+.foot-news-sheet h2 {
+  margin: 0;
+  --t-sig: clamp(44px, 5.4vw, 72px);
+  font: 400 var(--t-sig)/1.1 var(--script);
+  color: var(--steel);
+}
+.foot-news-sheet > p {
+  margin: 0; max-width: 54ch;
+  font: 400 var(--t-small)/1.6 var(--body); color: var(--steel-70);
+}
+.foot-news-form {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2);
+  margin-top: var(--s1); width: min(100%, 540px);
+}
+.foot-news-input {
+  flex: 1 1 240px; min-width: 0;
+  padding: var(--cta-pad);
+  font: 400 var(--t-body)/1 var(--body);
+  color: var(--steel); caret-color: var(--steel);
+  background: var(--sea);
+  border: var(--hairline) solid var(--steel-20);
+  border-radius: var(--r-btn);
+  transition: border-color .25s ease;
+}
+.foot-news-input::placeholder { color: var(--steel-35); }
+.foot-news-input:hover { border-color: var(--steel-35); }
+.foot-news-input:focus-visible { outline: none; border-color: var(--orange); }
+.foot-news-input[aria-invalid="true"] { border-color: var(--orange); }
+/* Every CTA is an outline. The stroke is currentColor, so the one colour
+   change on hover/focus carries the border with it. */
+.foot-sub {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--s1);
+  padding: var(--cta-pad);
+  font: 500 16px/1 var(--body); color: var(--steel); white-space: nowrap;
+  background: transparent;
+  border: var(--outer-stroke) solid currentColor;
+  border-radius: var(--r-btn); cursor: pointer;
+  transition: color .25s ease;
+}
+.foot-sub:hover, .foot-sub:focus-visible { color: var(--orange); outline: none; }
+.foot-sub:focus-visible { outline: var(--hairline) solid var(--orange); outline-offset: 3px; }
+/* aria-disabled, not the attribute: a press on a busy control still lands, so
+   the state can answer for itself. */
+.foot-sub[aria-disabled="true"] { color: var(--steel-35); cursor: default; }
+.foot-sub .glyph { flex: none; width: 18px; height: 18px; }
+.foot-news-help {
+  margin: 0; min-height: 1.6em;
+  font: 400 var(--t-caption)/1.6 var(--body); color: var(--steel-70);
+}
+.foot-news-bad, .foot-news-done {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; color: var(--steel);
+}
+.foot-news-help .glyph { flex: none; width: 15px; height: 15px; }
+/* The mark carries the state's colour; the sentence stays in the ink, where
+   it keeps its contrast at caption size. */
+.foot-news-bad .glyph { color: var(--orange); }
+.foot-news-done .glyph { color: var(--green); }
+
 /* ------------------------------------------------------- foot accordion -- */
 /* The phone footer: one titled row per section, one open at a time
    (components/tcg/foot-tabs.tsx). Vertical, because the footer is the end of
@@ -1589,7 +1731,12 @@ svg.glyph {
   content: ""; position: absolute; left: 0; right: 0; top: 0;
   height: var(--rule-sec); background: var(--steel); filter: url(#grunge);
 }
-.sec-head--bare { padding-top: var(--rule-sec); }
+/* A section head with no rule over it. The 3px --rule-sec is the page's one
+   thick rule and it opens every section; this modifier drops it, and the top
+   padding that only existed to clear it, for a head that is not meant to be
+   announced that way. Used on 05 (what we do) at the client's request. */
+.sec-head--bare { padding-top: 0; }
+.sec-head--bare::before { content: none; }
 .sec-head h2 {
   font: 700 var(--t-h2)/1 var(--head);
   /* FLAGGED, brand: --track-head is a flat -1px, and the brand sets -1px for
@@ -1795,6 +1942,15 @@ svg.glyph {
     min-width: 0; max-width: 100%;
     overflow-x: auto; scrollbar-width: none;
     overscroll-behavior-x: contain; touch-action: pan-x pan-y;
+    /* The row scrolls, but nothing said so: at 375px it measures 422 against a
+       375 window, so CONTACT was cut mid-word at the screen edge and read as a
+       layout fault rather than as more row. The fade is the same one the map's
+       industry chips carry, so the page has one way of saying "there is more
+       sideways", and the scroll padding keeps the first and last title off the
+       edge instead of butted against it. */
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--gut), #000 calc(100% - var(--gut)), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 var(--gut), #000 calc(100% - var(--gut)), transparent 100%);
+    scroll-padding-inline: var(--gut);
   }
   .topbar-pages ul::-webkit-scrollbar { display: none; }
 
@@ -2036,7 +2192,12 @@ svg.glyph {
 .card-row:not(.card-row--framed)>:last-child { padding-right: 0; }
 .card-row--framed>*+:before { content: none; }
 .cl-head.fr-head { --rail-nav-w: 88px; grid-template-columns: var(--rail-nav-w) minmax(0, 1fr) max-content minmax(0, 1fr) var(--rail-nav-w); align-items: center; gap: var(--s3); padding-top: 0; display: grid; }
-.sec-head.fr-head>h2 { text-align: center; font: 400 var(--t-h4)/1.1 var(--head); letter-spacing: var(--track-head); white-space: nowrap; grid-area: 1/3; justify-self: center; }
+/* The label is set IN the rule, so the rules must never reach the type. The
+   grid gap alone is not enough: the h2's column is max-content, and Cheltenham
+   condensed at --track-head overhangs its own measure, so the trailing rule
+   came up against the last letter. The padding holds the line off the text by
+   a whole step on each side, whatever the string measures. */
+.sec-head.fr-head>h2 { text-align: center; font: 400 var(--t-h4)/1.1 var(--head); letter-spacing: var(--track-head); white-space: nowrap; grid-area: 1/3; justify-self: center; padding-inline: var(--s3); }
 .cl-head.fr-head>.rail-nav--head { grid-area: 1/5; justify-self: end; padding-bottom: 0; }
 .sec-head.fr-head:before,.sec-head.fr-head:after { content: ""; height: var(--hairline); background: var(--steel-35); filter: url(#grunge); align-self: center; width: auto; position: static; }
 .sec-head.fr-head:before { grid-area: 1/2; }
@@ -2075,7 +2236,14 @@ svg.glyph {
 .features .card-row--framed { margin-inline: calc(-1 * var(--stage-pad)); padding-inline: var(--stage-pad); scroll-padding-inline: var(--stage-pad); }
 .cl-head.fr-head { gap: var(--s2); grid-template-columns: minmax(0,1fr); }
 .sec-head.fr-head:before,.sec-head.fr-head:after { content: none; }
-.sec-head.fr-head>h2 { white-space: normal; grid-area: 1/1; max-width: 22ch; }
+/* No rules at this width, so the clearance they needed comes off again and the
+   heading keeps the full column.
+   
+   D10: a mobile heading is left-aligned regardless of its desktop alignment.
+   The desktop rule centres this one because it is set INTO the flanking rules;
+   with those gone there is nothing to centre it against, and it was still
+   inheriting `text-align: center` and wrapping to two ragged centred lines. */
+.sec-head.fr-head>h2 { white-space: normal; grid-area: 1/1; max-width: 22ch; padding-inline: 0; text-align: left; justify-self: start; }
 .sec--final,.intake-head { text-align: left; justify-items: start; }
 }
 @media (prefers-reduced-motion:reduce) {
@@ -2136,173 +2304,152 @@ svg.glyph {
    its radius, so the row keeps one shape whether a card holds a drawing, a
    photograph or nothing yet. */
 .card-art:has(.card-shot) { overflow: hidden; background: var(--plate); }
-.card-shot { object-fit: cover; }
+/* The mockup shots are pulled in close.
+   
+   Every screen in these renders is the project's own site; the room around it
+   is generated set dressing. Framed wide, the card was mostly room -- a desk,
+   a wall, a window -- and the work itself sat small in the middle of it. The
+   scale crops the generated surroundings off the edges of the slot and brings
+   the screen up to fill the frame, so what the card shows is the site.
+   
+   `scale` on the image rather than a tighter aspect-ratio on the slot, because
+   the slot's height is what keeps every card in a row level with its
+   neighbours (--card-art-h); changing that would unlevel the row. */
+.card-shot { object-fit: cover; scale: 1.38; transform-origin: 50% 46%; }
+.card--lead .card-shot { scale: 1.22; }   /* the lead is already large: less crop, or the screen runs past the slot */
+/* Per render, because the screen sits somewhere different in each one. The
+   default above suits a screen near the middle (Bubby's, Brickstone, Sam's);
+   these are the ones that need the crop moved onto their own screen. */
+.card-shot[data-shot="amazing-donuts"] { transform-origin: 26% 54%; }   /* the phone is low and well left of the box */
 
-/* ===========================================================================
-   The viewfinder — "Good work speaks for itself."
-   (components/tcg/viewfinder.tsx)
+/* ------------------------------------------------- card result rows -------
+   What the project moved, in place of the CTA a finished case study does not
+   need. A description list because that is what it is: a label and its figure.
+   The numbers are PLACEHOLDER (see components/tcg/sections.tsx, RESULTS). */
+.card-results {
+  display: grid; gap: 0; align-content: end; margin: 0;
+  border-top: var(--hairline) solid var(--steel-20);
+}
+.card-result {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s2); padding-block: 9px;
+}
+.card-result + .card-result { border-top: var(--hairline) solid var(--steel-12); }
+.card-result dt {
+  font: 400 var(--t-caption)/1.2 var(--body);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--steel-55);
+}
+.card-result dd {
+  margin: 0; font: 700 var(--t-h5)/1 var(--head);
+  letter-spacing: var(--track-head); color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
 
-   One client in frame at a time. The frame is on the left, in camera chrome;
-   the dial on the right is @reactbits-starter/arc-list turning the seven logos
-   on an arc. Every line here is drawn from the tokens above: the chrome is CSS
-   and inline SVG rather than a rendered plate, so it stays hairline at any size.
+/* D04 on a phone: one CTA in its container spans the full width, and the
+   field above it does the same rather than leaving a ragged right edge.
+   The card's own padding comes in a step, because 48px of inset around a
+   two-line paragraph is most of a 375px screen. */
+@media (max-width: 560px) {
+  .foot-news-sheet { padding: var(--s4) var(--s3); }
+  .foot-news-form { max-width: none; }
+  .foot-news-form .foot-news-input,
+  .foot-news-form .foot-sub { flex: 1 1 100%; width: 100%; }
+}
 
-   Orange appears once, on the play control — the only operable mark inside the
-   frame. Everything else in it is decoration and carries no colour of its own.
-   ========================================================================= */
-.vf-stage {
-  --vf-h: clamp(340px, 40vw, 500px);
+/* --------------------------------------------------------- service card -- */
+/* 05, re-laid out to the client's reference: the four capabilities as two wide
+   cards to a row instead of four narrow ones. Markup: components/tcg/
+   service-card.tsx, which explains why it is its own component rather than a
+   variant of .card — that format is shared with the feature rail and the work
+   row, and both keep their art on top.
+
+   Reading order down the card is mark, headline, paragraph, link, art. The
+   paragraph's row takes the slack (1fr), so the link and the top of the art
+   land on the same line in both cards of a row whatever the copy runs to.
+
+   Appended as its own block rather than threaded into the card rules above:
+   other work is in flight in this file. */
+.svc-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
-  gap: var(--s5);
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+}
+.svc {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: var(--s2);
+  min-width: 0;
+  padding: var(--s4);
+  /* D02: the plate was --steel-06, which took the orange the CTA turns on
+     hover down to 4.17:1. The lightest surface the brand has is the page's own
+     ground, so the card takes that and is bounded by the hairline instead of
+     by a fill -- the same treatment .slot uses. See the note on .svc .card-cta
+     below for what this does and does not fix. */
+  background: var(--sea);
+  border: var(--hairline) solid var(--steel-12);
+  border-radius: var(--r-card);
 }
 
-/* --- the finder ---------------------------------------------------------- */
-.vf-finder { display: grid; gap: var(--s3); min-width: 0; }
-.vf-gate {
-  position: relative; overflow: hidden;
-  height: var(--vf-h);
-  border-radius: var(--r-frame);
-  border: var(--outer-stroke) solid var(--steel-20);
-  background: var(--steel);
-  isolation: isolate;
-}
-/* The footage. All seven are stacked and the one in frame is the one shown, so
-   the cut between clients is a dissolve rather than a load. */
-.vf-shot {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: center 25%;
-  opacity: 0; transition: opacity .5s var(--ease-out);
-}
-.vf-shot[data-on] { opacity: 1; }
-/* The footage is dark enough under the chrome for white ticks to read, and no
-   darker: the client's face is the point of the frame. */
-.vf-gate::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background:
-    linear-gradient(to bottom, rgb(25 37 74 / .45) 0 14%, transparent 34% 62%, rgb(25 37 74 / .62) 100%);
-}
-
-/* Four corner brackets, inset from the gate's own edge, drawn as one element:
-   each corner is two hairlines in the same white. */
-.vf-brackets {
-  position: absolute; inset: 14px; pointer-events: none; z-index: 2;
-  background:
-    linear-gradient(var(--sea-70) 0 0) 0 0 / var(--hairline) 26px,
-    linear-gradient(var(--sea-70) 0 0) 0 0 / 26px var(--hairline),
-    linear-gradient(var(--sea-70) 0 0) 100% 0 / var(--hairline) 26px,
-    linear-gradient(var(--sea-70) 0 0) 100% 0 / 26px var(--hairline),
-    linear-gradient(var(--sea-70) 0 0) 0 100% / var(--hairline) 26px,
-    linear-gradient(var(--sea-70) 0 0) 0 100% / 26px var(--hairline),
-    linear-gradient(var(--sea-70) 0 0) 100% 100% / var(--hairline) 26px,
-    linear-gradient(var(--sea-70) 0 0) 100% 100% / 26px var(--hairline);
-  background-repeat: no-repeat;
-}
-/* The focus crosshair, centred. */
-.vf-cross {
-  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
-  width: 72px; height: 72px; pointer-events: none; z-index: 2;
-  fill: none; stroke: var(--sea-45); stroke-width: 1; vector-effect: non-scaling-stroke;
-}
-/* The focus ticks on the two long edges. */
-.vf-ticks {
-  position: absolute; inset: 14px; pointer-events: none; z-index: 2;
-  background:
-    linear-gradient(var(--sea-45) 0 0) 0 50% / 9px var(--hairline),
-    linear-gradient(var(--sea-45) 0 0) 100% 50% / 9px var(--hairline);
-  background-repeat: no-repeat;
-}
-
-/* The tape counter: the camera's own readout, so it is set in the mono-ish
-   caps the rest of the system uses for machine text. */
-.vf-hud {
-  position: absolute; left: var(--s3); right: var(--s3); top: var(--s3); z-index: 3;
-  display: flex; align-items: center; justify-content: space-between;
-  font: 400 var(--t-micro)/1 var(--body);
-  letter-spacing: .14em; text-transform: uppercase;
-  color: var(--sea-70); pointer-events: none;
-}
-.vf-rec { display: inline-flex; align-items: center; gap: var(--s1); }
-.vf-rec i {
-  width: 6px; height: 6px; border-radius: 999px;
-  background: var(--sea); flex: none;
-}
-
-/* The bottom strip: who is speaking, and the one control. */
-.vf-strip {
-  position: absolute; left: var(--s3); right: var(--s3); bottom: var(--s3); z-index: 3;
-  display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3);
-}
-.vf-said { display: grid; gap: 2px; min-width: 0; }
-.vf-who {
-  font: 400 var(--t-h4)/1.05 var(--head);
-  letter-spacing: var(--track-head); color: var(--sea);
-}
-.vf-role {
-  font: 400 var(--t-caption)/1.25 var(--body);
-  color: var(--sea-70);
-}
-.vf-play {
-  flex: none; display: inline-flex; align-items: center; justify-content: center;
-  width: 52px; height: 52px; border-radius: 999px; border: 0; cursor: pointer;
-  background: var(--sea); color: var(--orange);
-  box-shadow: 0 6px 16px -6px rgb(25 37 74 / .5);
-  transition: transform .25s var(--ease-out);
-}
-.vf-play .glyph { width: 20px; height: 20px; margin-left: 2px; fill: currentColor; }
-.vf-play:hover { transform: scale(1.06); }
-.vf-play:focus-visible { outline: var(--hairline) solid var(--orange); outline-offset: 3px; }
-
-/* The words, under the frame rather than over the face. */
-.vf-quote { margin: 0; }
-.vf-quote blockquote {
-  margin: 0; max-width: 54ch;
-  font: 300 var(--t-lede)/1.5 var(--head);
+/* The mark. A drawing, never a control, so it is never orange and never
+   answers the pointer: it sits in the same steel the rule system uses, on the
+   page's own ground, inside the card's plate. */
+.svc-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-btn);
+  background: var(--sea);
+  border: var(--hairline) solid var(--steel-12);
   color: var(--steel-70);
 }
+.svc-mark .glyph { width: 20px; height: 20px; }
 
-/* --- the dial ------------------------------------------------------------ */
-.vf-dial { min-width: 0; height: var(--vf-h); }
-.vf-arc { height: 100%; min-height: 0; }
-/* A logo rides the arc where a line of type would, so it is sized against the
-   wheel's own font-size and by its shape — the height falls as the mark widens,
-   the way .cl-mark balances the same seven. */
-.vf-mark {
-  display: block; width: auto; max-width: 11em;
-  height: clamp(.9em, calc(2.3em / sqrt(var(--r, 3))), 2.1em);
-  object-fit: contain; object-position: left center;
+.svc-title {
+  font: 400 var(--t-h4)/1.12 var(--head);
+  letter-spacing: var(--track-head);
+  text-wrap: balance;
 }
-/* Out of frame the marks are quiet; the one in frame is the client's own
-   colour. The arc already fades and shrinks them — this is only the ink. */
-[data-arc-item] .vf-mark {
-  filter: grayscale(1);
-  opacity: .55;
-  transition: filter .4s var(--ease-out), opacity .4s var(--ease-out);
-}
-[data-arc-item][aria-selected="true"] .vf-mark { filter: none; opacity: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-  .vf-shot, .vf-play, [data-arc-item] .vf-mark { transition: none; }
+.svc-dek {
+  font-size: var(--t-body);
+  line-height: 1.6;
+  color: var(--steel-70);
+  max-width: 46ch;
 }
 
-/* --- phones and narrow tablets: the frame over the dial ------------------ */
+/* The one control on the card. .card-cta carries the small-caps label, the
+   orange it takes on hover and focus, and the ::after that spans the card, so
+   the whole card is the target on a single tab stop. Nothing is filled and
+   nothing is underlined. */
+.svc-act { display: flex; align-items: flex-end; padding-block: var(--s1); }
+/* D02: .card-cta rests at --steel-55, which is set for the page's own ground.
+   On the card's recessed plate that lands near 3:1 — under AA for the 13px
+   label — so the resting state is taken one tint down here. Hover and focus
+   keep the shared orange. */
+.svc .card-cta { color: var(--steel-70); }
+.svc:hover .card-cta { color: var(--orange); }
+.svc:has(.card-cta:focus-visible) {
+  outline: var(--outer-stroke) solid var(--orange);
+  outline-offset: 4px;
+}
+
+/* The art, taking the bottom of the card the way the reference does. A fixed
+   height, not a ratio: the two columns are the same width here, but the slot
+   has to agree with its neighbour across the row, and a ratio makes that
+   depend on the gutter. It clips, because the ground is drawn half again as
+   large as the slot and slid per card (app/figures.css). */
+.svc-art { height: 300px; overflow: hidden; }
+
 @media (max-width: 900px) {
-  .vf-stage {
-    --vf-h: clamp(260px, 56vw, 380px);
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--s4);
-  }
-  /* The arc turns itself horizontal below 640px; above that it still reads as
-     a column, so the dial keeps a band of its own either way. */
-  .vf-dial { height: clamp(150px, 34vw, 220px); }
-  .vf-mark { object-position: center; }
-  .vf-cross { width: 56px; height: 56px; }
+  /* One column. The cards are text-first, so two of them stop being readable
+     well before the page runs out of width. */
+  .svc-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
-  .vf-hud { left: var(--s2); right: var(--s2); top: var(--s2); }
-  .vf-strip { left: var(--s2); right: var(--s2); bottom: var(--s2); }
-  .vf-brackets, .vf-ticks { inset: 10px; }
-  .vf-play { width: 46px; height: 46px; }
-  .vf-quote blockquote { font-size: var(--t-body); }
+  .svc { padding: var(--s3); }
+  /* The slot is as wide as the screen now, so a ratio is the honest measure:
+     a fixed 300px would read as a band rather than as a picture. */
+  .svc-art { height: auto; aspect-ratio: 16 / 10; }
+  .svc-dek { font-size: var(--t-small); }
 }

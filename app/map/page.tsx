@@ -1,6 +1,7 @@
 import { preload } from "react-dom";
 import MapStage from "@/components/tcg/map-stage";
 import MapFullscreen from "./MapFullscreen";
+import MapOnly from "./MapOnly";
 import "./map-only.css";
 
 /**
@@ -12,6 +13,7 @@ export default function MapPage() {
   preload("/map/bathurst-osm.tcgm.gz", { as: "fetch", crossOrigin: "anonymous", fetchPriority: "low" });
   return (
     <>
+      <MapOnly />
       <MapStage headingLevel="h1" />
       <MapFullscreen />
     </>

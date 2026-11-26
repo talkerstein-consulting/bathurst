@@ -279,7 +279,7 @@ export function Clients() {
  * only here — opened deliberately, with controls, never autoplaying behind a
  * card nobody pressed.
  */
-export function ClientModal({
+function ClientModal({
   t,
   onClose,
 }: {

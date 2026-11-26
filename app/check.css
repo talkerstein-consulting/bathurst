@@ -1,0 +1,473 @@
+/* ============================================================================
+   /check — the campaign landing page.
+
+   It adds no design values. Every colour, radius, space and type size below is
+   a token from globals.css; the only numbers written here are the ones that
+   describe this page's own geometry (a field's height, the width a column of
+   reading is capped at), which no token could stand in for.
+
+   The page is one narrow column of reading, centred, because there is nothing
+   to put beside it: a question, an answer, a reason and an ask.
+   ========================================================================== */
+
+/* The measure the whole page is set to. Wider than prose (the dials and the
+   field want room) but far narrower than the site's 1460px shell. */
+.ck-shell { --ck-measure: 760px; }
+
+/* The condensed bar is this page's header (app/check/page.tsx passes `always`), so the
+   page has to open below it rather than under it. The bar keeps one row here — its
+   section-titles strip is hidden below — so --topbar-h is the whole of it. */
+.ck-shell { padding-top: calc(var(--topbar-h) + var(--s5)); }
+
+/* The bar is stripped to a header: the lockup, and the appointment on the right.
+   Everything else on it is a way off a page that has one ask — the titles row, the
+   sign-in, and the burger with the megamenu behind it. The appointment is kept at every
+   width, which means putting .topbar-r back on a phone, where the site hides it because
+   the full masthead carries the appointment instead; this page has no masthead. */
+/* Scoped by what the page contains rather than by a wrapper class, because the bar is a
+   sibling of the shell at the top of the document, not inside it. */
+body:has(.ck-shell) .topbar-pages { display: none; }
+body:has(.ck-shell) .topbar-r > a[href="/sign-in"] { display: none; }
+body:has(.ck-shell) .burger { display: none; }
+body:has(.ck-shell) .megamenu { display: none; }
+
+@media (max-width: 900px) {
+  /* The bar's phone layout hands columns to the icon, the wordmark and the burger. With
+     the burger gone, the appointment takes the third column in its place. */
+  body:has(.ck-shell) .topbar-r { display: flex; grid-column: 3; grid-row: 1; justify-self: end; }
+}
+
+/* The page's own rhythm. The site's --col-gap (64px) is set for full-bleed sections
+   stacked under a masthead and a navigation; four short sections in one narrow column
+   read tighter than that, and tighter again on a phone. Both are the system's own space
+   tokens, not new numbers. */
+.ck-col { gap: var(--s5); }
+
+.ck-col > * {
+  width: 100%;
+  max-width: var(--ck-measure);
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------- type ---- */
+
+/* One headline style, at the client's instruction: a single weight and a single cut
+   across the whole h1, with no italic and no lighter second line. */
+.ck-h1 {
+  font: 700 var(--t-h1)/1.02 var(--head);
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.ck-h2 {
+  font: 700 var(--t-h2)/1.05 var(--head);
+  letter-spacing: -0.01em;
+  margin: 0;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+/* FLAGGED, D10: the client asked for the headings centred, and centred they stay at
+   every width — including the phone, where the default is left-aligned. Everything that
+   is not a heading keeps its own alignment. */
+.ck-h1, .ck-h2, .ck-h3 { text-align: center; margin-inline: auto; }
+.ck-h3 {
+  font: 400 var(--t-h4)/1.1 var(--head);
+  letter-spacing: var(--track-head);
+  margin: 0;
+}
+.ck-lede {
+  font-size: var(--t-lede);
+  line-height: 1.55;
+  color: var(--steel-70);
+  max-width: 52ch;
+  margin-inline: auto;
+  text-align: center;
+}
+/* The fine print sits under whatever it qualifies, centred with it. */
+.ck-fine {
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--steel-55);
+  text-align: center;
+}
+
+/* ------------------------------------------------------- 01 · the hero ---- */
+
+.ck-hero {
+  display: grid;
+  gap: var(--s4);
+  justify-items: center;
+  padding-block: 0;
+}
+.ck-hero-copy { display: grid; gap: var(--s3); }
+
+/* The field and its button: side by side where there is room, stacked on a
+   phone with the single CTA full width (D04). */
+.ck-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2);
+  width: 100%;
+  align-items: stretch;
+}
+
+/* The field is a single-line frame, so the ghost completion and the input can
+   share one box without either of them drawing a border of its own. */
+.ck-field {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: 56px;
+  padding-inline: var(--cta-pad);
+  border-radius: var(--r-btn);
+  background: transparent;
+  min-width: 0;
+}
+.ck-field .ck-ghost,
+.ck-field .ck-input {
+  grid-area: 1 / 1;
+  font: 400 var(--t-body)/1.2 var(--body);
+  letter-spacing: 0;
+  min-width: 0;
+}
+/* The suggested ending, drawn under the caret. The typed part is invisible and
+   only there to push the suggestion to the right place. */
+.ck-ghost {
+  color: var(--steel-35);
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+}
+.ck-ghost i { font-style: normal; visibility: hidden; }
+
+.ck-input {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--steel);
+  width: 100%;
+  padding: 0;
+  outline: none;
+}
+.ck-input::placeholder { color: var(--steel-35); }
+.ck-input:disabled { color: var(--steel-55); cursor: progress; }
+/* The frame has no focus state of its own, so the field says it has the caret. */
+.ck-field:focus-within { box-shadow: 0 0 0 2px var(--orange-35); }
+
+.ck-go { white-space: nowrap; }
+
+/* ---------------------------------------------------- 02 · the results ---- */
+
+.ck-results {
+  display: grid;
+  gap: var(--s4);
+  scroll-margin-top: var(--s4);
+  padding-top: var(--s4);
+  position: relative;
+}
+.ck-results::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: var(--rule-mod);
+  background: var(--steel);
+  filter: url(#grunge);
+}
+
+/* The plate the dials stand on: the same stock the card imagery uses. */
+.ck-plate {
+  display: grid;
+  gap: var(--s3);
+  justify-items: center;
+  padding: var(--s4) var(--s3);
+  border-radius: var(--r-card);
+  background: var(--steel-06);
+  min-height: 220px;
+  align-content: center;
+}
+
+.ck-whose {
+  font-size: var(--t-caption);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--steel-55);
+  text-align: center;
+}
+.ck-whose b { font-weight: 600; color: var(--steel); text-transform: none; }
+
+.ck-dials { width: 100%; }
+
+.ck-timings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s1) var(--s4);
+  font-size: var(--t-small);
+  color: var(--steel-70);
+  text-align: center;
+}
+
+/* Running and failed, in the same slot the dials take, so the plate never
+   changes height under the reader (D07). */
+.ck-state {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--t-body);
+  color: var(--steel-70);
+  max-width: 46ch;
+  text-align: center;
+}
+.ck-state--bad { color: var(--steel); }
+
+.ck-pulse {
+  flex: none;
+  width: 10px; height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--steel-55);
+  animation: ck-pulse 1.4s var(--ease) infinite;
+}
+@keyframes ck-pulse {
+  0%, 100% { opacity: .25; transform: scale(.8); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
+.ck-caveat { display: grid; gap: var(--s2); max-width: 56ch; margin-inline: auto; }
+.ck-caveat p { font-size: var(--t-body); line-height: 1.6; color: var(--steel-70); }
+
+/* ------------------------------ the instrument panel (the key) ----------- */
+/* "Steampunk" here is the brand's own instrument language taken as far as it goes: the
+   double-lined frame the site already draws, a plate, four rivets, and gauges with the
+   full numeral ring and a needle that never quite settles. No brass, no gears and no new
+   colour — the panel is Steel Blue on the plate like every other figure, because none of
+   it is operable and orange belongs to the operable. */
+
+.ck-bands { display: grid; }
+
+.ck-panel {
+  position: relative;
+  display: grid;
+  gap: var(--s4);
+  padding: var(--s5) var(--s4);
+  border-radius: var(--r-frame);
+  background: var(--plate);
+}
+
+/* One element, four rivets: a dot in each corner of the plate, inset to sit between the
+   frame's two lines. The wrapper is given its own box over the panel — left inline it
+   picks up a `position` from the frame's own rules and becomes the rivets' containing
+   block, which stacks all four in one corner. The panel is in the selector because the
+   frame positions its own direct children, and that rule outranks a single class. */
+.ck-panel > .ck-rivets.ck-rivets {
+  position: absolute; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.ck-rivets i {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--steel-35);
+  box-shadow: inset 0 0 0 1px var(--steel-20);
+}
+.ck-rivets i:nth-child(1) { top: 11px;    left: 11px; }
+.ck-rivets i:nth-child(2) { top: 11px;    right: 11px; }
+.ck-rivets i:nth-child(3) { bottom: 11px; left: 11px; }
+.ck-rivets i:nth-child(4) { bottom: 11px; right: 11px; }
+
+.ck-panel-head { display: grid; gap: var(--s1); justify-items: center; }
+.ck-panel-sub {
+  font-size: var(--t-small); line-height: 1.5; color: var(--steel-70);
+  text-align: center; max-width: 48ch; margin-inline: auto;
+}
+
+/* One band to a row: the gauge on the left, the reading beside it. The hairline between
+   rows is the same divider the capability columns use. */
+.ck-band-list { display: grid; gap: 0; }
+.ck-band {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s4);
+  padding-block: var(--s4);
+}
+.ck-band + .ck-band { border-top: var(--hairline) solid var(--steel-20); }
+.ck-band-dial { width: 176px; }
+
+.ck-band-copy { display: grid; gap: 6px; min-width: 0; }
+.ck-band-name {
+  margin: 0;
+  font: 400 var(--t-h4)/1.08 var(--head); letter-spacing: var(--track-head);
+}
+/* The danger reading is the one thing in the panel set like a gauge label. */
+.ck-band-edge {
+  font: 400 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--steel-55);
+}
+.ck-band-edge b { font-weight: 700; color: var(--steel); }
+.ck-band-scale { font-size: var(--t-small); line-height: 1.5; color: var(--steel-55); }
+.ck-band-risk  { font-size: var(--t-body);  line-height: 1.6; color: var(--steel); }
+
+/* ------------------------------------------------- two-column body ------- */
+/* The client asked for the body in two columns. CSS columns rather than a grid, so a
+   run of paragraphs flows between them and balances itself instead of being dealt out
+   one paragraph per column. One column on a phone: two would leave about 20 characters
+   to the line. */
+.ck-two {
+  columns: 2;
+  column-gap: var(--s5);
+  /* A rule between the columns, at the weight the page's other module rules take. */
+  column-rule: var(--hairline) solid var(--steel-20);
+  max-width: none;
+}
+.ck-two > * { break-inside: avoid; }
+.ck-two > * + * { margin-top: var(--s2); }
+
+/* ------------------------------------------- 03 · the security concern ---- */
+
+.ck-concern {
+  display: grid;
+  gap: var(--s3);
+  padding-top: var(--s4);
+  position: relative;
+}
+.ck-concern::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: var(--rule-mod);
+  background: var(--steel);
+  filter: url(#grunge);
+}
+.ck-concern-body { max-width: 56ch; margin-inline: auto; }
+.ck-concern-body.ck-two { max-width: none; }
+.ck-concern-body p { font-size: var(--t-lede); line-height: 1.55; }
+
+/* ------------------------------- 04 · the ask, inside the envelope -------- */
+/* The envelope and its letter are the site's own (globals.css, .foot-news-card and
+   .foot-news-sheet). Only the band around it belongs to this page. */
+
+.ck-envelope-band {
+  max-width: 1460px;
+  margin-inline: auto;
+  padding: var(--s6) max(var(--gut), env(safe-area-inset-left, 0px));
+}
+.ck-envelope { scroll-margin-top: calc(var(--topbar-h) + var(--s3)); }
+.ck-ask { margin-top: var(--s2); }
+
+/* ------------------------------------------------ the compact footer ------ */
+/* React Bits Pro footer-14, on the brand's tokens (components/tcg/foot-compact.tsx). */
+
+.footc {
+  border-top: var(--hairline) solid var(--steel-20);
+  background: var(--sea);
+}
+.footc-in {
+  max-width: 1460px; margin-inline: auto;
+  padding: var(--s3) max(var(--gut), env(safe-area-inset-left, 0px));
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: var(--s3);
+}
+.footc-brand { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.footc-word { width: 92px; height: auto; flex: none; }
+.footc-year { font-size: var(--t-caption); color: var(--steel-55); }
+
+.footc-nav ul {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0 var(--s1);
+}
+.footc-nav a {
+  display: inline-flex; align-items: center; height: var(--icon-btn);
+  padding-inline: var(--s1);
+  font: 400 var(--t-small)/1 var(--head); letter-spacing: var(--track-head);
+  text-transform: uppercase; color: var(--steel-70);
+  text-decoration: none; position: relative;
+}
+/* The block's travelling underline, drawn in CSS: it grows from the centre under
+   whichever link has the pointer or the caret. */
+.footc-nav a::after {
+  content: ""; position: absolute; left: var(--s1); right: var(--s1); bottom: 14px;
+  height: var(--hairline); background: currentColor;
+  transform: scaleX(0); transition: transform var(--tumble) var(--ease-out);
+}
+.footc-nav a:hover, .footc-nav a:focus-visible { color: var(--orange); outline: none; }
+.footc-nav a:hover::after, .footc-nav a:focus-visible::after { transform: scaleX(1); }
+
+.footc-social { display: flex; justify-content: flex-end; gap: var(--s1); }
+.footc-social a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--icon-btn); height: var(--icon-btn);
+  border-radius: var(--r-pill); color: var(--steel-55);
+  transition: color var(--tumble) var(--ease-out), background var(--tumble) var(--ease-out);
+}
+.footc-social a:hover, .footc-social a:focus-visible {
+  color: var(--orange); background: var(--steel-06); outline: none;
+}
+.footc-social .glyph { width: 18px; height: 18px; }
+
+/* ------------------------------------------------- the pinned ask --------- */
+/* D04: shown only while neither the field nor the closing ask is on screen. */
+
+.ck-pin {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  padding: var(--s2) max(var(--gut), env(safe-area-inset-left, 0px))
+           calc(var(--s2) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--sea) 62%, transparent);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity var(--tumble) var(--ease), transform var(--tumble) var(--ease);
+  pointer-events: none;
+}
+.ck-pin.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.ck-pin .glyph { width: 18px; height: 18px; }
+
+/* --------------------------------------------------------- phones --------- */
+
+@media (max-width: 760px) {
+  .ck-col { gap: var(--s4); }
+  .ck-shell { padding-top: calc(var(--topbar-h) + var(--s4)); }
+  /* The site's own column clears the bar AND its titles row on a phone (globals.css,
+     .col at 900px). This page offsets on the shell and has no titles row, so the
+     column's padding would be a second clearance under the first. */
+  .ck-col { padding-top: 0; }
+
+  /* One column: two at this width would leave about twenty characters to the line. */
+  .ck-two { columns: 1; column-rule: none; }
+
+  /* The panel stacks: the gauge over its reading, both centred. */
+  .ck-panel { padding: var(--s4) var(--s3); }
+  .ck-band {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center; text-align: center; gap: var(--s2);
+  }
+  .ck-band-copy { justify-items: center; }
+  .ck-band-dial { width: 148px; }
+
+  .ck-envelope-band { padding: var(--s5) max(var(--gut), env(safe-area-inset-left, 0px)); }
+
+  /* The footer stacks: brand, then links, then profiles, each centred. */
+  .footc-in { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--s2); }
+  .footc-social { justify-content: center; }
+  .footc-year { text-align: center; }
+  .ck-h1 { line-height: 1.06; }
+  .ck-h2 { max-width: none; }
+
+  /* The field stacks, and a single CTA in its container is full width. */
+  .ck-form { grid-template-columns: minmax(0, 1fr); }
+  .ck-go { width: 100%; }
+  .ck-go .label { justify-content: center; }
+
+  .ck-plate { padding: var(--s3) var(--s2); }
+  .ck-state { max-width: none; }
+}
+
+/* D11: nothing here insists on moving. */
+@media (prefers-reduced-motion: reduce) {
+  .ck-pulse { animation: none; opacity: .6; }
+  .ck-pin { transition: none; }
+  .footc-nav a::after { transition: none; }
+}

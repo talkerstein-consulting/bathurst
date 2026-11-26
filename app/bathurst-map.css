@@ -6,7 +6,11 @@
 .tcg-logo { display: block; aspect-ratio: 1337/236; max-width: 100%; background: url("/brand/tcg-logo-s-h.svg") left center/contain no-repeat; }
 :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
-#hero { --inset: var(--s3); position: relative; height: 340vh; font-size: 14px; line-height: 1.5; }
+/* --peek-h: how much of the client sheet shows when it is closed -- the grab
+   handle, the name and its industry. One declaration, because it was written
+   as a literal 104px at <=760 and 118px at <=759, so a 760px-wide phone got a
+   sheet 14px shorter than every other phone. */
+#hero { --inset: var(--s3); --peek-h: 118px; position: relative; height: 340vh; font-size: 14px; line-height: 1.5; }
 #stick { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--sea); }
 #stage { position: absolute; inset: 0; }   /* the front-page window is a WebGL scissor; the neatline's paper shadow rounds its corners */
 :where(#hero) canvas { display: block; }
@@ -277,7 +281,7 @@
   .sheet { flex: 1 1 auto; margin: 136px var(--s1) 0; border-radius: var(--frame-radius) var(--frame-radius) 0 0; transition: transform .38s cubic-bezier(.22,1,.36,1); will-change: transform; }
   .sheet[data-state="full"] { transform: translateY(0); }
   .sheet[data-state="half"] { transform: translateY(42%); }
-  .sheet[data-state="peek"] { transform: translateY(calc(100% - 104px)); }
+  .sheet[data-state="peek"] { transform: translateY(calc(100% - var(--peek-h))); }
   .sheet.dragging { transition: none; }
   .sheet-body { padding: 0 var(--s2) var(--s3); }
   .grab { display: grid; place-items: center; border: 0; background: none; width: 100%; height: 28px; cursor: grab; touch-action: none; flex: none; padding: 0; position: relative; z-index: 1; }
@@ -286,14 +290,22 @@
   #compass { width: 64px; height: 64px; margin: 0; }
   .ctrls .zoomgrp { display: none; }
   .edgetab { display: none; }
-  .chipbar > .btn { display: none; }
+  /* The chevrons used to be hidden here, which left 6 of the 9 industries with
+     no control and no affordance -- 3 chips fit a 375px screen. They stay, and
+     the row's edges fade so the overflow is visible even before a swipe. */
   .layers-top { top: calc(var(--inset) + var(--icon-btn) * 2 + var(--s1) * 2); }
   .layers { top: calc(var(--inset) + var(--icon-btn) * 2 + var(--s1) * 2); }
-  .foot { display: none; }
+  /* The readout ("Canada", "Lake Ontario") used to be hidden here. It is the
+     only thing telling a visitor what they are looking at once the pins are
+     off screen, so it stays and sits above the control column instead. */
+  .foot { right: auto; left: var(--inset); bottom: calc(var(--inset) + 260px); height: auto; }
   .toast { bottom: auto; top: 136px; }
   .pin:not(.sel) .co .txt { display: none; }
   .pin:not(.sel) .co { padding: 6px; }
-  .pin .th { width: 40px; height: 40px; }
+  /* Fitts: 44px is the smallest target a finger hits reliably. It was 40. The
+     spread solver's GAP rises with it (lib/bathurst/engine.ts) so the larger
+     circles still keep air between them instead of merely packing tighter. */
+  .pin .th { width: 44px; height: 44px; }
   .etab span span { display: none; }
 }
 
@@ -362,6 +374,48 @@
 /* the sidebar and its tab only belong to the client walk-through */
 #stick:not(.nodes) #mapui.pc .edgetab { display: none; }   /* every open sidebar has its collapse tab */
 #stick.open .panel .sheet { display: none; }
+
+/* ---------------- phones: the pin cluster bubble ----------------
+   lib/bathurst/engine.ts collapses pins that fall within 46px of each other
+   into one of these. It is a zero-size anchor like .pin, so the engine can
+   position it with the same translate3d; the bubble itself is centred on that
+   point.
+
+   Steel, not orange: the bubble IS operable (it zooms to its group), but orange
+   is the page's one accent and forty of these would make the map a field of it.
+   The line is the same outer stroke every frame on the map wears, printed
+   through the grunge filter, so a count reads as part of the drawing rather
+   than as a UI badge dropped on top. */
+.pin-cluster {
+  position: absolute; left: 0; top: 0; width: 0; height: 0;
+  transform-origin: 0 0; will-change: transform;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  z-index: 90000;   /* under the selected pin (200000), over the ordinary ones */
+}
+.pin-cluster > .pc-n {
+  position: absolute; left: 0; top: 0; translate: -50% -50%;
+  display: grid; place-items: center;
+  min-width: 44px; height: 44px; padding: 0 10px;   /* 44: the Fitts minimum, and the pin it replaces */
+  /* #labels is pointer-events: none so the map can be dragged through it; every
+     control inside it turns them back on for its own hit area, the way .pin .mk
+     and .pin .co do. Without this the bubble is painted but not tappable. */
+  pointer-events: auto; cursor: pointer;
+  border-radius: var(--r-pill, 99px);
+  background: var(--sea);
+  box-shadow: 0 0 0 var(--outer-stroke) var(--steel);
+  font: 700 16px/1 var(--head); letter-spacing: 0; color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+.pin-cluster.hide { display: none; }
+/* pressed: the same inward nudge every control on the map makes */
+.pin-cluster:active > .pc-n { scale: .94; }
+.pin-cluster:focus-visible > .pc-n { box-shadow: 0 0 0 var(--outer-stroke) var(--steel), 0 0 0 4px var(--orange-35, rgb(179 83 14 / .35)); }
+.pin-cluster > .pc-n { transition: scale .18s cubic-bezier(.22,1,.36,1); }
+@media (prefers-reduced-motion: reduce) { .pin-cluster > .pc-n { transition: none; } }
+/* desktop never clusters (the engine gates it at 760px); belt and braces so a
+   stale bubble can never show there */
+@media (min-width: 761px) { .pin-cluster { display: none; } }
+
 .pin { visibility: visible; }
 
 /* after the last client: a sheet rises over everything, with a grab handle */
@@ -533,7 +587,7 @@
 /* ============ collapse notch: part of the sidebar's own shape ============
    A framed tab tucked under the sidebar's right edge; its left end is clipped just inside the sidebar's line,
    so the frame reads as one outline with a tab on it. Hover only nudges the chevron. */
-.edgetab { width: 44px; height: 60px; padding: 0 0 0 14px; border-radius: var(--frame-radius); clip-path: inset(-3px -3px -3px 14px); color: var(--steel); }
+.edgetab { width: 44px; height: 60px; padding: 0 0 0 14px; border-radius: var(--frame-radius, var(--r-frame)); clip-path: inset(-3px -3px -3px 14px); color: var(--steel); }
 .edgetab, .edgetab:hover { --ink: var(--steel); }
 .edgetab:hover { color: var(--steel); }
 .edgetab .glyph { width: 16px; height: 16px; transition: transform .3s cubic-bezier(.22,1,.36,1); }
@@ -705,7 +759,7 @@
   #hero { --mark-open: var(--icon-btn); }
   #hero #stick.open .chipbar, #hero .chipbar { left: 0 !important; right: 0 !important; top: calc(var(--inset) + var(--icon-btn) + var(--s1)) !important; }
   #hero .chips, #hero #stick.open .chipbar .chips { padding: 2px var(--inset); }
-  #hero #stick.open .chipbar > .btn, #hero .chipbar > .btn { display: none; }
+  /* the chevrons stay on phones here too -- see the phone block above */
 }
 /* no sideways scrolling inside the sidebar or the directions sheet (the tab rule used to poke past the edges) */
 .sheet-body, .dirsheet { overflow-x: hidden; }
@@ -1069,7 +1123,12 @@
 .rv-phone .rv-who small { font-size: 12px; white-space: normal; }
 .rv.rv-phone { min-height: 0; grid-template-rows: none; align-content: start; }   /* no full-screen stretch: the section ends under the card row */
 /* phones: a swipe on the chip row is always sideways (never handed to the page's vertical scroll) */
-@media (max-width: 759px) { .chips { touch-action: pan-x; } }
+@media (max-width: 760px) {
+  .chips { touch-action: pan-x; }
+  /* the row runs past both edges: fade them so the overflow is legible at rest */
+  .chips { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+           mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%); }
+}
 /* testimonial modal: centred (the CSS reset drops the dialog's margin:auto); one close button, top-right, always in reach */
 .rv-modal { margin: auto; inset: 0; max-height: calc(100svh - 32px); }
 .rv-modal-in { position: relative; }
@@ -1119,7 +1178,7 @@
   .place .gallery > div { font-size: 9px; letter-spacing: .1em; }
   .place .ptabs { margin-top: -4px; }
 }
-@media (max-width: 759px) { .sheet[data-state="peek"] { transform: translateY(calc(100% - 118px)); } }   /* closed: the handle, the name and its industry */
+/* closed: the handle, the name and its industry. One value, --peek-h, set on #hero. */
 
 /* Find Your Way Forward: every pin stays on the map with its hover name, but none is clickable */
 #stick.finale .pin .ic, #stick.finale .pin .co { cursor: default; }
@@ -1345,7 +1404,7 @@
   #stick .sheet { margin-top: var(--s1); }
   #stick .sheet[data-state="full"] { transform: translateY(0); }
   #stick .sheet[data-state="half"] { transform: translateY(calc(100% - 50svh)); }
-  #stick .sheet[data-state="peek"] { transform: translateY(calc(100% - 118px)); }
+  #stick .sheet[data-state="peek"] { transform: translateY(calc(100% - var(--peek-h))); }
   #stick .chipbar { transition: opacity .25s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s; }
   /* hidden, not just faded: the chips set pointer-events themselves, so a faded row would still catch taps */
   #stick:has(.sheet[data-state="full"]) .chipbar { opacity: 0; transform: translateY(-8px); visibility: hidden; transition: opacity .25s ease, transform .3s cubic-bezier(.22,1,.36,1), visibility 0s .25s; }
@@ -1894,7 +1953,12 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 #hero #stick .workhead { left: 50%; top: calc(var(--inset) + 28px); translate: -50% 0; text-align: center; padding: 0 24px; z-index: 4; }
 .workhead::before { background: radial-gradient(closest-side, rgb(243 247 243 / .94) 60%, rgb(243 247 243 / 0) 100%); inset: -20px -80px -24px -80px; }
 #hero #stick.work .chipbar { left: 50% !important; right: auto !important; top: calc(var(--inset) + 28px + 72px) !important; translate: -50% 0; max-width: calc(100% - 2 * var(--inset) - 2 * var(--icon-btn) - 2 * var(--s2)); }
+/* The work state centres the chip row and drops its chevrons: on a desktop the
+   row fits, so the chevrons would be two dead controls. A phone fits 3 of the 9
+   industries, so there they are the only way to reach the other 6 besides a
+   swipe nothing advertises -- the exception below puts them back. */
 #hero #stick.work .chipbar > .btn { display: none; }
+@media (max-width: 760px) { #hero #stick.work .chipbar > .btn { display: inline-flex; } }
 @media (max-width: 759px) {
   #hero #stick .workhead { top: calc(var(--inset) + var(--icon-btn) + var(--s1)); max-width: none; white-space: nowrap; }
   #hero #stick.work .chipbar { top: calc(var(--inset) + var(--icon-btn) + var(--s1) + 40px) !important; max-width: 100%; }
@@ -3010,4 +3074,21 @@ html body .btn.cap-ask.on { --ink: var(--sea); }
 @media (max-width: 420px) {
   #hero #stick .brandpin .bp-word { height: 30px; }
   #hero #stick .brandpin .bp-mark { width: 40px; height: 40px; }
+}
+
+
+/* ================= the sidebar starts below the industry rail =================
+   The chip rail is a band of its own across the top of the map window; the client
+   sidebar used to start level with it, so the two read as one block. The panel top
+   now clears the rail band (inset + the rail's button height + a gap) wherever that
+   is lower than the masthead offset. Desktop only: on phones the panel is full-bleed
+   and the sheet carries its own top margin. The bottom inset is unchanged, so the
+   panel simply loses height from the top. */
+@media (min-width: 761px) {
+  #hero #mapui .panel,
+  #hero #mapui.dock:not(.pc) .panel,
+  #mapui .panel,
+  #mapui.dock:not(.pc) .panel {
+    top: max(calc(var(--navh, 0px) + var(--s2)), calc(var(--inset) + var(--icon-btn) + var(--s2)));
+  }
 }

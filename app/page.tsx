@@ -1,11 +1,11 @@
 import { BriefProvider } from "@/components/tcg/brief";
+import { Clients } from "@/components/tcg/clients";
 import { Features } from "@/components/tcg/features";
 import { Footprint } from "@/components/tcg/footprint";
 import { Footer } from "@/components/tcg/footer";
 import { SelectedWork, WhatWeDo } from "@/components/tcg/sections";
 import { HeroGround } from "@/components/tcg/hero-ground";
 import { Intake } from "@/components/tcg/intake";
-import { Viewfinder } from "@/components/tcg/viewfinder";
 import { Masthead } from "@/components/tcg/masthead";
 import { Nav } from "@/components/tcg/nav";
 import { TopBar } from "@/components/tcg/topbar";
@@ -45,8 +45,7 @@ export default function Home() {
 
           <SelectedWork />
 
-          {/* The clients, in frame: viewfinder left, logo dial right. */}
-          <Viewfinder />
+          <Clients />
         </main>
       </div>
 

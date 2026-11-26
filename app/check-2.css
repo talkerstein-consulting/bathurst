@@ -1,0 +1,326 @@
+/* ============================================================================
+   /check-2 — the assessment as one instrument, in one viewport.
+
+   The whole page is exactly one screen and never scrolls. Every stage is laid
+   into the same box and crossfades in place, so the panel's edges, the stage
+   marker and the instrument face all hold their positions through the sequence.
+
+   It introduces no design values: the colours, radii, spaces and type sizes are
+   globals.css tokens. Orange stays on the operable — the dials, the gauge and
+   the ticks are Steel Blue like every other figure on the site.
+   ========================================================================== */
+
+/* The one screen. 100dvh rather than 100vh: on a phone, 100vh is the window
+   WITHOUT the browser's own chrome, which puts the booking controls under the
+   address bar. The fallback for a browser with no dvh is the old unit. */
+.inst-page {
+  height: 100vh;
+  height: 100dvh;
+  padding-top: var(--topbar-h);
+  display: grid;
+  overflow: hidden;
+}
+
+/* Nothing on this page scrolls the document, including an iOS rubber band. */
+html:has(.inst-page), body:has(.inst-page) { overflow: hidden; overscroll-behavior: none; }
+
+/* The bar is a header here, as it is on /check: no titles row, no megamenu, no
+   sign-in, and the appointment kept on the right at every width. */
+body:has(.inst-page) .topbar-pages,
+body:has(.inst-page) .megamenu,
+body:has(.inst-page) .burger,
+body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
+@media (max-width: 900px) {
+  body:has(.inst-page) .topbar-r {
+    display: flex; grid-column: 3; grid-row: 1; justify-self: end;
+  }
+}
+
+/* --------------------------------------------------------------- panel --- */
+
+.inst {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 0;
+  padding: var(--s3) max(var(--gut), env(safe-area-inset-left, 0px));
+}
+
+.inst-panel {
+  position: relative;
+  width: min(100%, 860px);
+  min-height: 0;
+  display: grid;
+  /* The marker keeps its row; the faces share the one below it, so a face that
+     grows cannot push the marker about. */
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--s4);
+  outline: none;
+}
+
+/* ------------------------------------------------------- stage marker ---- */
+
+.inst-steps {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+}
+.inst-steps li {
+  display: flex; align-items: baseline; gap: 6px;
+  font: 400 var(--t-micro)/1.2 var(--head);
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--steel-35);
+  transition: color var(--tumble) var(--ease-out);
+}
+.inst-steps li[data-done="true"] { color: var(--steel-55); }
+.inst-steps li[data-on="true"]   { color: var(--steel); }
+.inst-steps b { font-weight: 400; }
+/* The hairline under the stage the instrument is on: the only mark that moves
+   across the marker, and it does it by growing in place. */
+.inst-steps li { position: relative; padding-bottom: 6px; }
+.inst-steps li::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: var(--hairline); background: currentColor;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform var(--cta-draw) var(--ease-out);
+}
+.inst-steps li[data-on="true"]::after { transform: scaleX(1); }
+
+/* ---------------------------------------------------------- the faces --- */
+/* All four are laid in the same grid cell. The one on stage is the only one
+   that is painted, takes pointer events or is in the tab order (the markup
+   also marks the rest `inert`, which the stylesheet cannot do). */
+
+/* Row 2 is the faces' row: the marker keeps row 1 to itself. */
+.inst-face {
+  grid-area: 2 / 1;
+  min-height: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--s3);
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(.985);
+  transition:
+    opacity var(--cta-draw) var(--ease-out),
+    transform var(--cta-draw) var(--ease-out),
+    visibility 0s linear var(--cta-draw);
+}
+.inst[data-stage="input"]   .inst-face[data-face="input"],
+.inst[data-stage="reading"] .inst-face[data-face="reading"],
+.inst[data-stage="results"] .inst-face[data-face="results"],
+.inst[data-stage="booking"] .inst-face[data-face="booking"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s, 0s, 0s;
+}
+
+/* The faces share one grid cell, so the cell is as tall as the tallest of them.
+   The booking face is that one; capping the cell keeps the panel inside the
+   screen and lets its own content scroll if a short window forces it. */
+.inst-face > * { max-width: 100%; }
+
+/* ------------------------------------------------------------- type ----- */
+
+.inst-h1 {
+  font: 700 var(--t-h1)/1.02 var(--head);
+  letter-spacing: -0.01em;
+  margin: 0;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+/* "TO YOU." is the client's own emphasis, set in caps as they wrote it. It is
+   the same weight and the same cut — the capitals are the emphasis. */
+.inst-h1 span { white-space: nowrap; }
+
+.inst-h2 {
+  font: 700 var(--t-h3)/1.05 var(--head);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.inst-lede {
+  font-size: var(--t-lede); line-height: 1.5;
+  color: var(--steel-70); max-width: 46ch;
+}
+.inst-fine {
+  font-size: var(--t-small); line-height: 1.5; color: var(--steel-55);
+}
+.inst-fine a, .inst-bad a { color: var(--steel); text-decoration: underline; }
+.inst-bad { font-size: var(--t-small); line-height: 1.5; color: var(--steel); }
+
+.inst-whose {
+  font: 400 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .1em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-whose b { font-weight: 600; color: var(--steel); text-transform: none; letter-spacing: 0; }
+
+/* ----------------------------------------------------- 01 · the field --- */
+
+.inst-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2);
+  width: min(100%, 520px);
+  align-items: stretch;
+}
+.inst-field {
+  position: relative;
+  display: grid; align-items: center;
+  min-height: 56px;
+  padding-inline: var(--cta-pad);
+  border-radius: var(--r-btn);
+  min-width: 0;
+}
+.inst-field .inst-ghost,
+.inst-field .inst-input {
+  grid-area: 1 / 1;
+  font: 400 var(--t-body)/1.2 var(--body);
+  min-width: 0;
+}
+.inst-ghost { color: var(--steel-35); pointer-events: none; white-space: pre; overflow: hidden; }
+.inst-ghost i { font-style: normal; visibility: hidden; }
+
+.inst-input {
+  appearance: none; border: 0; background: none; color: var(--steel);
+  width: 100%; padding: 0; outline: none; text-align: left;
+}
+.inst-input::placeholder { color: var(--steel-35); }
+.inst-input:read-only { color: var(--steel-55); }
+.inst-field:focus-within { box-shadow: 0 0 0 2px var(--orange-35); }
+
+/* ---------------------------------------------------- 02 · the sweep ---- */
+
+.sweep { display: grid; justify-items: center; gap: var(--s1); }
+.sweep-face { width: min(100%, 420px); height: auto; display: block; overflow: visible; }
+
+.sweep-tick { stroke: var(--steel-20); stroke-width: 1.4; stroke-linecap: round; }
+.sweep-tick.is-major { stroke: var(--steel-35); stroke-width: 2; }
+
+.sweep-hand line { stroke: var(--steel); stroke-width: 3; stroke-linecap: round; }
+.sweep-hand circle { fill: var(--steel); }
+/* The needle sweeps the arc instead of climbing it: the reading is not known
+   until Google answers, so the instrument is shown working, not progressing. */
+.sweep-hand {
+  transform-origin: 200px 190px;
+  animation: sweep 3.4s var(--ease) infinite alternate;
+}
+@keyframes sweep {
+  from { transform: rotate(-82deg); }
+  to   { transform: rotate(82deg); }
+}
+
+.sweep-read { display: flex; align-items: baseline; gap: 8px; }
+.sweep-num {
+  font: 400 var(--t-h2)/1 var(--head); letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums; color: var(--steel);
+}
+.sweep-unit { font-size: var(--t-small); color: var(--steel-55); }
+
+.sweep-status {
+  font: 400 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel);
+}
+.sweep-fine { font-size: var(--t-small); color: var(--steel-55); max-width: 40ch; }
+
+/* ------------------------------------------------- 03 · the readings ---- */
+
+.inst-dials { width: 100%; }
+.inst-summary {
+  font-size: var(--t-body); line-height: 1.6; color: var(--steel); max-width: 56ch;
+}
+.inst-caveat {
+  display: grid; gap: 4px; max-width: 54ch;
+  padding-top: var(--s2);
+  border-top: var(--hairline) solid var(--steel-20);
+}
+.inst-caveat-h { font: 400 var(--t-h5)/1.2 var(--head); letter-spacing: var(--track-head); }
+.inst-caveat p:last-child { font-size: var(--t-small); line-height: 1.5; color: var(--steel-70); }
+
+/* ----------------------------------------------- 04 · the consultation -- */
+
+/* The three faces, kept and moved aside rather than replaced. */
+.inst-strip { width: 100%; max-width: 420px; opacity: .75; }
+
+.inst-book { display: grid; justify-items: center; gap: var(--s2); width: 100%; }
+.inst-book-form {
+  display: grid; gap: var(--s2);
+  width: min(100%, 560px);
+  text-align: left;
+  margin-top: var(--s1);
+}
+.inst-carried {
+  font: 400 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .1em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-carried b { color: var(--steel); text-transform: none; letter-spacing: 0; }
+
+.inst-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.inst-label { display: grid; gap: 4px; min-width: 0; }
+.inst-label > span {
+  font-size: var(--t-caption); color: var(--steel-55);
+}
+.inst-input--box {
+  min-height: 46px;
+  padding: 0 var(--cta-pad-sm);
+  border: var(--hairline) solid var(--steel-35);
+  border-radius: var(--r-btn);
+  background: transparent;
+}
+.inst-input--box:focus { box-shadow: 0 0 0 2px var(--orange-35); }
+.inst-input--box[aria-invalid="true"] { border-color: var(--steel); }
+
+.inst-book-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+
+/* The way back to the readings. A text control, not a second outlined button:
+   one CTA ranks this view and it is the one that sends (D04). */
+.inst-back {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font: 400 var(--t-small)/1 var(--body); color: var(--steel-55);
+  text-decoration: underline; text-underline-offset: 3px;
+  padding: var(--s1) 0;
+}
+.inst-back:hover, .inst-back:focus-visible { color: var(--steel); outline: none; }
+
+.inst-done { display: grid; justify-items: center; gap: var(--s2); max-width: 46ch; }
+.inst-done p { font-size: var(--t-body); line-height: 1.6; color: var(--steel-70); }
+
+/* ----------------------------------------------------------- phones ----- */
+
+@media (max-width: 760px) {
+  .inst { padding: var(--s2) max(var(--gut), env(safe-area-inset-left, 0px)); }
+  .inst-panel { gap: var(--s3); }
+  .inst-steps { gap: 2px var(--s2); }
+  /* The step names come off; the numbers alone keep the sequence legible in the
+     width a phone has for them. */
+  .inst-steps b { display: none; }
+
+  .inst-form { grid-template-columns: minmax(0, 1fr); }
+  .inst-go { width: 100%; }
+  .inst-go .label { justify-content: center; }
+
+  .sweep-face { width: min(100%, 320px); }
+  .inst-row { grid-template-columns: minmax(0, 1fr); }
+
+  /* A short phone in landscape cannot hold the booking face at any size, so that
+     face — and only that face — may scroll inside the panel rather than being
+     clipped. The page still does not scroll. */
+  .inst-face[data-face="booking"],
+  .inst-face[data-face="results"] {
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* D11 */
+@media (prefers-reduced-motion: reduce) {
+  .inst-face { transition: opacity .01ms linear; transform: none; }
+  .inst-steps li::after { transition: none; }
+  /* The needle parks mid-arc: the stage still reads as working, through the
+     elapsed count and the status line, without anything moving. */
+  .sweep-hand { animation: none; transform: rotate(0deg); }
+}

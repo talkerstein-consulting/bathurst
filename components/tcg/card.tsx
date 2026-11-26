@@ -40,6 +40,7 @@ export function Card({
   lead,
   drag,
   art,
+  results,
   cta = "Learn more",
   href = "#intake",
 }: {
@@ -47,6 +48,9 @@ export function Card({
   dek?: string;
   lead?: boolean;
   drag?: boolean;
+  /** What the work moved, once the project was live. Given, it REPLACES the
+   *  CTA: the card stops asking to be read and starts reporting. */
+  results?: Array<[string, string]>;
   /** The drawing for the art slot (components/tcg/figures.tsx). Left out, the
    *  slot stays the empty plate it has been since the client pulled the old
    *  stages — every card that has no figure yet keeps that blank by design. */
@@ -74,11 +78,30 @@ export function Card({
           {dek && <p className="card-dek">{dek}</p>}
         </div>
 
-        <div className="card-act">
-          <a className="card-cta" href={href}>
-            {cta}
-          </a>
-        </div>
+        {results ? (
+          /* The result rows. A finished project does not need a "Learn more"
+             that goes nowhere -- it needs to say what changed. Each row is a
+             label and the movement since launch.
+
+             PLACEHOLDER FIGURES: these numbers are shape, not measurement.
+             Nothing here has been read off an analytics account. Replace each
+             one with the project's own figure (and its period) before this
+             page goes anywhere near a client. */
+          <dl className="card-results">
+            {results.map(([label, delta]) => (
+              <div key={label} className="card-result">
+                <dt>{label}</dt>
+                <dd>{delta}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <div className="card-act">
+            <a className="card-cta" href={href}>
+              {cta}
+            </a>
+          </div>
+        )}
       </article>
     );
   }

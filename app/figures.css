@@ -28,14 +28,16 @@
 /* Half as large again as the slot, slid to a different corner per card: one
    set of settings, four different crops of the same field. figures.tsx has the
    reasoning. The slot already clips (overflow: hidden). */
-.card-art--fig .scene-crop {
+.card-art--fig .scene-crop,
+.svc-art .scene-crop {
   position: absolute;
   left: var(--gx, 0);
   top: var(--gy, 0);
   width: 155%;
   height: 155%;
 }
-.card-art--fig .scene-ground {
+.card-art--fig .scene-ground,
+.svc-art .scene-ground {
   position: absolute;
   inset: 0;
 }
