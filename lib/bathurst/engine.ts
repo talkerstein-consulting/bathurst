@@ -381,7 +381,7 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
   [...LOCAL].sort((a,b)=>b.pos.z-a.pos.z).forEach((p,i)=>{ p.side = i%2 ? 'l' : 'r'; });
   const thumbHTML = p => (p.thumb = p.thumb || (CONTENT[p.id] && CONTENT[p.id].banner.replace(/\.webp$/, '-sm.webp')) || (p.youtube && `https://i.ytimg.com/vi/${p.youtube}/hqdefault.jpg`)) ?`<img src="${p.thumb}" alt="" loading="lazy" decoding="async">` : svg(p.icon||p.ind,'glyph');
   LOCAL.forEach(p=>{
-    const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':''); el.style.setProperty('--ind', INDUSTRIES[p.ind]?.color); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
+    const el=document.createElement('div'); el.className=`pin ${p.side}`+(p.maybe?' maybe':'')+(p.feat?' feat':''); el.style.setProperty('--ind', INDUSTRIES[p.ind]?.color); el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label', `${p.name}, ${p.addr}`);
     const logo=(LOGOS as Record<string,string>)[p.id]; if(logo){ el.classList.add('has-logo'); el.dataset.logo=p.id; }   // the client's own logo in the pin; the industry icon only when we have none
     el.innerHTML=`<span class="ic" aria-hidden="true">${logo ? `<img class="lg" src="${logo}" alt="" decoding="async">` : svg(p.icon||p.ind,'glyph')}</span><span class="nm" aria-hidden="true">${p.name}</span><svg class="mk" viewBox="-9 -9 18 18" aria-hidden="true"><g filter="url(#grunge)"><circle r="7"/><circle class="dot" r="2.6"/></g></svg><span class="ld" aria-hidden="true"></span><div class="co sprout" data-no-tumble><span class="th single hair">${thumbHTML(p)}</span><span class="txt"><b>${p.name}</b><small></small>${CONTENT[p.id]?.rating ? `<span class="co-rate"><b>${CONTENT[p.id].rating.toFixed(1)}</b> ★ <span>(${CONTENT[p.id].count.toLocaleString('en-CA')})</span></span>` : ''}<span class="co-act"><button type="button" class="sprout btn orange co-view" data-view>${p.youtube ? 'Watch video' : 'View case study'}</button><button type="button" class="sprout btn icon co-next" data-next aria-label="Next case study"><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></span></span></div>`;
     el.onclick=()=>pinClick(p.id); el.onkeydown=e=>{if(e.key==='Enter')pinClick(p.id);};
@@ -394,8 +394,10 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
   });
   const labelEl = r=>{ const el=document.createElement('div'); el.className='road '+r.cls; el.textContent = r.name; labels.appendChild(el); r.el=el; };
   roadLabels.forEach(labelEl);
-  // the Toronto clients (NEAR): framed by the opening view; the rest are away (Montreal, New York, Florida…)
+  // the Toronto clients (NEAR) and the ones away from them (FAR: Montreal, Queens, Aventura, George Town).
+  // The opening view frames both, so the spread between them is what the map opens on.
   const NEAR = LOCAL.filter(p=>p.pos && !p.far);
+  const FAR = LOCAL.filter(p=>p.pos && p.far);
   // ---------- small UI helpers ----------
   const $ = id => document.getElementById(id);
   const toastEl=$('toast'); let toastT;
@@ -619,7 +621,7 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
       </div>`
       : `<div class="gallery"><div class="single hair" style="--ind:${INDUSTRIES[p.ind]?.color}">${thumbHTML(p)}</div></div>`;
     // the tour's own controls (Previous / Next) sit after the content, so the case study is read on the way
-    // to them; Next names where it leads. A × in the header closes the sheet; the handle only resizes it.
+    // to them; Next names where it leads. The handle only resizes the sheet; the edge tab collapses it.
     const j = NODES.findIndex(n=>n.id===p.id), last = j===NODES.length-1;
     // off the route: Previous / Next step through the other cases (the ones the tour doesn't stop at), wrapping round
     const off = ALL.filter(x=>!NODES.some(n=>n.id===x.id)), k = off.findIndex(x=>x.id===p.id);
@@ -631,10 +633,9 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
         <button type="button" class="sprout btn pprev" data-go="${j-1}" aria-label="${j>0 ? `Previous: ${esc(NODES[j-1].name)}` : 'Back to the overview'}"><svg class="glyph" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span>${j>0 ? 'Previous' : 'Overview'}</span></button>
         <button type="button" class="sprout btn orange pnext" data-go="${j+1}" aria-label="${last ? 'Next: The Way Forward' : `Next: ${esc(NODES[j+1].name)}`}"><span class="pn-t"><small>Next</small><b>${last ? 'The Way Forward' : esc(NODES[j+1].name)}</b></span><svg class="glyph" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
       </nav>`;
-    const close = `<button type="button" class="sprout btn icon pclose" data-close aria-label="Close ${esc(p.name)}"><svg class="glyph" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
     return `<div class="place">
       ${gallery}
-      <div class="hd"><div><h2>${p.name}</h2><div class="meta">${rating}${c?`<span class="gcat">${esc(c.gcat)}</span>`:IND[p.ind].name}${p.maybe?' · <b>to confirm</b>':''}</div></div>${close}</div>
+      <div class="hd"><div><h2>${p.name}</h2><div class="meta">${rating}${c?`<span class="gcat">${esc(c.gcat)}</span>`:IND[p.ind].name}${p.maybe?' · <b>to confirm</b>':''}</div></div></div>
       <div class="ptabs" role="tablist" aria-label="${p.name}">${T.map(([k,n])=>`<button type="button" role="tab" class="ptab" data-tab="${k}" aria-selected="${k===tab}">${n}</button>`).join('')}</div>
       <div class="ppanel" role="tabpanel">${panel}</div>
       ${nav ? `<div class="pfoot">${nav}</div>` : ''}
@@ -680,7 +681,6 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
     sheetBody.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>{ placeTab[view.id]=b.dataset.tab; render(); });
     if(p) sheetBody.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>openPhotos(p, +b.dataset.ph));
     // case-study controls: the stop before or after (it opens half way on phones), the overview before the first, The Way Forward after the last
-    sheetBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>placeClose.onclick());   // the sheet's own × (the search bar's × does the same)
     sheetBody.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openPlace(b.dataset.open));   // off-route cases: open the neighbour in place
     sheetBody.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const k=+b.dataset.go;
       if(k>=0 && k<NODES.length) scrollToNode(k); });   // Previous / Next: open the stop before or after this one
@@ -865,24 +865,52 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
 
   // an area page frames only that area's clients; /map frames them all
   const FOCUS = area ? LOCAL.filter(p=>p.pos && inArea(p, area)) : null;
+  /** The near end of the reveal: the Toronto bunch, framed as the map always framed it. */
   const routeView = () => {
-    const all = FOCUS?.length ? FOCUS.map(p=>p.pos)
-      : [START, ...NEAR.map(p=>p.pos), OFFICE_P];   /* the away clients are edge markers, not part of the frame */
+    const list = FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...NEAR.map(p=>p.pos), OFFICE_P];
     /* phones: frame the core so the pins separate; 56px clears the control column on the left */
     return W<760
-      ? viewOf(core(all), PLAN_PITCH, 120, 80, 56, 0)
-      : viewOf(all, PLAN_PITCH, 215, 80, 140, 0);
+      ? viewOf(core(list), PLAN_PITCH, 120, 80, 56, 0)
+      : viewOf(list, PLAN_PITCH, 215, 80, 140, 0);
   };
-  // the zoom-out limit: the whole planet, filling most of the map's shorter side (an altitude, then the distance at a pitch)
-  const worldAlt = () => { const hv=camera.fov*Math.PI/360, hh=Math.atan(Math.tan(hv)*W/H); return R_E/Math.sin(Math.min(hv,hh)*.86) - R_E; };
+  // the zoom-out limit: the whole planet, filling the map's shorter side edge to edge but never cropped
+  const worldAlt = () => { const hv=camera.fov*Math.PI/360, hh=Math.atan(Math.tan(hv)*W/H); return R_E/Math.sin(Math.min(hv,hh)*.985) - R_E; };
   const maxDist = pitch => worldAlt()/Math.max(.45, Math.cos(pitch));
-  function defaultView(){ return routeView(); }
+  /** The far end of the reveal: the whole globe, centred on every client — the Toronto bunch and the away ones. */
+  const worldView = () => {
+    const all = FOCUS?.length ? FOCUS.map(p=>p.pos) : [START, ...NEAR.map(p=>p.pos), ...FAR.map(p=>p.pos), OFFICE_P];
+    const xs = all.map(q=>q.x), zs = all.map(q=>q.z);
+    return {cx:(Math.min(...xs)+Math.max(...xs))/2, cz:(Math.min(...zs)+Math.max(...zs))/2,
+            dist: maxDist(PLAN_PITCH), bearing: 0, pitch: PLAN_PITCH};
+  };
+  function defaultView(){ return revealView(reveal); }
   // the centre stays within 7,000 km of Toronto: the world map is drawn round Toronto, and it is truest near it
   function setGoal(v, instant){ if(!Object.values(v).every(x=>typeof x!=='number' || Number.isFinite(x))) return;   // never let a bad fit poison the camera
     Object.assign(goal, v); goal.pitch=Math.min(1.15,Math.max(0,goal.pitch)); goal.dist=Math.min(maxDist(goal.pitch),Math.max(300,goal.dist));
     { const cr=Math.hypot(goal.cx,goal.cz), CMAX=7e6; if(cr>CMAX){ goal.cx*=CMAX/cr; goal.cz*=CMAX/cr; } }
     if(instant) Object.assign(view3, goal); }
   function resetView(){ mapDirty=false; setGoal(defaultView()); }
+  /**
+   * The reveal: the page the map is framed in (components/tcg/footprint.tsx) drives this with its own
+   * scroll. 0 is the whole globe, filling the map and centred on every client; 1 is the Toronto bunch
+   * at the framing the map has always opened on. Scrolling the section flies the camera in between the
+   * two — the centre eased in longitude and latitude, so the planet turns as it comes closer, and the
+   * distance eased geometrically, so each scrolled pixel halves the altitude by the same share.
+   * It stops as soon as the visitor touches the map themselves (mapDirty).
+   */
+  let reveal = 0;   // the framed page sets this; /map opened on its own is driven by its own page (map/page.tsx)
+  const geoOf = v => Math.hypot(v.cx, v.cz) < NEAR_M
+    ? {lat:O.lat - v.cz/111000, lon:O.lon + v.cx/80300} : xzGeo(O, v.cx, v.cz);
+  const REVEAL_SPIN = 18;   // degrees of extra turn at 0, so the globe is seen to rotate, not only to grow
+  function revealView(p){
+    const t = Math.min(1, Math.max(0, p));
+    const far = worldView(), near = routeView();
+    if(t >= 1) return near;
+    const gf = geoOf(far), gn = geoOf(near);
+    const lat = gf.lat + (gn.lat - gf.lat)*t, lon = gf.lon - REVEAL_SPIN*(1-t) + (gn.lon - gf.lon)*t;
+    const c = geoXZ(O, lat, lon);
+    return {...near, cx:c.x, cz:c.z, dist: Math.exp(Math.log(far.dist)*(1-t) + Math.log(near.dist)*t)};
+  }
   const fwd = b => ({x:Math.sin(b), z:-Math.cos(b)}), rgt = b => ({x:Math.cos(b), z:Math.sin(b)});
   function poseFrom(vw, pos, tgt){ const sp=Math.sin(vw.pitch), cp=Math.cos(vw.pitch), f=fwd(vw.bearing); tgt.set(vw.cx,0,vw.cz); pos.set(vw.cx - f.x*vw.dist*sp, vw.dist*cp, vw.cz - f.z*vw.dist*sp); }
   const mpp = dist => 2*dist*Math.tan(camera.fov*Math.PI/360)/H;
@@ -1060,7 +1088,7 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
   }
   function bunchPin(p){
     const b=document.createElement('div'); const logo=LOGOS[p.id];
-    b.className='pin mini'+(logo ? ' has-logo' : ''); if(logo) b.dataset.logo=p.id; b.style.setProperty('--ind', INDUSTRIES[p.ind]?.color);
+    b.className='pin mini'+(logo ? ' has-logo' : '')+(p.feat ? ' feat' : ''); if(logo) b.dataset.logo=p.id; b.style.setProperty('--ind', INDUSTRIES[p.ind]?.color);
     b.tabIndex=0; b.setAttribute('role','button');
     b.innerHTML=`<span class="ic" aria-hidden="true">${iconOf(p)}</span><span class="nm" aria-hidden="true"></span>`;
     b.querySelector('.nm').textContent=`${p.name} · ${p.addr}`;
@@ -1091,7 +1119,9 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
     const groups=[], NEARPX=52;
     for(const it of items){ const g=groups[groups.length-1]; if(g && Math.hypot(g[g.length-1].x-it.x, g[g.length-1].y-it.y)<NEARPX) g.push(it); else groups.push([it]); }
     if(groups.length>1){ const a=groups[0], b=groups[groups.length-1]; if(Math.hypot(a[0].x-b[b.length-1].x, a[0].y-b[b.length-1].y)<NEARPX){ a.unshift(...b); groups.pop(); } }
-    const ALONG=24, DEPTH=28;   // icons are 30px: they overlap a little along the edge, rows stack inward
+    // a row, not a clump: the pitch clears the widest icon (52px for a highlighted client) plus a gap,
+    // so the away clients read as a line along the edge; only past the edge's length do they wrap inward
+    const ALONG=60, DEPTH=64;
     groups.forEach((g,i)=>{
       const el = edgePool[i] || (edgePool[i]=makeBunch());
       let sx=0, sy=0; for(const it of g){ sx+=it.dx; sy+=it.dy; }
@@ -1202,7 +1232,7 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
     // static: the opening view is fitted at mount, before the city, the region and the pins are
     // there, so the camera settles on a half-measured frame. Fit it once more the moment the map is
     // really ready — the same fit the recenter button does.
-    if(STATIC && ready && !staticFitted){ staticFitted=true; if(!mapDirty) resetView(); }
+    if(STATIC && ready && !staticFitted){ staticFitted=true; if(!mapDirty) setGoal(revealView(reveal)); }
     if(ready!==wasReady){ stick.classList.toggle('mapready', ready); wasReady=ready;
       if(!ready){ closeDrawer(); setLayers(false); }
       else if(view.type!=='place'){ setCollapsed(true); setSheet('peek'); }
@@ -1324,6 +1354,8 @@ export function createBathurstEngine(area?: string, opts?: { static?: boolean })
 
   return {
     openPlace: (id) => showPlace(id),
+    /** 0 = the globe turned away from the clients, 1 = the opening view. The framed page drives it with its scroll. */
+    reveal(p){ if(!Number.isFinite(p)) return; reveal = Math.min(1, Math.max(0, p)); if(!mapDirty) setGoal(revealView(reveal)); },
     destroy(){
       dead = true; cancelAnimationFrame(raf); clearInterval(phTimer); ac.abort(); disposeLand();
       for(const m of city.meshes){ m.geometry.dispose(); m.material.dispose(); }

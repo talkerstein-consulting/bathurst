@@ -18,6 +18,8 @@ export type Client = {
   group?: "thornhill" | "mississauga";
   /** Position on the scroll route (1 = first project the path visits). Pins without it only show in the final overview. */
   stop?: number;
+  /** Shown larger than the rest, on the map and on the edge markers: the clients TCG leads with. */
+  feat?: true;
   /** Pin icon when the industry's own doesn't fit (a key of the engine's ICON set, e.g. "wheel"). */
   icon?: string;
   hidden?: string;
@@ -59,9 +61,9 @@ export const CLIENTS: Client[] = [
   { id: "yjc", name: "Yorkville Jewish Centre", addr: "94 Avenue Rd, Toronto", lat: 43.6725, lon: -79.396, ind: "community", services: [], stop: 1 },
   { id: "fringe", name: "Fringe Boutique", addr: "87 Lynnhaven Rd", lat: 43.72322, lon: -79.43973, ind: "retail", services: ["Branding", "Shopify", "POS"], result: "3.1× online conversion", stop: 2 },
   { id: "hilys", name: "Hily's Sparkly Spa", addr: "207 Edgeley Blvd #5, Concord", lat: 43.7978, lon: -79.5325, ind: "beauty", services: [], stop: 3 },
-  { id: "mes", name: "Maple Electric Supply", addr: "8520 Jane St Unit 5, Concord", lat: 43.8132, lon: -79.5294, ind: "retail", services: [], stop: 4 },
+  { id: "mes", name: "Maple Electric Supply", addr: "8520 Jane St Unit 5, Concord", lat: 43.8132, lon: -79.5294, feat: true, ind: "retail", services: [], stop: 4 },
   { id: "royaldairy", name: "Royal Dairy Cafe & Catering", addr: "10 Disera Dr Unit 100, Thornhill", lat: 43.8112, lon: -79.4544, ind: "food", services: [], stop: 5 },
-  { id: "kapara", name: "Kapara", addr: "7700 Bathurst St Unit 12, Thornhill", lat: 43.8052, lon: -79.4482, ind: "food", services: [], stop: 6 },
+  { id: "kapara", name: "Kapara", addr: "7700 Bathurst St Unit 12, Thornhill", lat: 43.8052, lon: -79.4482, feat: true, ind: "food", services: [], stop: 6 },
   { id: "hoh", name: "House of Hair Extensionz", addr: "7181 Yonge St #218, Thornhill", lat: 43.8032, lon: -79.4194, ind: "beauty", services: ["Branding", "Shopify", "AI photoshoot"], result: "2.3× sales growth", stop: 7 },
   // always pinned, off the scroll route
   { id: "uzbek", name: "Uzbek Delight", addr: "382 Enford Rd, Richmond Hill", lat: 43.89, lon: -79.4384, ind: "food", services: ["Website", "Branding", "Food truck", "POS"] },
@@ -86,7 +88,7 @@ export const CLIENTS: Client[] = [
   { id: "luminari", name: "Luminari Cleaning", addr: "4100 Chesswood Dr Unit 200, North York", lat: 43.75841, lon: -79.47818, ind: "professional", services: [], site: "https://luminari-nine.vercel.app/" },
   { id: "paulas", name: "Paula's Wig Boutique", addr: "800 Petrolia Rd Unit 17, North York", lat: 43.77945, lon: -79.48982, ind: "beauty", services: ["Branding"] },
   { id: "sams", name: "Sam's Menswear", addr: "318 Charlton Ave, Vaughan", lat: 43.79403, lon: -79.46067, ind: "professional", services: ["Branding"] },
-  { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, ind: "community", services: ["Instagram"] },
+  { id: "beithalochem", name: "Beit Halochem Canada", addr: "1600 Steeles Ave W Suite 219, Concord", lat: 43.78850, lon: -79.47470, feat: true, ind: "community", services: ["Instagram"] },
   { id: "womb", name: "The WOMB Vaughan", addr: "545 North Rivermede Rd Unit 105, Vaughan", lat: 43.80688, lon: -79.48317, ind: "health", services: [], site: "https://www.thewomb.ca/vaughan/" },
   // J2J short film ads by TCG Studios (Oct 2026): the YouTube ad stands in for a website. Addresses and pins from each
   // Google Maps listing (Oct 6, 2026); Pest Control Plus lists no address on Google, so its office is geocoded with Nominatim.
@@ -99,11 +101,27 @@ export const CLIENTS: Client[] = [
   { id: "chillies", name: "Chillie's Dry Cleaning", addr: "North York (pickup & drop-off)", lat: 43.76987, lon: -79.44200, ind: "professional", services: ["Short film ad"], youtube: "UdmW8WqYLns" },
   // Away from Toronto, pinned where they are on the world map (city coordinates only). Off screen, the map shows each one
   // as a marker on the edge of the view, in its true direction (engine.ts, edge markers).
-  { id: "kidicare", name: "KidiCare / Inspera", addr: "Montreal, QC", lat: 45.5019, lon: -73.5674, ind: "retail", services: [], site: "https://kidicare.ca/" },
-  { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", lat: 40.7282, lon: -73.7949, ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"] },
-  { id: "cleverpays", name: "CleverPays", addr: "Laval, QC", lat: 45.6066, lon: -73.7124, ind: "finance", services: [], site: "https://cleverpays.ca/" },
+  // KidiCare's own contact page (kidicare.ca, read 2026-11-26): the showroom is by appointment. Street address geocoded with Nominatim.
+  { id: "kidicare", name: "KidiCare", addr: "9540 Boul. Saint-Laurent, Montréal, QC H2N 1R1", lat: 45.54559, lon: -73.65576, feat: true, ind: "retail", services: [], site: "https://kidicare.ca/" },
+  // TODO(content): Esther Saadia NY publishes no street address (the label sells online and through marketplaces),
+  // so this is still the Queens city pin, not the atelier. Replace lat/lon and addr once TCG supplies it.
+  // Inspera (inspera.ca, read 2026-11-26): institutional and commercial furniture — seating, tables, storage,
+  // early-childhood and acoustic ranges, with procurement and installation. Address from its own footer,
+  // geocoded with Nominatim; it is the block north of KidiCare. No logo file yet, so the pin draws the industry glyph.
+  { id: "inspera", name: "Inspera", addr: "9600 Boul. Saint-Laurent Suite 200, Montréal, QC H2N 1R1", lat: 45.54559, lon: -73.65575, ind: "industrial", services: [], site: "https://inspera.ca/" },
+  { id: "esthersaadia", name: "Esther Saadia", addr: "Queens, NY", lat: 40.7282, lon: -73.7949, feat: true, ind: "retail", services: ["Branding", "Shopify", "AI photoshoot"], note: "Pinned at Queens, not a street address; the brand publishes none. Confirm." },
   { id: "premierkosher", name: "Premier Kosher", addr: "1607 Abingdon Rd, West Lincoln, ON", lat: 43.0939, lon: -79.5487, ind: "food", services: ["Short film ad"], youtube: "hDyAwOqVCPw", note: "Pinned at the township centre (Smithville), not the street address; confirm." },
+  // Nova Risk Transfer: the testimonial is from Mendel, co-owner, in the Cayman Islands (data.ts testimonials,
+  // id "novarrisk"). No street address published; pinned at George Town, the capital. Confirm the address.
+  { id: "novarrisk", name: "Nova Risk Transfer", addr: "George Town, Cayman Islands", lat: 19.2869, lon: -81.3674, ind: "finance", services: [], note: "Pinned at George Town, not a street address; confirm." },
   { id: "ralphwigs", name: "Ralph Wigs", addr: "Aventura, FL", lat: 25.9565, lon: -80.1392, ind: "beauty", services: ["Short film ad"], youtube: "whkye_cU5j8", short: true },
+  // Added 2026-11-26 from the /work case studies on tcg-framer (framer-content.json, Work collection).
+  // Neither business publishes a street address we could verify: Enzo's shows only an Uber Eats listing
+  // (and a second, separate location in Laval), and no listing was found for The Store Miami at all.
+  // Both are pinned at the city named on their /work page, NOT at the storefront. TODO(content): get the
+  // street addresses from TCG and replace lat/lon.
+  { id: "enzos", name: "Enzo's Pizza and Poulet", addr: "Repentigny, QC", lat: 45.7420, lon: -73.4500, ind: "food", services: ["AI photoshoot", "Website", "Online ordering"], result: "2.9× order traffic", note: "Pinned at Repentigny city centre, not the restaurant; no verified street address. Confirm." },
+  { id: "storemiami", name: "The Store Miami", addr: "Miami, FL", lat: 25.7617, lon: -80.1918, ind: "retail", services: ["Branding", "Website", "Custom product logic"], result: "2.4× browsing intent", note: "Pinned at Miami city centre, not the showroom; no listing found under this name. Confirm." },
 ];
 
 /** Published projects with no mapped address. */
@@ -111,9 +129,12 @@ export const ELSEWHERE: Client[] = [
   { id: "shomrim", name: "Shomrim Toronto", addr: "Greater Toronto Area", ind: "community", services: [], site: "https://shomrimtoronto.org/" },
   { id: "hetz", name: "Hetz Electrical", addr: "Greater Toronto Area", ind: "industrial", services: [], site: "https://www.hetzelectrical.com/" },
   { id: "zmedicair", name: "ZMedicAir", addr: "Canada", ind: "health", services: [], site: "https://zmedicair.ca/" },
+  // Taken off the map 2026-11-26 at TCG's request; it keeps its place in the published work.
+  { id: "cleverpays", name: "CleverPays", addr: "Laval, QC", ind: "finance", services: [], site: "https://cleverpays.ca/" },
   // TODO(content): no public address found (or more than one business by that name); confirm, then remove `hidden`
   { id: "papergoodsplus", name: "Papergoods Plus", addr: "To confirm", ind: "retail", services: [], hidden: "No listing found under this name; address or website needed before it can be pinned" },
   { id: "arianoir", name: "Aria Noir", addr: "To confirm", ind: "retail", services: [], hidden: "No listing found under this name; address or website needed before it can be pinned" },
+  { id: "crystalball", name: "Crystal Ball", addr: "To confirm", ind: "professional", services: ["Consulting", "Website", "AI integration"], hidden: "Draft on /work: location and project facts still TBD, so there is nothing to pin" },
   { id: "mondialpay", name: "MondialPay", addr: "Canada", ind: "finance", services: [], hidden: "Location and website to confirm" },
   { id: "ohr", name: "Ohr", addr: "Toronto", ind: "community", services: [], hidden: "Which Ohr organization (Ohr Somayach, Ohr HaEmet…)? Address to confirm" },
   { id: "beautique", name: "Beautique", addr: "Toronto", ind: "beauty", services: [], hidden: "Possibly Beautique Bar, 3430 Yonge St; confirm" },

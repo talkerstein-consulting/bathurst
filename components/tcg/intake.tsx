@@ -6,7 +6,6 @@ import { Cta } from "./cta";
 import { Chat } from "./chat";
 import { useBrief } from "./brief";
 import { Frame } from "./frame";
-import { HeroGround } from "./hero-ground";
 
 /**
  * The prompt hints, shuffled once per visit and cycled through the field while
@@ -237,9 +236,10 @@ export function Intake() {
   return (
     <>
       {sent && <Chat first={sent} onClose={() => setSent("")} />}
+      {/* The ground is no longer this section's. It belongs to .stage in
+          app/page.tsx, which now holds the box AND the cards, so the two read
+          as one surface instead of two stacked blocks. */}
       <section className="intake" id="intake">
-      <HeroGround />
-
 
       <div className="intake-head">
         <h1>What&rsquo;s your big idea?</h1>
@@ -257,6 +257,9 @@ export function Intake() {
              being dragged — not only once it has landed. */
           data-over={brief?.over ? "true" : "false"}
           data-drag={brief?.dragging ? "true" : "false"}
+          /* A card is merely under the pointer: show the slot at half strength,
+             so the box answers the hover before anything is picked up. */
+          data-arm={brief?.armed ? "true" : "false"}
         >
           {/* The band's text slot. Set at p1, reversed out of the Steel Blue. */}
           <p className="intake-slot">

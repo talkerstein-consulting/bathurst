@@ -31,6 +31,16 @@ body::before { display: none; }
 }
 /* The row scrolls itself if it runs long, so the paddles are not needed. */
 .chipbar > .btn { display: none !important; }
+/* The chips sit in the middle of the map, not against its left edge: the row is as wide as its
+   chips and centred in the bar, and it still scrolls sideways when it runs longer than the map
+   ("safe" keeps the first chip reachable instead of overflowing off the left). */
+#hero #stick .chipbar .chips {
+  flex: 0 1 auto; margin-inline: auto; justify-content: safe center;
+}
+/* Solid, never a tint of the map behind them: these are the map's only controls that carry text. */
+#hero #stick .chipbar .chip {
+  opacity: 1 !important; background: var(--sea) !important; backdrop-filter: none !important;
+}
 
 /* The chips are part of the map, not of a state: they stay up with a place open, at full
    strength. The reference faded them out whenever the panel or a full sheet came in. */
@@ -137,23 +147,26 @@ body::before { display: none; }
    The world's names (Natural Earth, lib/bathurst/engine.ts loadWorld): continents in the
    widest caps, countries in the area caps, cities small with a dot, seas and lakes in italic.
    ========================================================================= */
-.road.area.continent { font-size: 18px; letter-spacing: .5em; color: var(--steel-70); }
-.road.area.country { font-size: 13px; letter-spacing: .28em; }
-.road.area.lake { font-size: 12px; letter-spacing: .14em; }
+/* Every annotation on the map is set in the low-contrast ink: the names are there to be read when
+   looked for, not to compete with the client pins, which carry the only full-strength marks on the map.
+   Zoomed out to the world there are many more of them, so this holds the sheet quiet. */
+.road.area.continent { font-size: 18px; letter-spacing: .5em; color: var(--steel-50); }
+.road.area.country { font-size: 13px; letter-spacing: .28em; color: var(--steel-50); }
+.road.area.lake { font-size: 12px; letter-spacing: .14em; color: var(--steel-50); }
 .road.city {
   font-family: var(--body); font-weight: 600; font-size: 11px; letter-spacing: .02em; text-transform: none;
-  color: var(--steel); display: flex; align-items: center; gap: 4px;
+  color: var(--steel-70); display: flex; align-items: center; gap: 4px;
 }
-.road.city::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--steel); box-shadow: 0 0 0 1.5px var(--sea); flex: none; }
+.road.city::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--steel-50); box-shadow: 0 0 0 1.5px var(--sea); flex: none; }
 .road.city.capital { font-weight: 700; }
-.road.city.capital::before { width: 6px; height: 6px; background: var(--sea); box-shadow: inset 0 0 0 1.5px var(--steel); }
+.road.city.capital::before { width: 6px; height: 6px; background: var(--sea); box-shadow: inset 0 0 0 1.5px var(--steel-50); }
 
 /* The map's readout shares the class .foot with the site footer (app/globals.css), whose rule (a grunge line on
    ::before), top margin and padding leaked onto the map as a stray line above the coordinates. */
 #mapui .foot { margin-top: 0; padding-top: 0; }
 #mapui .foot::before { content: none; }
 /* the readout: the country (or sea, or lake) under the middle of the view, in place of the coordinates and scale */
-.fp-place { gap: 6px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: none; }
+.fp-place { gap: 6px; font-family: var(--body); font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: none; color: var(--steel-70); }
 .fp-place .glyph { width: 16px; height: 16px; flex: none; }
 
 /* The map takes the gesture: there is no page behind it to scroll. */
@@ -184,6 +197,8 @@ body::before { display: none; }
    frame — the sheet then sits a full width off the left edge. It simply appears instead. */
 #hero #stick #mapui.dock .sheet { animation: none !important; transform: none !important; }
 #hero #stick #mapui.dock .edgetab { left: calc(var(--inset) + var(--dock-w) - 21px) !important; }
+/* collapsed, it rides the map's own left edge instead of floating where the sheet used to be */
+#hero #stick #mapui.dock.pc .edgetab { left: calc(var(--inset) - 21px) !important; }
 
 @media (max-width: 760px) {
   /* The place sheet, inside the map instead of under the fold.
@@ -221,4 +236,49 @@ body::before { display: none; }
      target and the row still scrolls sideways (D06). */
   .chip { height: 44px !important; padding: 0 12px !important; font-size: 13px !important; }
   #hero #stick#stick .chipbar.chipbar { justify-content: flex-start !important; }
+  #hero #stick .chipbar .chips { margin-inline: 0; justify-content: flex-start; }
 }
+
+/* ===========================================================================
+   The clients TCG leads with (data.ts, `feat`): Esther Saadia, KidiCare, Kapara,
+   Maple Electric Supply, CleverPays and Beit Halochem. Their pins are drawn larger
+   than the rest, on the map and in the edge-marker bunches, so they read first.
+   ========================================================================= */
+/* half again the size of a plain pin (34px here, 28px on phones), and above them in the stack */
+#hero .pin.feat .ic,
+#hero .pin.feat.mini .ic { width: 52px; height: 52px; left: -26px; top: -26px; z-index: 3; }
+#hero .pin.feat .ic .glyph,
+#hero .pin.feat.mini .ic .glyph { width: 29px; height: 29px; }
+#hero .pin.feat { z-index: 3; }
+
+/* They pulse, so the eye finds them in the bunch: a ring of brand orange that grows out of the
+   pin and fades. It rides on the icon's own box-shadow, which draws outside the circle even
+   though the logo clips to it, and the three-step stagger keeps the group from beating as one.
+   Orange is right here — a pin is an operable control. */
+@keyframes tcg-pin-pulse {
+  0%   { box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 0 0 0 rgb(179 83 14 / .5); }
+  70%  { box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 0 0 16px rgb(179 83 14 / 0); }
+  100% { box-shadow: 0 0 0 2px var(--sea), 0 0 0 3.5px var(--ind, var(--steel)), 0 0 0 0 rgb(179 83 14 / 0); }
+}
+#hero .pin.feat .ic { animation: tcg-pin-pulse 2.4s cubic-bezier(.22,1,.36,1) infinite; }
+#hero .pin.feat:nth-of-type(3n+1) .ic { animation-delay: .8s; }
+#hero .pin.feat:nth-of-type(3n+2) .ic { animation-delay: 1.6s; }
+/* the pin in focus has its own orange ring; it does not also beat */
+#hero .pin.feat.sel .ic, #hero .pin.feat:hover .ic, #hero .pin.feat:focus-visible .ic { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  #hero .pin.feat .ic { animation: none; }
+}
+@media (max-width: 760px) {
+  #hero .pin.feat .ic,
+  #hero .pin.feat.mini .ic { width: 42px; height: 42px; left: -21px; top: -21px; }
+  #hero .pin.feat .ic .glyph,
+  #hero .pin.feat.mini .ic .glyph { width: 24px; height: 24px; }
+  /* the teardrop head on phones keeps its shape at the larger size */
+  #hero .pin.feat:not(.mini) .ic { top: -58px; }
+}
+
+/* The collapse tab has to survive collapsing. The shared sheet hides it once the panel is
+   collapsed (#stick:not(.nodes) / #stick.dirs + #mapui.pc), which on this page left the
+   sidebar shut with nothing to reopen it. While a place is open the tab stays, and it is
+   the only control that closes the sheet now that the header × is gone. */
+#mapui.place .edgetab { display: grid !important; }

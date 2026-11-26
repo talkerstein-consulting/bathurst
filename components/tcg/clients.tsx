@@ -66,11 +66,13 @@ function WhiteLogo({ id }: { id: string }) {
   );
 }
 
+
 /** How far one press of a chevron moves the row: one card and its gutter. */
 const STEP = 1;
 
 export function Clients() {
   const row = useRef<HTMLUListElement | null>(null);
+  const stage = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   /** Which ends the row has reached, so a chevron that cannot move says so. */
   const [ends, setEnds] = useState({ start: true, end: false });
@@ -97,9 +99,101 @@ export function Clients() {
     };
   }, [readEnds]);
 
+  /**
+   * The row travels sideways as the page travels down.
+   *
+   * The section's passage through the viewport is the timeline: when its top
+   * reaches the lower fifth of the screen the row is at its first card, and by
+   * the time its bottom clears the upper fifth the row is at its last. Nothing
+   * is pinned and the page never stops scrolling — the row simply reads itself
+   * out on the way past, which is what makes the seven clients visible to
+   * someone who never touches it.
+   *
+   * It drives `scrollLeft` rather than a transform, so the row is the same
+   * scroller it always was: the chevrons, the snap points and a swipe all still
+   * work, and the keyboard still lands on the cards in order.
+   *
+   * It yields. The first time the visitor drives the row themselves — a swipe, a
+   * wheel, a chevron — the page stops driving it, and only takes it back once
+   * the section has left the screen. Two hands on the same scroller is the thing
+   * that makes effects like this feel broken.
+   *
+   * D11 / G13: nothing moves under prefers-reduced-motion, and every listener,
+   * observer and frame is released on teardown.
+   */
+  useEffect(() => {
+    const el = row.current;
+    const box = stage.current;
+    if (!el || !box) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    /* Who is driving, kept on the row itself (data-rail) rather than in a ref:
+       the CSS reads it too — a driven row must not snap, or a continuous
+       travel is quantised to card boundaries and the row jumps a card at a
+       time. "hand" means the visitor has taken it over. */
+    el.dataset.rail = "page";
+
+    let frame = 0;
+    let seen = false;
+
+    const tick = () => {
+      frame = 0;
+      if (!seen || el.dataset.rail !== "page") return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      const r = box.getBoundingClientRect();
+      const from = window.innerHeight * 0.8;          /* top at 80% of the screen */
+      const to = window.innerHeight * 0.2 - r.height; /* bottom at 20% of it */
+      const p = (from - r.top) / Math.max(1, from - to);
+      el.scrollLeft = Math.min(1, Math.max(0, p)) * max;
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+
+    const hand = () => {
+      el.dataset.rail = "hand";
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        seen = e.isIntersecting;
+        /* Out of sight the row is handed back to the page, so the next pass
+           drives it again and a visitor who took it over is not punished for
+           the rest of the session. */
+        if (!seen) el.dataset.rail = "page";
+        else onScroll();
+      },
+      { threshold: 0 },
+    );
+    io.observe(box);
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    el.addEventListener("pointerdown", hand);
+    el.addEventListener("wheel", hand, { passive: true });
+    el.addEventListener("touchstart", hand, { passive: true });
+    el.addEventListener("keydown", hand);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      el.removeEventListener("pointerdown", hand);
+      el.removeEventListener("wheel", hand);
+      el.removeEventListener("touchstart", hand);
+      el.removeEventListener("keydown", hand);
+    };
+  }, []);
+
+
   const nudge = (dir: -1 | 1) => {
     const el = row.current;
     if (!el) return;
+    /* A chevron is the visitor driving, so the page lets go of the row. */
+    el.dataset.rail = "hand";
     const card = el.querySelector<HTMLElement>("li");
     /* One card plus the row's gap. Measured rather than assumed, because the
        card width is a clamp and the gap is a token. */
@@ -130,7 +224,7 @@ export function Clients() {
           client's logo at the far right, the poster with its play mark, the
           opening of the quote and a foot line. The card is the control; it
           opens the video. */}
-      <div className="rail-wrap">
+      <div className="rail-wrap" ref={stage}>
       <ul className="tc-row cl-row" ref={row}>
         {TESTIMONIALS.map((t) => (
           <li key={t.id}>
@@ -185,7 +279,7 @@ export function Clients() {
  * only here — opened deliberately, with controls, never autoplaying behind a
  * card nobody pressed.
  */
-function ClientModal({
+export function ClientModal({
   t,
   onClose,
 }: {

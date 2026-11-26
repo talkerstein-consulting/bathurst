@@ -1418,13 +1418,10 @@ html body .tc-follow.btn { --ink: var(--steel); background: var(--orange) paddin
 .pnext .pn-t { display: grid; text-align: left; line-height: 1.2; min-width: 0; }
 .pnext .pn-t small { font: 600 10px/1.2 var(--body); letter-spacing: .1em; text-transform: uppercase; color: rgb(255 255 255 / .8); }
 .pnext .pn-t b { font-size: 15px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* the × that closes the sheet: phones (desktop keeps the search bar's ×, as Google does) */
-.pclose { display: none; }
+/* the sheet has no × of its own: the edge tab collapses it, the handle only resizes it */
 @media (max-width: 760px) {
   .place .hd { flex-wrap: nowrap; align-items: flex-start; }
   .place .hd > div { min-width: 0; }
-  .pclose { display: inline-flex; flex: none; width: 44px; height: 44px; margin-top: -2px; }
-  .pclose .glyph { width: 18px; height: 18px; }
 }
 /* phones: while the case study sheet is open, the map card above it is just a label (its View / Next would repeat the sheet's) */
 @media (max-width: 760px) { #stick:has(#mapui:not(.pc) .sheet) .pin.sel .co-act { display: none; } }

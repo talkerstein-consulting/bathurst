@@ -44,7 +44,14 @@ const CARDS: Array<[string, string]> = [
 export function Features() {
   return (
     <section className="features" id="services" aria-labelledby="features-h">
-      <FeatureRail heading={<h2 id="features-h">Drag an idea. Let&rsquo;s build it.</h2>}>
+      {/* Set in the rule, the way a sign-in screen separates two ways of doing
+          one thing — which is what this is: type a brief, or hand over a card.
+          The "Or" is doing the work, so it opens the line. */}
+      <FeatureRail
+        heading={
+          <h2 id="features-h">Or drag in a feature you&rsquo;ve always wanted</h2>
+        }
+      >
         {CARDS.map(([title, dek], i) => (
           <Card
             key={title}

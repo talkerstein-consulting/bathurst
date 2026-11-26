@@ -39,13 +39,22 @@ const Glyph = ({ g }: { g: keyof typeof G }) => (
 
 export default function MapStage({ headingLevel = "h1" }: { headingLevel?: "h1" | "h2" } = {}) {
   useEffect(() => {
-    let engine: { destroy: () => void } | null = null;
+    let engine: { destroy: () => void; reveal?: (p: number) => void } | null = null;
     let cancelled = false;
+    /* The page that frames this map (components/tcg/footprint.tsx) turns the globe with its own
+       scroll: 0 while the map is boxed, 1 once it is full bleed. The frame is same-origin, so it
+       calls this directly. Calls that land before the engine has loaded are kept and replayed. */
+    let pending = 1;
+    const reveal = (p: number) => { pending = p; engine?.reveal?.(p); };
+    (window as unknown as { tcgMapReveal?: (p: number) => void }).tcgMapReveal = reveal;
     import("@/lib/bathurst/engine").then(({ createBathurstEngine }) => {
-      if (!cancelled) engine = createBathurstEngine(undefined, { static: true });
+      if (cancelled) return;
+      engine = createBathurstEngine(undefined, { static: true });
+      engine.reveal?.(pending);
     });
     return () => {
       cancelled = true;
+      delete (window as unknown as { tcgMapReveal?: (p: number) => void }).tcgMapReveal;
       engine?.destroy();
     };
   }, []);

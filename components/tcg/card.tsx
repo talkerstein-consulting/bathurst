@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus } from "lucide-react";
+import { Check, GripVertical, Plus } from "lucide-react";
 import { Frame } from "./frame";
 import { SproutStroke } from "./sprout";
 import { useBrief } from "./brief";
@@ -84,18 +84,24 @@ export function Card({
   }
 
   const held = brief?.chips.some((c) => c.label === title) ?? false;
-  /* The hover hint. It names both routes, and it is a `title` rather than an
-     element so it cannot crowd the plus sitting on the same edge. Touch never
-     sees it; touch has the plus, which says the same thing in one glyph. */
-  const tip = held
-    ? "Already in your brief"
-    : "Click to add, or drag into the box";
+  /* The hint, and it is an ELEMENT now rather than a `title`. A native tooltip
+     waits about a second before it shows, is unstyled, and never appears on
+     touch at all — so the only instruction for the drag was one most visitors
+     never saw. "Up" is literal: the box sits directly above this row, on the
+     same ground. */
+  const tip = held ? "Already in your brief" : "Drag it up, or click";
 
   return (
     <Frame
       as="article"
       className={`card card--drag${held ? " is-held" : ""}`}
       data-dragging={brief?.dragging ? "true" : "false"}
+      /* Hovering a card shows the drop slot in the box above. The gesture
+         could not teach itself before: the box is off-screen while the cards
+         are centred, and its slot only appeared once a drag was already
+         running. A card that is loaded does not arm — it has nowhere to go. */
+      onPointerEnter={() => brief?.arm(!held)}
+      onPointerLeave={() => brief?.arm(false)}
     >
       {/* The card is a control, so it hovers like one: the same seeded outline
           that sprouts on every CTA, over the frame it already wears. */}
@@ -131,6 +137,19 @@ export function Card({
             <Plus className="glyph" aria-hidden="true" />
           )}
         </span>
+
+        {/* The words, between the two glyphs that bracket them. */}
+        {!held && <span className="card-hint">{tip}</span>}
+
+        {/* The grip. Every draggable object on the web wears one, and this card
+            wore nothing: a cursor change is the whole signal a mouse gets, and
+            it arrives only after the visitor has already decided to point at
+            the card. It is the one convention they already hold. */}
+        {!held && (
+          <span className="card-grip">
+            <GripVertical className="glyph" aria-hidden="true" />
+          </span>
+        )}
       </div>
 
       {/* The whole card is the target, the way the CTA used to stretch itself
@@ -143,7 +162,6 @@ export function Card({
       <button
         type="button"
         className="card-grab"
-        title={tip}
         onPointerDown={(e) => brief?.startDrag(title, e)}
         onClick={() => brief?.add(title)}
       >

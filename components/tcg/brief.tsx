@@ -63,6 +63,18 @@ type BriefApi = {
   dragging: boolean;
   /** True while that drag is over the box, so the box can light up. */
   over: boolean;
+  /** A card is under the pointer and has somewhere to go.
+   *
+   *  This is the answer to the one thing the drag could not say for itself:
+   *  the box sits ~200px above the row, and when the cards are centred in a
+   *  1440x900 viewport NONE of the box is on screen. So the destination could
+   *  never hint at the gesture, and the gesture's own hint — the drop slot —
+   *  only appeared once a drag was already running, which taught nobody
+   *  anything. Hovering a card now surfaces that slot, so one pass of the
+   *  pointer shows where the card goes, before any commitment. */
+  armed: boolean;
+  /** A card reports that it is, or is no longer, under the pointer. */
+  arm: (on: boolean) => void;
 };
 
 const Ctx = createContext<BriefApi | null>(null);
@@ -81,6 +93,7 @@ export function BriefProvider({ children }: { children: ReactNode }) {
   const [chips, setChips] = useState<Chip[]>([]);
   const [dragging, setDragging] = useState(false);
   const [over, setOver] = useState(false);
+  const [armed, setArmed] = useState(false);
   /** The title under the cursor. Set once, when the press becomes a drag. */
   const [label, setLabel] = useState("");
 
@@ -112,6 +125,8 @@ export function BriefProvider({ children }: { children: ReactNode }) {
     zone.current = el;
   }, []);
 
+  const arm = useCallback((on: boolean) => setArmed(on), []);
+
   /** Is this point inside the box? Measured per call: the page scrolls under a
    *  drag, so a rect cached at pointerdown would be wrong by the time it ends. */
   const inZone = useCallback((x: number, y: number) => {
@@ -140,6 +155,11 @@ export function BriefProvider({ children }: { children: ReactNode }) {
     drag.current = null;
     setDragging(false);
     setOver(false);
+    /* Pointer capture swallows the pointerleave that would normally disarm the
+       box, so a drag that ends over the card would leave the slot showing for
+       good. Clearing here costs nothing: the card it came from is loaded now,
+       and a loaded card has nothing left to invite. */
+    setArmed(false);
   }, []);
 
   const startDrag = useCallback((label: string, e: React.PointerEvent) => {
@@ -234,8 +254,8 @@ export function BriefProvider({ children }: { children: ReactNode }) {
   }, [add, inZone, place, clear]);
 
   const api = useMemo<BriefApi>(
-    () => ({ chips, add, remove, setDropZone, startDrag, dragging, over }),
-    [chips, add, remove, setDropZone, startDrag, dragging, over],
+    () => ({ chips, add, remove, setDropZone, startDrag, dragging, over, armed, arm }),
+    [chips, add, remove, setDropZone, startDrag, dragging, over, armed, arm],
   );
 
   return (

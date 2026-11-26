@@ -144,7 +144,7 @@ const CROPS: Array<[string, string]> = [
   ["-24%", "-24%"],
 ];
 
-function Ground({ seed = 0 }: { seed?: number }) {
+export function Ground({ seed = 0 }: { seed?: number }) {
   const [gx, gy] = CROPS[seed % CROPS.length];
   return (
     <div

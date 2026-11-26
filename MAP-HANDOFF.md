@@ -14,7 +14,7 @@ by the page's scroll any more.
 | `app/map/page.tsx` | `/map` = the stage + the fullscreen button + `map-only.css`. |
 | `app/map/map-only.css` | sizes the map to the page, and puts the engine's chrome on the TCG brand. |
 | `app/bathurst-map.css` | the chrome's own styles, carried over with the engine. |
-| `components/tcg/footprint.tsx` | the homepage section. It frames `/map` in an iframe, stage height `clamp(420px, 68vh, 760px)` (`app/globals.css`). |
+| `components/tcg/footprint.tsx` | the homepage section. It frames `/map` in an iframe on a sticky, viewport-wide stage that opens from the page column out to full bleed as the section is scrolled (React Bits ScrollExpand, `components/ScrollExpand.jsx`). The iframe is always the full stage and is scaled down while boxed, so the map never resizes and its chips and controls stay on screen; styles in `app/globals.css` (`.footprint-track/-stage/-clip`). |
 
 ## What the engine is now
 
@@ -102,6 +102,47 @@ The old `onEdge` ring, which pulled Montreal, Queens and Mississauga in to the e
 - **Moved onto the map from `ELSEWHERE`:** CleverPays (Laval), Ralph Wigs (Aventura) and
   Premier Kosher (West Lincoln). All three use city coordinates. Premier Kosher sits at the
   township centre, not at 1607 Abingdon Rd, and needs confirming.
+
+## The opening view (2026-11-26)
+
+`routeView()` in `engine.ts` now frames every pin, the away ones included (`FAR`), and never comes in
+closer than `OPEN_WORLD_SHARE` (.62) of the whole-planet view — so the map opens on about half the
+Earth, with Nova Risk Transfer (George Town), Ralph Wigs (Aventura), Esther Saadia (Queens) and
+KidiCare (Montreal) in frame around the Toronto bunch. An area page still frames only its own clients.
+
+Nova Risk Transfer is new in `data.ts`: the testimonial (`novarrisk`) puts its co-owner in the Cayman
+Islands, and it is pinned at George Town, the capital — not a street address. Confirm it.
+
+Map annotations (continents, countries, lakes, seas, cities, the readout) are all set in the
+low-contrast ink in `map-only.css`; the client pins carry the only full-strength marks.
+
+**The reveal (2026-11-26, second pass).** `engine.reveal(p)` flies the camera between the two ends
+of the section: **0 is the whole globe**, filling the map's shorter side edge to edge (`worldAlt`'s
+fill factor is .985, up from .86 — the globe fills the frame and is never cropped) and centred on
+every client, with `REVEAL_SPIN` (18°) of extra turn so it is seen to rotate; **1 is `routeView()`**,
+the Toronto bunch at the framing the map has always opened on (~20–45 km). The centre is eased in
+lat/lon and the distance geometrically. `footprint.tsx` drives it with the section's own scroll,
+divided by `REVEAL_LEAD` (0.62) so the flight is over before the hold ends and the next section
+covers the map. `defaultView()` is `revealView(reveal)`, so recenter returns to the scrolled state.
+It stops at the first real map interaction (`mapDirty`); `/map` on its own gets 1 from `map-stage.tsx`.
+
+**Featured pins.** `feat: true` in `data.ts` draws a client's pin 52px instead of 34 (42 instead of
+28 on phones), on the map and in the edge-marker bunches, above the others in the stack
+(`map-only.css`). It is on Esther Saadia, KidiCare, Kapara, Maple Electric Supply, CleverPays and
+Beit Halochem.
+
+**The section.** Boxed, the map fills the section's own column (no rule above it, heading centred
+right on top of it). Open, it is full bleed and held for `HOLD_DISTANCE` (0.75 stage heights) while
+the next section rides up over it: `.footprint` is pulled back by `--fp-overlap` (set from the stage
+height by the section's script), and `.footprint + .sec` carries its own edge-to-edge paper at
+`z-index: 2` with `min-height: var(--fp-overlap)`, so the held map is never seen past the column.
+
+**Addresses.** KidiCare is pinned at 9540 Boul. Saint-Laurent, Montréal (its own contact page, read
+2026-11-26; by appointment), geocoded with Nominatim. **Esther Saadia is still the Queens city pin** —
+the label publishes no street address anywhere public. It needs one from TCG.
+
+**The chips** are centred in the row (`safe center`, so the first chip stays reachable when the row
+is longer than the map) and painted solid; on phones they stay left-aligned and scroll sideways.
 
 ## Known, not done
 

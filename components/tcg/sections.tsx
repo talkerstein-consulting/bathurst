@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { Card } from "./card";
 import { Collectible } from "./collectible";
+import { Ground } from "./figures";
 
 /**
  * Sections 5 to 8, laid out to the brief.
@@ -18,64 +20,92 @@ import { Collectible } from "./collectible";
 /**
  * 05 — the four capabilities, in the brief's order.
  *
- * The titles are the client's. The lines under them are PLACEHOLDER COPY,
- * written so every card carries a body; they describe the service in general
- * terms and claim nothing specific. Replace with the client's own wording.
+ * The titles are the client's. The lines under them were reworded for voice;
+ * they describe the service in general terms and claim nothing specific.
+ * Still subject to the client's sign-off.
  */
 const CAPABILITIES: Array<[string, string]> = [
   [
     "Strategy & Consulting",
-    "Working out what the business actually needs before anything gets built.",
+    "See the move before you make it.",
   ],
   [
     "Websites & Digital Experiences",
-    "Sites and applications built to be used, not just looked at.",
+    "Give your business a bigger stage.",
   ],
   [
     "Automation & AI",
-    "Taking the repetitive work off the people who should be doing better work.",
+    "Put your operation on autopilot.",
   ],
   [
     "Marketing & Growth",
-    "Reaching the customers who are already looking for what you do.",
+    "Become the name they remember.",
   ],
 ];
 
 /**
- * 06 — the portfolio cards.
+ * 06 — the portfolio cards: five real engagements.
  *
- * PLACEHOLDER COPY, WRITTEN TO BE REPLACED. The client asked for stand-in
- * content so the row can be read at the right length instead of five cards
- * saying "Client". None of these are real engagements, none of these numbers
- * were measured, and nothing here may ship to a live site: the sectors are
- * generic and no business is named, precisely so that none of it can be
- * mistaken for a claim about a real client.
+ * The placeholder sectors ("Regional logistics group" and four like it) are
+ * gone. Every card here is a client TCG actually works with, and the lines are
+ * written from the case-study copy already in the repo — the `overview` field
+ * in lib/bathurst/client-content.ts, which is sourced from talkerstein.com/work
+ * and each client's own site. The art is that client's own banner photograph
+ * (public/clients/<id>/banner.webp), the same image the map's sidebar leads
+ * with, so a card and its case study show the same picture.
  *
- * TODO(content): replace all six with real work before launch.
+ * NO NUMBER HERE WAS WRITTEN FOR THIS PAGE. Every figure quoted — 3.1×, 2.7×,
+ * 2.3×, 200%, 3.4× — is repeated verbatim from that content file, and Maple
+ * Electric's is attributed the way the source attributes it ("the founder
+ * reports"). A client without a measured result is described by the work
+ * instead; none has been given one to match the others.
+ *
+ * The CTA goes to #footprint, the map further down the page, because that is
+ * where each case study actually opens. There are still no per-project pages.
  */
-const LEAD: [string, string] = [
-  "Regional logistics group",
-  "Twelve depots booking by phone and spreadsheet. One dispatch system, built around how the drivers already worked, and a dispatcher's morning that starts with a plan instead of a phone queue.",
+type Project = { id: string; name: string; line: string };
+
+const LEAD: Project = {
+  id: "fringe",
+  name: "Fringe Boutique",
+  line: "Two sisters and a women's boutique on Lynnhaven. A new brand and visual identity, the Shopify store and the point-of-sale behind the counter, and the model photography directed to match. Online conversion rose 3.1×, and the audience 2.7×.",
+};
+
+const WORK: Project[] = [
+  {
+    id: "hoh",
+    name: "House of Hair Extensionz",
+    line: "A luxury identity and a Shopify catalogue of thousands of SKUs. Online sales 2.3×.",
+  },
+  {
+    id: "mes",
+    name: "Maple Electric Supply",
+    line: "Contractor-grade supply, shipping Canada-wide. The founder reports the business grew 200%.",
+  },
+  {
+    id: "amritsari",
+    name: "Amritsari Chatore",
+    line: "Branding, print and a WordPress site for Amritsari street food. Local discovery 3.4×.",
+  },
+  {
+    id: "sams",
+    name: "Sam's Menswear",
+    line: "A brand and a website for a master tailor's made-to-measure studio.",
+  },
 ];
 
-const WORK: Array<[string, string]> = [
-  [
-    "Specialty food importer",
-    "A trade catalogue and ordering portal, replacing a PDF price list.",
-  ],
-  [
-    "Private clinic network",
-    "Intake, triage and scheduling joined up across five locations.",
-  ],
-  [
-    "Industrial manufacturer",
-    "Quoting automated from the parts data the shop floor already kept.",
-  ],
-  [
-    "Professional services firm",
-    "A new site and a brand that reads the same in both official languages.",
-  ],
-];
+/** The client's own banner, the image their case study opens with. */
+function Shot({ id, lead }: { id: string; lead?: boolean }) {
+  return (
+    <Image
+      className="card-shot"
+      src={`/clients/${id}/banner.webp`}
+      alt=""
+      fill
+      sizes={lead ? "(max-width: 1080px) 100vw, 56vw" : "(max-width: 1080px) 100vw, 25vw"}
+    />
+  );
+}
 
 /** A section's opening: the house rule, then the headline. */
 function Head({ id, children }: { id: string; children: string }) {
@@ -90,12 +120,18 @@ export function WhatWeDo() {
   return (
     <section className="sec" id="what-we-do" aria-labelledby="what-we-do-h">
       <Head id="what-we-do-h">
-        Everything your business needs to move forward.
+        Built for the business you’re becoming.
       </Head>
 
-      <div className="card-row">
-        {CAPABILITIES.map(([title, dek]) => (
-          <Card key={title} title={title} dek={dek} />
+      {/* One column on phones and tablets, with the art slot taken up to a
+          wide plate (globals.css, .sec--stack). The slot carries the same
+          dithered ground the feature figures stand on — ./figures.tsx `Ground`,
+          one crop of the one field per card — so these cards are printed on
+          the stock the rest of the page already uses, instead of the blank
+          plate they carried. */}
+      <div className="card-row card-row--stack">
+        {CAPABILITIES.map(([title, dek], i) => (
+          <Card key={title} title={title} dek={dek} art={<Ground seed={i} />} />
         ))}
       </div>
     </section>
@@ -109,12 +145,24 @@ export function SelectedWork() {
 
       {/* The reference's shape: one lead across the row, four minors beneath. */}
       <div className="card-lead-row">
-        <Card lead title={LEAD[0]} dek={LEAD[1]} />
+        <Card
+          lead
+          title={LEAD.name}
+          dek={LEAD.line}
+          art={<Shot id={LEAD.id} lead />}
+          href="#footprint"
+        />
       </div>
 
       <div className="card-row card-row--ruled">
-        {WORK.map(([title, dek]) => (
-          <Card key={title} title={title} dek={dek} />
+        {WORK.map((p) => (
+          <Card
+            key={p.id}
+            title={p.name}
+            dek={p.line}
+            art={<Shot id={p.id} />}
+            href="#footprint"
+          />
         ))}
       </div>
     </section>
