@@ -46,46 +46,101 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   padding: var(--s3) max(var(--gut), env(safe-area-inset-left, 0px));
 }
 
+/* COMMON REGION: the instrument is a bounded plate, not four blocks floating on
+   the page. Everything each stage does happens inside this one edge, which is
+   what makes the sequence read as one device changing state. */
 .inst-panel {
   position: relative;
-  width: min(100%, 860px);
+  width: min(100%, 880px);
+  max-height: 100%;
   min-height: 0;
   display: grid;
-  /* The marker keeps its row; the faces share the one below it, so a face that
-     grows cannot push the marker about. */
+  /* The rail keeps its row; the faces share the one below it, so a face that
+     grows cannot push the rail about. */
   grid-template-rows: auto minmax(0, 1fr);
   gap: var(--s4);
+  padding: var(--s4) var(--s4) var(--s5);
+  border-radius: var(--r-frame);
+  background: var(--plate);
   outline: none;
 }
+.inst-panel > .inst-steps:focus { outline: none; }
 
-/* ------------------------------------------------------- stage marker ---- */
+/* Four rivets, between the frame's two lines. The wrapper carries the panel in
+   its selector because the frame positions its own children, and that rule
+   outranks a single class. */
+.inst-panel > .inst-rivets.inst-rivets {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+}
+.inst-rivets i {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--steel-35);
+  box-shadow: inset 0 0 0 1px var(--steel-20);
+}
+.inst-rivets i:nth-child(1) { top: 11px;    left: 11px; }
+.inst-rivets i:nth-child(2) { top: 11px;    right: 11px; }
+.inst-rivets i:nth-child(3) { bottom: 11px; left: 11px; }
+.inst-rivets i:nth-child(4) { bottom: 11px; right: 11px; }
+
+/* --------------------------------------------------------- the rail ----- */
+/* UNIFORM CONNECTEDNESS: one hairline runs behind all four marks, so they read
+   as positions on a single instrument rather than four separate labels. The
+   travelled part of it is drawn at full strength up to where the needle is. */
 
 .inst-steps {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--s1) var(--s3);
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: start;
+  gap: var(--s2);
+  padding-top: var(--s2);
 }
+.inst-steps::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  height: var(--hairline); background: var(--steel-20);
+}
+/* How far the sequence has run, as a share of the rail. Set per stage below so
+   the mark travels rather than four separate underlines blinking on and off. */
+.inst[data-stage="input"]   .inst-steps { --run: .125; }
+.inst[data-stage="reading"] .inst-steps { --run: .375; }
+.inst[data-stage="results"] .inst-steps { --run: .625; }
+.inst[data-stage="booking"] .inst-steps { --run: .875; }
+.inst-steps::after {
+  content: ""; position: absolute; left: 0; top: 0;
+  width: 100%; height: var(--rule-mod);
+  background: var(--steel);
+  transform: scaleX(var(--run, .125)); transform-origin: left;
+  transition: transform var(--cta-draw) var(--ease-out);
+}
+
 .inst-steps li {
-  display: flex; align-items: baseline; gap: 6px;
+  display: grid; justify-items: center; gap: 4px;
   font: 400 var(--t-micro)/1.2 var(--head);
   letter-spacing: .14em; text-transform: uppercase;
   color: var(--steel-35);
   transition: color var(--tumble) var(--ease-out);
+  min-width: 0;
 }
 .inst-steps li[data-done="true"] { color: var(--steel-55); }
 .inst-steps li[data-on="true"]   { color: var(--steel); }
 .inst-steps b { font-weight: 400; }
-/* The hairline under the stage the instrument is on: the only mark that moves
-   across the marker, and it does it by growing in place. */
-.inst-steps li { position: relative; padding-bottom: 6px; }
-.inst-steps li::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
-  height: var(--hairline); background: currentColor;
-  transform: scaleX(0); transform-origin: left;
-  transition: transform var(--cta-draw) var(--ease-out);
+
+/* The mark on the rail: a number before it is reached, a check once it is. */
+.inst-step-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: var(--r-pill);
+  border: var(--hairline) solid currentColor;
+  font-size: 9px; letter-spacing: .04em;
+  background: var(--plate);
 }
-.inst-steps li[data-on="true"]::after { transform: scaleX(1); }
+.inst-steps li[data-on="true"] .inst-step-mark {
+  background: var(--steel); color: var(--sea); border-color: var(--steel);
+}
+.inst-step-mark .glyph { width: 12px; height: 12px; }
 
 /* ---------------------------------------------------------- the faces --- */
 /* All four are laid in the same grid cell. The one on stage is the only one
@@ -99,7 +154,10 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: var(--s3);
+  /* PROXIMITY: the air between a face's blocks is larger than the air inside
+     any of them (.inst-say holds a heading to its own lede at --s2), so each
+     face reads as two or three groups rather than five loose lines. */
+  gap: var(--s4);
   text-align: center;
   opacity: 0;
   visibility: hidden;
@@ -123,6 +181,9 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
    The booking face is that one; capping the cell keeps the panel inside the
    screen and lets its own content scroll if a short window forces it. */
 .inst-face > * { max-width: 100%; }
+
+/* A heading and the line that belongs to it, kept close. */
+.inst-say { display: grid; gap: var(--s2); justify-items: center; }
 
 /* ------------------------------------------------------------- type ----- */
 
@@ -149,6 +210,7 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 .inst-fine {
   font-size: var(--t-small); line-height: 1.5; color: var(--steel-55);
 }
+.inst-fine.is-bad { color: var(--steel); }
 .inst-fine a, .inst-bad a { color: var(--steel); text-decoration: underline; }
 .inst-bad { font-size: var(--t-small); line-height: 1.5; color: var(--steel); }
 
@@ -192,6 +254,26 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 .inst-input:read-only { color: var(--steel-55); }
 .inst-field:focus-within { box-shadow: 0 0 0 2px var(--orange-35); }
 
+/* PARADOX OF THE ACTIVE USER: the grey completion behind the caret is only
+   useful if something says how to take it. Shown only while there is one. */
+.inst-field > .inst-tab.inst-tab {
+  position: absolute; right: var(--cta-pad); top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-micro); color: var(--steel-55);
+  background: var(--plate); padding-left: 8px;
+  pointer-events: none;
+}
+.inst-tab kbd {
+  font: inherit; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  border: var(--hairline) solid var(--steel-20); border-radius: var(--r-inner);
+  padding: 2px 5px; color: var(--steel);
+}
+
+/* The booking fields take the same frame as the address field, at the smaller
+   size. SIMILARITY: one kind of input across the whole instrument. */
+.inst-field--sm { min-height: 46px; }
+.inst-field--sm .inst-input { font-size: var(--t-small); }
+
 /* ---------------------------------------------------- 02 · the sweep ---- */
 
 .sweep { display: grid; justify-items: center; gap: var(--s1); }
@@ -228,6 +310,36 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 
 /* ------------------------------------------------- 03 · the readings ---- */
 
+/* VON RESTORFF + SELECTIVE ATTENTION: one number is set large — the weakest of
+   the three, which is the answer the visitor came for. The three dials under it
+   are the working, not the headline. The band is said in words beside it, so
+   the emphasis never rests on colour alone. */
+.inst-headline {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r-card);
+  background: var(--sea);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+}
+.inst-headline-num {
+  font: 700 clamp(56px, 9vw, 84px)/1 var(--head);
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+  color: var(--steel);
+}
+.inst-headline-say { display: grid; gap: 2px; text-align: left; }
+.inst-headline-say b {
+  font: 400 var(--t-h4)/1.1 var(--head); letter-spacing: var(--track-head);
+}
+.inst-headline-say i {
+  font-style: normal; font-size: var(--t-small); color: var(--steel-70);
+}
+/* The band is marked by a rule on the reading, at one of three weights. It is
+   never orange: a score is not operable, and the brand keeps orange for things
+   that can be pressed. */
+.inst-headline[data-band="poor"] { box-shadow: inset 0 0 0 var(--rule-mod) var(--steel); }
+.inst-headline[data-band="fair"] { box-shadow: inset 0 0 0 var(--hairline) var(--steel-55); }
+
 .inst-dials { width: 100%; }
 .inst-summary {
   font-size: var(--t-body); line-height: 1.6; color: var(--steel); max-width: 56ch;
@@ -242,8 +354,21 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 
 /* ----------------------------------------------- 04 · the consultation -- */
 
-/* The three faces, kept and moved aside rather than replaced. */
-.inst-strip { width: 100%; max-width: 420px; opacity: .75; }
+/* WORKING MEMORY: the reading the visitor is deciding about stays legible while
+   they fill the form in, rather than receding into decoration. */
+.inst-recap {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: var(--s1) var(--s3);
+  padding: var(--s1) var(--s3);
+  border-radius: var(--r-pill);
+  background: var(--sea);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  font: 400 var(--t-caption)/1.3 var(--head);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-recap b { color: var(--steel); text-transform: none; letter-spacing: 0; font-weight: 600; }
+.inst-recap-score b { font-variant-numeric: tabular-nums; }
+.inst-recap-score[data-band="poor"] { color: var(--steel); }
 
 .inst-book { display: grid; justify-items: center; gap: var(--s2); width: 100%; }
 .inst-book-form {
@@ -263,30 +388,48 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 .inst-label > span {
   font-size: var(--t-caption); color: var(--steel-55);
 }
-.inst-input--box {
-  min-height: 46px;
-  padding: 0 var(--cta-pad-sm);
-  border: var(--hairline) solid var(--steel-35);
-  border-radius: var(--r-btn);
-  background: transparent;
-}
-.inst-input--box:focus { box-shadow: 0 0 0 2px var(--orange-35); }
-.inst-input--box[aria-invalid="true"] { border-color: var(--steel); }
+/* The booking inputs share .inst-field with the address field; the invalid
+   state is the only thing they add. */
+.inst-field:has([aria-invalid="true"]) { box-shadow: 0 0 0 2px var(--steel-35); }
 
 .inst-book-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
 
 /* The way back to the readings. A text control, not a second outlined button:
    one CTA ranks this view and it is the one that sends (D04). */
+/* FITTS: a 15px line with 8px of padding is a 31px target. Touch wants 44. */
 .inst-back {
   appearance: none; border: 0; background: none; cursor: pointer;
+  display: inline-flex; align-items: center;
+  min-height: 44px; padding-inline: var(--s1);
   font: 400 var(--t-small)/1 var(--body); color: var(--steel-55);
   text-decoration: underline; text-underline-offset: 3px;
-  padding: var(--s1) 0;
 }
 .inst-back:hover, .inst-back:focus-visible { color: var(--steel); outline: none; }
 
+/* PEAK–END: the last thing in the sequence is a confirmation with a mark on it,
+   not a line of body text. The green is the system's confirmation ink, which the
+   brand reserves for exactly this (accepted, booked, paid) — and the copy is
+   careful to say a time is not yet held. */
 .inst-done { display: grid; justify-items: center; gap: var(--s2); max-width: 46ch; }
 .inst-done p { font-size: var(--t-body); line-height: 1.6; color: var(--steel-70); }
+.inst-done-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: var(--r-pill);
+  background: var(--green); color: var(--sea);
+  margin-bottom: var(--s1);
+}
+.inst-done-mark .glyph { width: 28px; height: 28px; }
+
+/* The one piece of real proof on the ask, from the Google Business Profile
+   figure in lib/bathurst/data.ts. */
+.inst-proof {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-caption); color: var(--steel-55);
+}
+.inst-proof .glyph { width: 14px; height: 14px; }
+
+/* The full form, demoted to a footnote so it stops competing with the ask. */
+.inst-alt { margin-top: var(--s1); }
 
 /* ----------------------------------------------------------- phones ----- */
 
@@ -297,6 +440,10 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   /* The step names come off; the numbers alone keep the sequence legible in the
      width a phone has for them. */
   .inst-steps b { display: none; }
+  .inst-steps { gap: var(--s1); }
+  .inst-panel { padding: var(--s3) var(--s3) var(--s4); }
+  .inst-headline { gap: var(--s2); padding: var(--s2); }
+  .inst-headline-num { font-size: 52px; }
 
   .inst-form { grid-template-columns: minmax(0, 1fr); }
   .inst-go { width: 100%; }
@@ -305,9 +452,31 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   .sweep-face { width: min(100%, 320px); }
   .inst-row { grid-template-columns: minmax(0, 1fr); }
 
-  /* A short phone in landscape cannot hold the booking face at any size, so that
-     face — and only that face — may scroll inside the panel rather than being
-     clipped. The page still does not scroll. */
+  /* The two long faces are tightened to fit a phone outright: the dials drop to
+     one row (set in the component), and the air between blocks comes in. The
+     inner scroll below is the last resort for a short window in landscape, not
+     the way these faces are meant to be read — the page itself never scrolls. */
+  .inst-face { gap: var(--s3); }
+  .inst-face[data-face="results"] .inst-summary { font-size: var(--t-small); }
+  .inst-face[data-face="results"] .inst-caveat { padding-top: var(--s1); }
+  .inst-face[data-face="results"] .inst-caveat p:last-child { font-size: var(--t-caption); }
+  .inst-headline { width: 100%; }
+
+  /* The consultation face is the longest of the four. On a phone it is tightened
+     until it fits outright: the recap to one line, the air between the form's
+     rows down to a single step, and the footnote closed up under the proof. */
+  .inst-face[data-face="booking"] { gap: var(--s2); }
+  .inst-face[data-face="booking"] .inst-say { gap: var(--s1); }
+  .inst-book { gap: var(--s1); }
+  .inst-book-form { gap: var(--s1); margin-top: 0; }
+  .inst-field--sm { min-height: 44px; }
+  .inst-recap {
+    gap: 2px var(--s2);
+    padding: 4px var(--s2);
+    font-size: var(--t-micro);
+  }
+  .inst-alt { margin-top: 0; }
+
   .inst-face[data-face="booking"],
   .inst-face[data-face="results"] {
     align-content: start;

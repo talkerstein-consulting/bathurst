@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Check, Star } from "lucide-react";
 import { InstrumentDial } from "@/components/instrument-dial";
 import { completeDomain, toSiteUrl } from "@/lib/domain";
-import { CONTACT } from "@/lib/bathurst/data";
+import { CONTACT, GOOGLE } from "@/lib/bathurst/data";
 import { Cta } from "./cta";
 import { Frame } from "./frame";
 import { SweepGauge } from "./sweep-gauge";
@@ -15,7 +16,7 @@ import { SweepGauge } from "./sweep-gauge";
  *   01 INPUT        the instrument is dormant — the address field and nothing else
  *   02 MEASUREMENT  it comes alive — one semicircular gauge, sweeping (./sweep-gauge.tsx)
  *   03 DIAGNOSIS    it reveals its readings — that one gauge becomes three
- *   04 CONSULTATION it makes room — the dials recede to a strip and the booking opens
+ *   04 CONSULTATION it makes room — the readings move to a strip and the booking opens
  *
  * The continuity is deliberate: 02 and 03 are the same semicircular face at two sizes
  * (the dial's `meter` variant), and 04 keeps those same three faces at the top of the
@@ -24,9 +25,12 @@ import { SweepGauge } from "./sweep-gauge";
  *
  * WHAT IS REAL AND WHAT IS NOT:
  *  - The scores are Google's, from /api/pagespeed. Nothing here re-weights or re-grades
- *    them, and the summary under them is written from the numbers that came back.
+ *    them; the headline reading and the sentence under it are both derived from the
+ *    numbers that came back, using Google's own bands.
  *  - The gauge in 02 is indeterminate, because PageSpeed reports nothing until it is
  *    done. See ./sweep-gauge.tsx.
+ *  - The rating shown in 04 is the real Google Business Profile figure recorded in
+ *    lib/bathurst/data.ts, not a number written for this page.
  *  - 04 sends a request; it does not book a time. There are no slots on this page,
  *    because there is no calendar behind it to read them from. It posts the same payload
  *    to the same endpoint as the site's own booking form
@@ -35,6 +39,13 @@ import { SweepGauge } from "./sweep-gauge";
  *
  * This is a PageSpeed assessment, not a security scan, and the copy in 03 says so in as
  * many words before anyone is asked for anything.
+ *
+ * UX REVIEW, applied: the panel is a real bounded region (Common Region); the stage rail
+ * is connected rather than four loose labels (Uniform Connectedness); the weakest score
+ * is the one thing set large, because that is what the visitor came to find out
+ * (Von Restorff, Selective Attention); the reading stage can be abandoned (Doherty); the
+ * end of the sequence is a proper confirmation rather than a line of text (Peak–End); and
+ * the scores stay readable while the booking is being filled in (Working Memory).
  */
 
 type Stage = "input" | "reading" | "results" | "booking";
@@ -52,34 +63,51 @@ const DIALS: Array<[keyof Scores, string]> = [
   ["practices", "Best practices"],
 ];
 
+const STEPS: Array<[Stage, string]> = [
+  ["input", "Input"],
+  ["reading", "Measurement"],
+  ["results", "Diagnosis"],
+  ["booking", "Consultation"],
+];
+
 /** Google's own bands: 0–49 poor, 50–89 needs improvement, 90–100 good. */
-function band(score: number) {
+type Band = "good" | "fair" | "poor";
+function bandOf(score: number): Band {
   if (score >= 90) return "good";
   if (score >= 50) return "fair";
   return "poor";
 }
 
+const BAND_WORD: Record<Band, string> = {
+  good: "Good",
+  fair: "Needs improvement",
+  poor: "Poor",
+};
+
+/** The weakest category that came back — the reading this whole page exists to surface. */
+function weakest(scores: Scores) {
+  const got = DIALS.map(([key, label]) => ({ key, label, value: scores[key] })).filter(
+    (s): s is { key: keyof Scores; label: string; value: number } => s.value !== null,
+  );
+  if (got.length === 0) return null;
+  return got.reduce((a, b) => (b.value < a.value ? b : a));
+}
+
 /**
- * The plain-English line under the dials, built from the scores that came back. It names
- * the lowest of the three and what that band means, and says nothing the numbers do not
- * support.
+ * The plain-English line under the dials, built from the scores that came back. It says
+ * what the weakest band means and nothing the numbers do not support.
  */
 function summarise(scores: Scores) {
-  const got = DIALS.map(([key, label]) => [label, scores[key]] as const).filter(
-    (pair): pair is readonly [string, number] => pair[1] !== null,
-  );
-  if (got.length === 0) return "The audit came back without a score.";
+  const low = weakest(scores);
+  if (!low) return "The audit came back without a score.";
 
-  const worst = got.reduce((a, b) => (b[1] < a[1] ? b : a));
-  const [label, value] = worst;
-
-  if (band(value) === "good") {
-    return `Every category came back in Google's good band, the lowest being ${label} at ${value}. On these measures the website is holding up.`;
+  if (bandOf(low.value) === "good") {
+    return `Every category came back in Google's good band, ${low.label} lowest at ${low.value}. On these measures the website is holding up.`;
   }
-  if (band(value) === "fair") {
-    return `${label} is the weakest at ${value}, which Google bands as needing improvement rather than poor. There is room here, and it is the kind of room a visitor feels rather than sees.`;
+  if (bandOf(low.value) === "fair") {
+    return `${low.label} is the weakest at ${low.value} — Google bands that as needing improvement rather than poor. There is room here, and it is the kind of room a visitor feels rather than sees.`;
   }
-  return `${label} came back at ${value}, inside Google's poor band. At that level people are leaving before the page finishes — and they do not tell you; they go back and open the next result.`;
+  return `${low.label} came back at ${low.value}, inside Google's poor band. At that level people leave before the page finishes — and they do not tell you; they go back and open the next result.`;
 }
 
 export function Instrument({ bookHref }: { bookHref: string }) {
@@ -87,35 +115,48 @@ export function Instrument({ bookHref }: { bookHref: string }) {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  const panel = useRef<HTMLOListElement>(null);
   const field = useRef<HTMLInputElement>(null);
-  const panel = useRef<HTMLDivElement>(null);
+  /** The run in flight, so the reading stage can be abandoned rather than waited out. */
+  const run = useRef<AbortController | null>(null);
 
   const tail = completeDomain(url);
   const locked = stage !== "input";
 
   /* Each stage takes the focus to the top of what it just put on screen, so the keyboard
-     follows the instrument instead of being left on a field that is now inert. */
+     follows the instrument instead of being left on a control that is now inert. */
   useEffect(() => {
-    if (stage === "input") return;
+    if (stage === "input") {
+      field.current?.focus({ preventScroll: true });
+      return;
+    }
     panel.current?.focus({ preventScroll: true });
   }, [stage]);
 
-  const run = async (e: FormEvent) => {
+  /* G13: a run still open when the instrument unmounts is cancelled, not left hanging. */
+  useEffect(() => () => run.current?.abort(), []);
+
+  const start = async (e: FormEvent) => {
     e.preventDefault();
     const site = toSiteUrl(url + tail);
     if (!site) {
       setError("That doesn’t look like a website address. Try it as example.com.");
+      field.current?.focus();
       return;
     }
     setUrl(url + tail);          // the field keeps what was actually checked
     setError("");
     setResult(null);
     setStage("reading");
+
+    const ctl = new AbortController();
+    run.current = ctl;
     try {
       const answer = await fetch("/api/pagespeed", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ url: site }),
+        signal: ctl.signal,
       });
       const data = await answer.json();
       if (!answer.ok) {
@@ -125,10 +166,20 @@ export function Instrument({ bookHref }: { bookHref: string }) {
       }
       setResult(data as Result);
       setStage("results");
-    } catch {
+    } catch (err) {
+      /* An abort is the visitor's own decision, not a failure: say nothing. */
+      if ((err as Error)?.name === "AbortError") return;
       setError("The check didn’t come back. Try again in a moment.");
       setStage("input");
+    } finally {
+      run.current = null;
     }
+  };
+
+  const stop = () => {
+    run.current?.abort();
+    run.current = null;
+    setStage("input");
   };
 
   const stats = result
@@ -139,31 +190,52 @@ export function Instrument({ bookHref }: { bookHref: string }) {
         max: 100,
       }))
     : [];
+  const low = result ? weakest(result.scores) : null;
+  const narrow = useNarrow(760);
 
   return (
     <div className="inst" data-stage={stage}>
-      <div className="inst-panel" ref={panel} tabIndex={-1}>
-        {/* The stage marker: the one piece of chrome that is on screen throughout, so the
-            visitor can see the instrument moving through its sequence. */}
-        <ol className="inst-steps" aria-label="Where you are">
-          {(["input", "reading", "results", "booking"] as Stage[]).map((s, i) => (
-            <li key={s} data-on={stage === s ? "true" : "false"} data-done={stageIndex(stage) > i ? "true" : "false"}>
-              <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-              <b>{["Input", "Measurement", "Diagnosis", "Consultation"][i]}</b>
-            </li>
-          ))}
+      {/* The instrument itself: one bounded plate with the sequence across the top of it,
+          so every stage happens inside the same visible region rather than floating on
+          the page. */}
+      {/* The ref is on the rail below, not on the Frame: Frame holds its own ref for
+          measuring the box, and a second one spread over it would break the line it
+          draws. The rail is the first thing in the panel and names the sequence, so it
+          is the right thing for the focus to land on anyway. */}
+      <Frame className="inst-panel">
+        <span className="inst-rivets" aria-hidden="true">
+          <i /><i /><i /><i />
+        </span>
+
+        {/* The stage rail. One hairline runs the whole width behind the four marks, so
+            they read as positions on one instrument rather than four separate labels. */}
+        <ol className="inst-steps" aria-label="Assessment sequence" ref={panel} tabIndex={-1}>
+          {STEPS.map(([s, name], i) => {
+            const on = stage === s;
+            const done = STEPS.findIndex(([k]) => k === stage) > i;
+            return (
+              <li key={s} data-on={on ? "true" : "false"} data-done={done ? "true" : "false"}>
+                <span className="inst-step-mark" aria-hidden="true">
+                  {done ? <Check className="glyph" /> : String(i + 1).padStart(2, "0")}
+                </span>
+                <b aria-current={on ? "step" : undefined}>{name}</b>
+              </li>
+            );
+          })}
         </ol>
 
         {/* ----------------------------------------------- 01 · INPUT ------ */}
         <section className="inst-face" data-face="input" aria-hidden={stage !== "input"} inert={stage !== "input"}>
-          <h1 className="inst-h1">
-            Your website looks fine. <span>TO YOU.</span>
-          </h1>
-          <p className="inst-lede">
-            Does it for everyone? Find out what your customers experience.
-          </p>
+          <div className="inst-say">
+            <h1 className="inst-h1">
+              Your website looks fine. <span>TO YOU.</span>
+            </h1>
+            <p className="inst-lede">
+              Does it for everyone? Find out what your customers experience.
+            </p>
+          </div>
 
-          <form className="inst-form" onSubmit={run} noValidate>
+          <form className="inst-form" onSubmit={start} noValidate>
             <label className="sr-only" htmlFor="inst-url">
               Your website address
             </label>
@@ -181,6 +253,7 @@ export function Instrument({ bookHref }: { bookHref: string }) {
                 autoComplete="url"
                 spellCheck={false}
                 placeholder="yourwebsite.com"
+                aria-describedby="inst-url-hint"
                 value={url}
                 readOnly={locked}
                 onChange={(e) => {
@@ -197,6 +270,14 @@ export function Instrument({ bookHref }: { bookHref: string }) {
                   }
                 }}
               />
+              {/* The completion is offered in grey behind the caret; nothing on screen
+                  said how to take it, so this does — to everyone, not only to a screen
+                  reader. It is only there while there is something to accept. */}
+              {tail && !locked && (
+                <span className="inst-tab" id="inst-url-hint">
+                  <kbd>Tab</kbd> to accept {tail}
+                </span>
+              )}
             </Frame>
             <Cta
               as="button"
@@ -211,31 +292,48 @@ export function Instrument({ bookHref }: { bookHref: string }) {
             </Cta>
           </form>
 
-          <p className="inst-fine" role={error ? "alert" : undefined}>
-            {error || "Free assessment. No password needed."}
+          <p className={`inst-fine${error ? " is-bad" : ""}`} role={error ? "alert" : undefined}>
+            {error || "Free assessment. Takes about half a minute. No password needed."}
           </p>
         </section>
 
         {/* ----------------------------------------- 02 · MEASUREMENT ------ */}
         <section className="inst-face" data-face="reading" aria-hidden={stage !== "reading"} inert={stage !== "reading"}>
-          <p className="inst-whose">Reading {hostOf(url)}</p>
+          <p className="inst-whose">
+            Reading <b>{hostOf(url)}</b>
+          </p>
           <SweepGauge />
+          {/* A half-minute wait with no way out is a trap. This is the way out. */}
+          <button type="button" className="inst-back" onClick={stop}>
+            Stop the reading
+          </button>
         </section>
 
         {/* -------------------------------------------- 03 · DIAGNOSIS ----- */}
         <section className="inst-face" data-face="results" aria-hidden={stage !== "results"} inert={stage !== "results"}>
-          {result && (
+          {result && low && (
             <>
               <p className="inst-whose">
                 Google PageSpeed Insights · mobile · <b>{hostOf(result.url)}</b>
+              </p>
+
+              {/* The headline reading: the weakest of the three, set large. Everything
+                  else on this face is secondary to it, because it is the answer to the
+                  question the visitor arrived with. */}
+              <p className="inst-headline" data-band={bandOf(low.value)}>
+                <span className="inst-headline-num">{low.value}</span>
+                <span className="inst-headline-say">
+                  <b>{low.label}</b>
+                  <i>{BAND_WORD[bandOf(low.value)]} — Google&rsquo;s own band</i>
+                </span>
               </p>
 
               <div className="inst-dials">
                 <InstrumentDial
                   stats={stats}
                   variant="meter"
-                  size={200}
-                  gap={28}
+                  size={narrow ? 100 : 168}
+                  gap={narrow ? 6 : 24}
                   theme="light"
                   accentColor="#19254A"
                   trackColor="rgb(25 37 74 / .20)"
@@ -270,21 +368,18 @@ export function Instrument({ bookHref }: { bookHref: string }) {
 
         {/* ----------------------------------------- 04 · CONSULTATION ----- */}
         <section className="inst-face" data-face="booking" aria-hidden={stage !== "booking"} inert={stage !== "booking"}>
-          {/* The same three faces, moved aside rather than replaced. */}
-          <div className="inst-strip" aria-hidden="true">
-            <InstrumentDial
-              stats={stats}
-              variant="meter"
-              size={96}
-              gap={16}
-              theme="light"
-              accentColor="#19254A"
-              trackColor="rgb(25 37 74 / .20)"
-              textColor="#19254A"
-              replayOnClick={false}
-              hand={false}
-            />
-          </div>
+          {/* The readings stay readable while the form is filled in. They are what the
+              visitor is deciding about, so they are not turned into wallpaper. */}
+          {low && (
+            <p className="inst-recap">
+              <span>
+                Reviewing <b>{hostOf(result?.url ?? url)}</b>
+              </span>
+              <span className="inst-recap-score" data-band={bandOf(low.value)}>
+                {low.label} <b>{low.value}</b>
+              </span>
+            </p>
+          )}
 
           <BookingPanel
             site={result?.url ?? url}
@@ -292,13 +387,29 @@ export function Instrument({ bookHref }: { bookHref: string }) {
             onBack={() => setStage("results")}
           />
         </section>
-      </div>
+      </Frame>
     </div>
   );
 }
 
-function stageIndex(stage: Stage) {
-  return ["input", "reading", "results", "booking"].indexOf(stage);
+/**
+ * Whether the viewport is under `px`, matching the stylesheet's own breakpoint.
+ *
+ * The dial lays itself out from the width it is given, and at a phone's width three of
+ * them at the desktop size wrap to two and then one — which pushed the stage's own CTA
+ * below the fold of a panel that is not allowed to scroll. Below the breakpoint they are
+ * drawn small enough to stay in one row.
+ */
+function useNarrow(px: number) {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${px}px)`);
+    const read = () => setNarrow(mq.matches);
+    read();
+    mq.addEventListener("change", read);
+    return () => mq.removeEventListener("change", read);   // G13
+  }, [px]);
+  return narrow;
 }
 
 function hostOf(url: string) {
@@ -335,6 +446,7 @@ function BookingPanel({
   const [f, setF] = useState({ name: "", email: "", when: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "fallback">("idle");
   const [bad, setBad] = useState<string[]>([]);
+  const first = useRef<HTMLInputElement>(null);
   const set = (k: keyof typeof f) => (v: string) => {
     setF((o) => ({ ...o, [k]: v }));
     setBad((x) => x.filter((y) => y !== k));
@@ -361,6 +473,7 @@ function BookingPanel({
     if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) miss.push("email");
     if (miss.length) {
       setBad(miss);
+      document.querySelector<HTMLElement>(`[name="${miss[0]}"]`)?.focus();
       return;
     }
     setStatus("sending");
@@ -385,13 +498,23 @@ function BookingPanel({
     }
   };
 
+  /* The end of the sequence. It is the thing the visitor will remember, so it is a
+     confirmation with a mark on it and a clear statement of what happens next — not a
+     line of body text. It is careful to say that a time is NOT yet held. */
   if (status === "sent") {
     return (
       <div className="inst-done" role="status">
+        <span className="inst-done-mark" aria-hidden="true">
+          <Check className="glyph" />
+        </span>
         <h2 className="inst-h2">Request sent.</h2>
         <p>
-          We&rsquo;ll look at {hostOf(site)} and reply with a time{f.when ? ` around ${f.when}` : ""}.
-          Nothing is booked yet — the time comes back in that reply.
+          We&rsquo;ll review {hostOf(site)} and reply with a time
+          {f.when ? ` around ${f.when}` : ""}. Nothing is held yet — the time comes back in
+          that reply, usually within one business day.
+        </p>
+        <p className="inst-fine">
+          Need it sooner? Call <a href={CONTACT.tel}>{CONTACT.phone}</a>.
         </p>
         <button type="button" className="inst-back" onClick={onBack}>
           Back to the readings
@@ -402,52 +525,60 @@ function BookingPanel({
 
   return (
     <div className="inst-book">
-      <h2 className="inst-h2">Let&rsquo;s take a closer look.</h2>
-      <p className="inst-lede">
-        We&rsquo;ll review your website for unexpected redirects and browser warnings, then
-        explain what we find.
-      </p>
+      <div className="inst-say">
+        <h2 className="inst-h2">Let&rsquo;s take a closer look.</h2>
+        <p className="inst-lede">
+          We&rsquo;ll review your website for unexpected redirects and browser warnings, then
+          explain what we find.
+        </p>
+      </div>
 
       <form className="inst-book-form" onSubmit={send} noValidate>
-        <p className="inst-carried">
-          Reviewing <b>{hostOf(site)}</b>
-        </p>
-
         <div className="inst-row">
           <label className="inst-label">
             <span>Your name</span>
-            <input
-              className="inst-input inst-input--box"
-              name="name"
-              value={f.name}
-              autoComplete="name"
-              aria-invalid={bad.includes("name") || undefined}
-              onChange={(e) => set("name")(e.target.value)}
-            />
+            <Frame className="inst-field inst-field--sm" single>
+              <input
+                ref={first}
+                className="inst-input"
+                name="name"
+                value={f.name}
+                autoComplete="name"
+                maxLength={80}
+                aria-invalid={bad.includes("name") || undefined}
+                onChange={(e) => set("name")(e.target.value)}
+              />
+            </Frame>
           </label>
           <label className="inst-label">
             <span>Email</span>
-            <input
-              className="inst-input inst-input--box"
-              name="email"
-              type="email"
-              value={f.email}
-              autoComplete="email"
-              aria-invalid={bad.includes("email") || undefined}
-              onChange={(e) => set("email")(e.target.value)}
-            />
+            <Frame className="inst-field inst-field--sm" single>
+              <input
+                className="inst-input"
+                name="email"
+                type="email"
+                value={f.email}
+                autoComplete="email"
+                maxLength={120}
+                aria-invalid={bad.includes("email") || undefined}
+                onChange={(e) => set("email")(e.target.value)}
+              />
+            </Frame>
           </label>
         </div>
 
         <label className="inst-label">
           <span>When suits you (optional)</span>
-          <input
-            className="inst-input inst-input--box"
-            name="when"
-            value={f.when}
-            placeholder="Weekday mornings, say"
-            onChange={(e) => set("when")(e.target.value)}
-          />
+          <Frame className="inst-field inst-field--sm" single>
+            <input
+              className="inst-input"
+              name="when"
+              value={f.when}
+              maxLength={80}
+              placeholder="Weekday mornings, say"
+              onChange={(e) => set("when")(e.target.value)}
+            />
+          </Frame>
         </label>
 
         {bad.length > 0 && (
@@ -471,7 +602,6 @@ function BookingPanel({
             as="button"
             type="submit"
             primary
-            small
             label="Ask for my free website check"
             disabled={status === "sending"}
             reason="Your name and email first."
@@ -483,11 +613,24 @@ function BookingPanel({
           </button>
         </div>
 
-        <p className="inst-fine">
-          No obligation. Rather use the full form?{" "}
-          <a href={`${bookHref}&website=${encodeURIComponent(site)}`}>Book an appointment</a>.
-        </p>
+        {/* The one reason to trust the ask, and it is a real figure: the Google Business
+            Profile rating recorded in lib/bathurst/data.ts. Shown only when there is one
+            to show, so an empty record prints nothing rather than "0 reviews". */}
+        {GOOGLE.rating !== null && GOOGLE.count !== null && (
+          <p className="inst-proof">
+            <Star className="glyph" aria-hidden="true" />
+            <span>
+              {GOOGLE.rating} on Google, {GOOGLE.count} reviews
+            </span>
+          </p>
+        )}
       </form>
+
+      {/* The full booking form stays reachable, but as a footnote rather than a third
+          control competing with the ask above it. */}
+      <p className="inst-fine inst-alt">
+        Rather fill in the full form? <a href={`${bookHref}&website=${encodeURIComponent(site)}`}>Book an appointment</a>.
+      </p>
     </div>
   );
 }

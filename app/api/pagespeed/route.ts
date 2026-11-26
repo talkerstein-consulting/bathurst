@@ -49,10 +49,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (process.env.PAGESPEED_STUB === "1") {
-    await new Promise((r) => setTimeout(r, 6000));
-    return NextResponse.json({ url: site, strategy: "mobile", scores: { performance: 41, accessibility: 92, practices: 83 }, timings: { paint: "1.4 s", usable: "2.8 s" } });
-  }
   const query = new URLSearchParams({ url: site, strategy: "mobile" });
   for (const c of CATEGORIES) query.append("category", c);
   const key = process.env.PAGESPEED_API_KEY;
