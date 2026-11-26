@@ -21,7 +21,7 @@ export default function Awards({ className = "", style }: { className?: string; 
       <li><a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a></li>
       <li><a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>{GOOGLE.count ? `${GOOGLE.count} reviews on Google` : "Rating on Google"}</small></span></a></li>
       <li className="aw-badge"><img src="/badges/shopify.avif" alt="" width={512} height={85} className="cert-shopify" /><small>Shopify Partner</small></li>
-      <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>HighLevel Certified Admin</small></li>
+      <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>GoHighLevel Certified Admin</small></li>
     </ul>
   );
 }

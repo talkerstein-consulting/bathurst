@@ -14,12 +14,24 @@
    WITHOUT the browser's own chrome, which puts the booking controls under the
    address bar. The fallback for a browser with no dvh is the old unit. */
 .inst-page {
+  position: relative;
   height: 100vh;
   height: 100dvh;
   padding-top: var(--topbar-h);
   display: grid;
+  /* The instrument takes what is left; the foot takes what it needs. */
+  grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
 }
+
+/* The ground. The dither canvas fills the screen behind everything, including under
+   the bar, and never takes the tab order. Everything else on the page is lifted over
+   it. It keeps its own pointer so the ripple can answer the cursor. */
+.inst-page > .hero-bg { position: absolute; inset: 0; z-index: 0; }
+.inst-page > :not(.hero-bg) { position: relative; z-index: 1; }
+/* D07: the ground's loading state is the dither's own paper, so the first paint is the
+   colour the canvas resolves to rather than a flash of something else. */
+.inst-page .hero-bg--wait { background: #FCF8F1; }
 
 /* Nothing on this page scrolls the document, including an iOS rubber band. */
 html:has(.inst-page), body:has(.inst-page) { overflow: hidden; overscroll-behavior: none; }
@@ -46,110 +58,85 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   padding: var(--s3) max(var(--gut), env(safe-area-inset-left, 0px));
 }
 
-/* COMMON REGION: the instrument is a bounded plate, not four blocks floating on
-   the page. Everything each stage does happens inside this one edge, which is
-   what makes the sequence read as one device changing state. */
+/* The instrument has no plate and no rivets any more: it stands on the page's own
+   ground. What held the four stages together was never the edge — it is that every
+   face is laid into this one grid cell and crossfades in place, so the heading, the
+   field and the readings all arrive where the last stage left them. */
 .inst-panel {
   position: relative;
   width: min(100%, 880px);
   max-height: 100%;
   min-height: 0;
   display: grid;
-  /* The rail keeps its row; the faces share the one below it, so a face that
-     grows cannot push the rail about. */
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--s4);
-  padding: var(--s4) var(--s4) var(--s5);
-  border-radius: var(--r-frame);
-  background: var(--plate);
+  grid-template-rows: minmax(0, 1fr);
   outline: none;
 }
-.inst-panel > .inst-steps:focus { outline: none; }
 
-/* Four rivets, between the frame's two lines. The wrapper carries the panel in
-   its selector because the frame positions its own children, and that rule
-   outranks a single class. */
-.inst-panel > .inst-rivets.inst-rivets {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none;
-}
-.inst-rivets i {
-  position: absolute;
-  width: 7px; height: 7px;
-  border-radius: var(--r-pill);
-  background: var(--steel-35);
-  box-shadow: inset 0 0 0 1px var(--steel-20);
-}
-.inst-rivets i:nth-child(1) { top: 11px;    left: 11px; }
-.inst-rivets i:nth-child(2) { top: 11px;    right: 11px; }
-.inst-rivets i:nth-child(3) { bottom: 11px; left: 11px; }
-.inst-rivets i:nth-child(4) { bottom: 11px; right: 11px; }
+/* ------------------------------------------------------ staging tabs ---- */
+/* FLAGGED: a review control, not part of the page. It puts any of the four stages on
+   screen without running a reading, so the whole sequence can be looked at while there
+   is no PageSpeed key. /check-2 is noindex and is the treatment being reviewed, so it
+   ships with it — but it belongs behind a flag the day this becomes the live page.
 
-/* --------------------------------------------------------- the rail ----- */
-/* UNIFORM CONNECTEDNESS: one hairline runs behind all four marks, so they read
-   as positions on a single instrument rather than four separate labels. The
-   travelled part of it is drawn at full strength up to where the needle is. */
-
-.inst-steps {
-  position: relative;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  align-items: start;
-  gap: var(--s2);
-  padding-top: var(--s2);
+   It is deliberately NOT the stage rail that was removed from the top of the panel: it
+   sits in the corner as a utility strip, in the quiet end of the palette, so it reads
+   as a tool laid over the page rather than as the visitor's own navigation. */
+.inst-tabs {
+  position: fixed;
+  left: max(var(--gut), env(safe-area-inset-left, 0px));
+  /* Under the bar, not along the bottom: the logo rail already owns the foot of the
+     screen, and a tool sitting on top of the clients' marks looks like a fault. */
+  top: calc(var(--topbar-h) + var(--s2));
+  z-index: 5;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-btn);
+  background: var(--sea-70);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  backdrop-filter: blur(6px);
 }
-.inst-steps::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0;
-  height: var(--hairline); background: var(--steel-20);
-}
-/* How far the sequence has run, as a share of the rail. Set per stage below so
-   the mark travels rather than four separate underlines blinking on and off. */
-.inst[data-stage="input"]   .inst-steps { --run: .125; }
-.inst[data-stage="reading"] .inst-steps { --run: .375; }
-.inst[data-stage="results"] .inst-steps { --run: .625; }
-.inst[data-stage="booking"] .inst-steps { --run: .875; }
-.inst-steps::after {
-  content: ""; position: absolute; left: 0; top: 0;
-  width: 100%; height: var(--rule-mod);
-  background: var(--steel);
-  transform: scaleX(var(--run, .125)); transform-origin: left;
-  transition: transform var(--cta-draw) var(--ease-out);
-}
-
-.inst-steps li {
-  display: grid; justify-items: center; gap: 4px;
-  font: 400 var(--t-micro)/1.2 var(--head);
+.inst-tabs b {
+  display: inline-flex; align-items: center;
+  padding-inline: var(--s1);
+  font: 400 var(--t-micro)/1 var(--head);
   letter-spacing: .14em; text-transform: uppercase;
   color: var(--steel-35);
-  transition: color var(--tumble) var(--ease-out);
-  min-width: 0;
 }
-.inst-steps li[data-done="true"] { color: var(--steel-55); }
-.inst-steps li[data-on="true"]   { color: var(--steel); }
-.inst-steps b { font-weight: 400; }
+.inst-tabs button {
+  appearance: none; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  /* FITTS: 30px of box in a corner the pointer can throw itself at. It is a tool, so
+     it is allowed to be smaller than a CTA. */
+  min-height: 30px;
+  padding-inline: var(--s2);
+  border-radius: var(--r-inner);
+  background: transparent;
+  font: 400 var(--t-micro)/1 var(--head);
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--steel-55);
+  transition: background var(--tumble) var(--ease-out), color var(--tumble) var(--ease-out);
+}
+.inst-tabs button i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .6; }
+.inst-tabs button:hover { color: var(--steel); background: var(--steel-06); }
+.inst-tabs button:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+/* The stage on screen. Steel, not orange: a tab is operable, but the brand keeps orange
+   for the one thing the page wants pressed, and that is the CTA. */
+.inst-tabs button[aria-current] { color: var(--sea); background: var(--steel); }
+.inst-tabs button[aria-current] i { opacity: .7; }
 
-/* The mark on the rail: a number before it is reached, a check once it is. */
-.inst-step-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
-  border-radius: var(--r-pill);
-  border: var(--hairline) solid currentColor;
-  font-size: 9px; letter-spacing: .04em;
-  background: var(--plate);
-}
-.inst-steps li[data-on="true"] .inst-step-mark {
-  background: var(--steel); color: var(--sea); border-color: var(--steel);
-}
-.inst-step-mark .glyph { width: 12px; height: 12px; }
+/* The stage rail is gone. It was a progress tracker for a sequence the visitor is
+   carried through in under a minute, and it spent the top of the screen saying so. */
 
 /* ---------------------------------------------------------- the faces --- */
 /* All four are laid in the same grid cell. The one on stage is the only one
    that is painted, takes pointer events or is in the tab order (the markup
    also marks the rest `inert`, which the stylesheet cannot do). */
 
-/* Row 2 is the faces' row: the marker keeps row 1 to itself. */
+/* All four faces share the panel's one cell. */
 .inst-face {
-  grid-area: 2 / 1;
+  grid-area: 1 / 1;
   min-height: 0;
   display: grid;
   align-content: center;
@@ -187,16 +174,71 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 
 /* ------------------------------------------------------------- type ----- */
 
+/* THE TYPE SCALE OF THIS FACE.
+   Four sizes, each a clear step from the last, so the eye is told what to read and in
+   what order rather than meeting four things of roughly equal weight:
+
+     1  the claim          --t-h1, capped against the window
+     2  the question       .80 of the claim — subordinate, but still the headline
+     3  the lede           --t-lede
+     4  the fine print     --t-small
+
+   The claim holds one line at any width. The size is the h1 token until that line will
+   not fit, and from there the window sets it — so the break stays where it is written
+   rather than the sentence folding somewhere nobody chose. */
 .inst-h1 {
-  font: 700 var(--t-h1)/1.02 var(--head);
+  /* ONE size for the whole headline. The claim and the question are one sentence, so
+     they are set at one size — the step between them was doing nothing the line break
+     was not already doing. The size is set by the longer of the two lines: the question
+     carries two pills, which cost about a word of width each, so the whole headline
+     comes down to meet it rather than the question being shrunk away from the claim. */
+  /* clamp, not min: on a phone 4.4vw is 16px, which is body size — the headline had
+     shrunk to the same weight as the sentence under it. The floor holds it as a
+     headline; below the laptop the question simply wraps, which is fine. */
+  font: 700 clamp(26px, 4.4vw, var(--t-h2))/1.18 var(--head);
   letter-spacing: -0.01em;
   margin: 0;
-  max-width: 18ch;
-  text-wrap: balance;
+  /* The headline is the one thing allowed past the panel's 880px measure. 94vw keeps it
+     inside the window's own gutters at every width, so nothing can scroll sideways. */
+  width: min(94vw, 1060px);
+  max-width: none;
+  margin-inline: auto;
 }
-/* "TO YOU." is the client's own emphasis, set in caps as they wrote it. It is
-   the same weight and the same cut — the capitals are the emphasis. */
-.inst-h1 span { white-space: nowrap; }
+/* Two lines, written deliberately: the claim, then the question that undoes it. D10 —
+   a heading with nothing beside it spans its width rather than stacking by accident;
+   this break is the exception, and the claim still sets the measure. */
+.inst-h1 > span { display: block; }
+.inst-h1-a { white-space: nowrap; }
+.inst-h1-b { text-wrap: balance; }
+
+/* --------------------------------------------------- the two pills ------ */
+/* A named company, set as an object in the line rather than as a word. The edge is
+   what makes a foreign mark legible inside a sentence in someone else's typeface; it
+   also gives Google's colour wordmark plain paper, so the dither never runs under it.
+
+   Sized in em throughout, so the pills follow the headline at every width without a
+   second set of breakpoints. They never break across a line. */
+.inst-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .18em;
+  padding: .16em .42em;
+  margin-inline: .04em;
+  border-radius: var(--r-pill);
+  background: var(--sea);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  white-space: nowrap;
+  vertical-align: -.2em;
+  /* D05: a chip must not look operable. No hover, no pointer, no shadow. */
+  cursor: inherit;
+}
+/* The two marks are set to the same optical size.
+   They are not set to the same number: the ChatGPT mark is a square badge that fills
+   its file, while the Google wordmark is lowercase with descenders and carries its own
+   padding, so matching their box heights would leave Google looking the smaller of the
+   two. The pair below measures the same on screen. */
+.inst-pill-mark { display: block; width: auto; height: .74em; }
+.inst-pill-mark--google { height: .92em; }
 
 .inst-h2 {
   font: 700 var(--t-h3)/1.05 var(--head);
@@ -205,12 +247,16 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 }
 .inst-lede {
   font-size: var(--t-lede); line-height: 1.5;
-  color: var(--steel-70); max-width: 46ch;
+  color: var(--steel-70); max-width: 42ch;
 }
 .inst-fine {
   font-size: var(--t-small); line-height: 1.5; color: var(--steel-55);
 }
 .inst-fine.is-bad { color: var(--steel); }
+/* The three facts are separated by a middot rather than three full stops: it reads as
+   one line of reassurance instead of three clipped sentences. The dots are aria-hidden
+   in the markup, so a screen reader hears the phrases and not the punctuation. */
+.inst-fine span[aria-hidden] { color: var(--steel-35); padding-inline: 2px; }
 .inst-fine a, .inst-bad a { color: var(--steel); text-decoration: underline; }
 .inst-bad { font-size: var(--t-small); line-height: 1.5; color: var(--steel); }
 
@@ -219,6 +265,13 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   letter-spacing: .1em; text-transform: uppercase; color: var(--steel-55);
 }
 .inst-whose b { font-weight: 600; color: var(--steel); text-transform: none; letter-spacing: 0; }
+/* Said plainly, where the source of the reading is normally named: when the numbers on
+   screen are the sample that ?stage= puts there, nothing should be able to be mistaken
+   for a measurement of anyone's website. */
+.inst-sample {
+  color: var(--steel); font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--steel-20);
+}
 
 /* ----------------------------------------------------- 01 · the field --- */
 
@@ -260,7 +313,7 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   position: absolute; right: var(--cta-pad); top: 50%; transform: translateY(-50%);
   display: inline-flex; align-items: center; gap: 6px;
   font-size: var(--t-micro); color: var(--steel-55);
-  background: var(--plate); padding-left: 8px;
+  background: var(--sea); padding-left: 8px;
   pointer-events: none;
 }
 .inst-tab kbd {
@@ -274,39 +327,99 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 .inst-field--sm { min-height: 46px; }
 .inst-field--sm .inst-input { font-size: var(--t-small); }
 
-/* ---------------------------------------------------- 02 · the sweep ---- */
-
-.sweep { display: grid; justify-items: center; gap: var(--s1); }
-.sweep-face { width: min(100%, 420px); height: auto; display: block; overflow: visible; }
-
-.sweep-tick { stroke: var(--steel-20); stroke-width: 1.4; stroke-linecap: round; }
-.sweep-tick.is-major { stroke: var(--steel-35); stroke-width: 2; }
-
-.sweep-hand line { stroke: var(--steel); stroke-width: 3; stroke-linecap: round; }
-.sweep-hand circle { fill: var(--steel); }
-/* The needle sweeps the arc instead of climbing it: the reading is not known
-   until Google answers, so the instrument is shown working, not progressing. */
-.sweep-hand {
-  transform-origin: 200px 190px;
-  animation: sweep 3.4s var(--ease) infinite alternate;
+/* The one CTA on the page is filled.
+ *
+ * It is the exception the brand allows itself here and nowhere else: on a full-screen
+ * ground with nothing else to press, an outline asks to be found and a fill does not.
+ * Orange is still only on something operable (it IS the operable thing), and the rest
+ * of the page keeps the outline — the booking face's send, the two text controls.
+ *
+ * FLAGGED, D04/D00: this is the only filled CTA in the system. If a second screen wants
+ * one, it belongs in the Cta component as a variant, not copied from here.
+ *
+ * The sprouting outline is taken off: it draws orange on orange and cannot be seen.
+ * Hover and press are carried by the fill instead, focus by a ring outside it.
+ */
+html body .inst-go.btn {
+  --ink: var(--sea);
+  color: var(--sea);
+  background: var(--orange) padding-box;
+  border-color: transparent;
+  transition: transform var(--tumble) var(--ease-out);
 }
-@keyframes sweep {
-  from { transform: rotate(-82deg); }
-  to   { transform: rotate(82deg); }
+html body .inst-go.btn .stroke { display: none; }
+/* D00.2: no second orange is invented for the hover. The label tumbling to its twin is
+   already the system's hover, and the press answers with a shift. */
+html body .inst-go.btn:active { transform: translateY(1px); }
+html body .inst-go.btn:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+/* D04: the disabled state keeps the button orange — it is the one thing on the screen
+   to press, and greying it out before a single character is typed reads as broken — but
+   at the token's own faded weight, so it is plainly not ready. It is aria-disabled, so
+   a press still answers with the reason rather than doing nothing. */
+html body .inst-go.btn.is-off {
+  --ink: var(--sea);
+  color: var(--sea);
+  background: var(--orange-35) padding-box;
+}
+/* The chevron is the direction, not an arrow (D03), and takes the button's own gap. */
+.inst-go .glyph { width: 18px; height: 18px; flex: none; }
+
+/* ---------------------------------------------------- 02 · the dial ----- */
+
+.sweep { display: grid; justify-items: center; gap: var(--s2); }
+
+/* The ring and its figure share one box: the number is centred in the circle because it
+   is what the circle is of, not a caption under it. */
+.dial {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(62vw, 240px);
+  aspect-ratio: 1;
+}
+.dial-face {
+  grid-area: 1 / 1;
+  width: 100%; height: 100%;
+  /* Twelve o'clock, not three: a dial that starts at the side reads as half finished
+     before it begins. */
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+.dial-track, .dial-run {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+/* The whole journey, so what is left to go is visible rather than implied by a gap. */
+.dial-track { stroke: var(--steel-12); }
+/* The run. Steel Blue, not orange: the brand keeps orange for what can be pressed, and
+   a loader cannot be pressed. */
+.dial-run {
+  stroke: var(--steel);
+  transition: stroke-dashoffset 900ms var(--ease-out);
 }
 
-.sweep-read { display: flex; align-items: baseline; gap: 8px; }
-.sweep-num {
-  font: 400 var(--t-h2)/1 var(--head); letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums; color: var(--steel);
+.dial-read {
+  grid-area: 1 / 1;
+  display: flex; align-items: baseline; gap: 2px;
+  color: var(--steel);
 }
-.sweep-unit { font-size: var(--t-small); color: var(--steel-55); }
+.dial-num {
+  font: 700 clamp(40px, 11vw, 64px)/1 var(--head);
+  letter-spacing: -0.02em;
+  /* Tabular, so the number does not jitter sideways as it counts. */
+  font-variant-numeric: tabular-nums;
+}
+.dial-pc { font: 400 var(--t-h5)/1 var(--head); color: var(--steel-55); }
 
 .sweep-status {
   font: 400 var(--t-caption)/1.2 var(--head);
   letter-spacing: .12em; text-transform: uppercase; color: var(--steel);
 }
-.sweep-fine { font-size: var(--t-small); color: var(--steel-55); max-width: 40ch; }
+.sweep-fine {
+  font-size: var(--t-small); line-height: 1.5;
+  color: var(--steel-55); max-width: 44ch; text-align: center;
+}
 
 /* ------------------------------------------------- 03 · the readings ---- */
 
@@ -431,17 +544,109 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 /* The full form, demoted to a footnote so it stops competing with the ask. */
 .inst-alt { margin-top: var(--s1); }
 
+/* ---------------------------------------------------------- the foot ---- */
+/* Who has already been through this, and who says so. It sits under the instrument at
+   every stage: it is the page's standing proof, not part of the sequence. */
+
+/* The foot belongs to the first screen only.
+   *
+   * Once the visitor has handed over an address and the instrument is working, the
+   * proof has done its job — it was there to earn the address. Leaving it under a
+   * live reading splits the attention of a screen whose whole point is one thing
+   * happening. It dissolves rather than disappears, so nothing jumps.
+   *
+   * Driven off the instrument's own stage, which is on .inst as a data attribute, so
+   * there is one source for which stage is up and no second flag to keep in step. */
+.inst-page:has(.inst:not([data-stage="input"])) .inst-foot {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--cta-draw) var(--ease-out),
+    visibility 0s linear var(--cta-draw);
+}
+
+.inst-foot {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--cta-draw) var(--ease-out);
+  display: grid;
+  /* The column is pinned to the page's width, not to its content. The logo row is a
+     track several screens wide: in an `auto` column it would set the column's width,
+     the row would measure that width to decide how many copies of the set it needs,
+     and widen again on the answer — which is a loop with no end to it. */
+  grid-template-columns: minmax(0, 1fr);
+  /* PROXIMITY: the ratings and the logo row are two separate claims, so the air between
+     them is larger than the air inside either. */
+  gap: var(--s5);
+  padding: var(--s2) 0 max(var(--s3), env(safe-area-inset-bottom, 0px));
+}
+
+/* The travelling row of client logos (components/LogoLoop.jsx, which draws its own
+   fade at both ends and stops itself under prefers-reduced-motion). The marks are held
+   back from the headline: this is a footing, and the ink is other people's. */
+.inst-logos { width: 100%; min-width: 0; }
+
+/* The marks themselves, whole: no disc, no crop. Most of these files are transparent
+   and the rest have been knocked out (components/tcg/client-logos.ts), so each logo
+   sits on the page's ground at its own shape. They are held back from the headline:
+   this is a footing, and the ink is other people's. */
+.inst-logos .inst-mark {
+  width: auto;
+  height: var(--logoloop-logoHeight);
+  max-width: 180px;
+  object-fit: contain;
+  opacity: .78;
+}
+/* The hover label. The component drops it UNDER the mark, which on this page is the
+   last thing above the bottom of the screen — it would open into the edge. Flipped to
+   sit above instead, where there is room, and set in the brand's own small caps rather
+   than the component's default so it reads as the page's own labelling.
+
+   The component reserves its padding on both sides of the row, so moving the label up
+   needs no extra space. Hover AND focus both show it (the row is in the tab order). */
+.inst-logos .logoloop__tip {
+  top: auto;
+  bottom: 100%;
+  margin: 0 0 calc(var(--logoloop-logoHeight) * .22);
+  translate: -50% -4px;
+  font: 400 var(--t-micro)/1.2 var(--head);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.inst-logos .logoloop__item:hover .logoloop__tip,
+.inst-logos .logoloop__item:focus-within .logoloop__tip,
+.inst-logos .logoloop__item[data-active] .logoloop__tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+/* The mark comes up to full strength with its name, so the two read as one thing. */
+.inst-logos .logoloop__item:hover .inst-mark,
+.inst-logos .logoloop__item:focus-within .inst-mark { opacity: 1; }
+
+/* The seven whose ground cannot be knocked out (components/tcg/client-logos.ts). The
+   corner is the card radius the rest of the site uses, so the tile reads as a plate. */
+.inst-logos .inst-mark.has-ground {
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+/* The ratings and certifications row, from components/bathurst/Awards.tsx. This is the
+   page's proof and it is read, not glanced at, so it is set larger here than in the map
+   hero — large enough that the two figures and the two certifications carry on their
+   own under the form. */
+.inst-foot .inst-awards { margin: 0; }
+.inst-foot .inst-awards li { padding: 4px var(--s4); }
+.inst-foot .inst-awards b { font-size: 52px; }
+.inst-foot .inst-awards .stars { font-size: 20px; }
+.inst-foot .inst-awards small { font-size: 15px; }
+.inst-foot .inst-awards .aw-badge img { height: 44px; }
+.inst-foot .inst-awards .aw-badge small { max-width: 16ch; }
+
 /* ----------------------------------------------------------- phones ----- */
 
 @media (max-width: 760px) {
   .inst { padding: var(--s2) max(var(--gut), env(safe-area-inset-left, 0px)); }
-  .inst-panel { gap: var(--s3); }
-  .inst-steps { gap: 2px var(--s2); }
-  /* The step names come off; the numbers alone keep the sequence legible in the
-     width a phone has for them. */
-  .inst-steps b { display: none; }
-  .inst-steps { gap: var(--s1); }
-  .inst-panel { padding: var(--s3) var(--s3) var(--s4); }
   .inst-headline { gap: var(--s2); padding: var(--s2); }
   .inst-headline-num { font-size: 52px; }
 
@@ -449,7 +654,7 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   .inst-go { width: 100%; }
   .inst-go .label { justify-content: center; }
 
-  .sweep-face { width: min(100%, 320px); }
+  .dial { width: min(70vw, 200px); }
   .inst-row { grid-template-columns: minmax(0, 1fr); }
 
   /* The two long faces are tightened to fit a phone outright: the dials drop to
@@ -477,6 +682,23 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   }
   .inst-alt { margin-top: 0; }
 
+  /* On a phone the stage names come off: the numbers alone still say which is up, and
+     the strip stays out of the instrument's way. */
+  .inst-tabs { gap: 0; padding: 2px; }
+  .inst-tabs b, .inst-tabs button span { display: none; }
+  .inst-tabs button {
+    padding-inline: var(--s1); min-width: 34px;
+    justify-content: center; font-size: 10px;
+  }
+
+  /* The foot keeps both rows on a phone, tightened: the logos are what a visitor
+     recognises at a glance, and the ratings are the reason to trust the reading. */
+  .inst-foot { gap: var(--s1); padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px)); }
+  .inst-foot .inst-awards b { font-size: 32px; }
+  .inst-foot .inst-awards .stars { font-size: 15px; }
+  .inst-foot .inst-awards small { font-size: 12px; }
+  .inst-foot .inst-awards .aw-badge img { height: 30px; }
+
   .inst-face[data-face="booking"],
   .inst-face[data-face="results"] {
     align-content: start;
@@ -488,8 +710,11 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 /* D11 */
 @media (prefers-reduced-motion: reduce) {
   .inst-face { transition: opacity .01ms linear; transform: none; }
-  .inst-steps li::after { transition: none; }
-  /* The needle parks mid-arc: the stage still reads as working, through the
-     elapsed count and the status line, without anything moving. */
-  .sweep-hand { animation: none; transform: rotate(0deg); }
+  .inst-foot,
+  .inst-page:has(.inst:not([data-stage="input"])) .inst-foot { transition: none; }
+  .inst-tabs button { transition: none; }
+  /* LogoLoop parks itself under reduced motion; nothing to add here. */
+  /* The ring still fills: that fill IS the information. Only the glide between one
+     figure and the next is dropped, so it steps instead. */
+  .dial-run { transition: none; }
 }

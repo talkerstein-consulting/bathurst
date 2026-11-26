@@ -92,7 +92,20 @@ const linear = (hex: string): [number, number, number] => {
 const WAVE_INK = "#D3CBC5";
 const GROUND = "#F8F4EC";
 
-export function HeroGround() {
+/**
+ * The ground takes a pair of colours so one component can print two papers: the home
+ * hero's warm grey, which is the map's own, and /check-2's brand blue. They must be on
+ * the same side of neutral as each other — the dither quantises BETWEEN them, and a
+ * pair that straddles neutral puts a third hue in the middle steps. That is the fault
+ * the comment above records.
+ */
+export function HeroGround({
+  ink = WAVE_INK,
+  paper = GROUND,
+}: {
+  ink?: string;
+  paper?: string;
+} = {}) {
   return (
     /* The canvas is wrapped rather than given .hero-bg directly. Dither.css
        sets .dither-container { position: relative; height: 100% } on whatever
@@ -105,8 +118,8 @@ export function HeroGround() {
         /* The BG Studio settings, with the two colours swapped for brand
            tokens. Palette is None there, so the wave is a single colour
            quantised into `colorNum` steps rather than a ramp of its own. */
-        waveColor={linear(WAVE_INK)}
-        backgroundColor={linear(GROUND)}
+        waveColor={linear(ink)}
+        backgroundColor={linear(paper)}
         colorNum={6}
         ditherMode="bayer"
         pixelSize={1}

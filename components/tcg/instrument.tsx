@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, Star } from "lucide-react";
+import { Check, ChevronRight, Star } from "lucide-react";
 import { InstrumentDial } from "@/components/instrument-dial";
 import { completeDomain, toSiteUrl } from "@/lib/domain";
 import { CONTACT, GOOGLE } from "@/lib/bathurst/data";
@@ -63,12 +63,26 @@ const DIALS: Array<[keyof Scores, string]> = [
   ["practices", "Best practices"],
 ];
 
-const STEPS: Array<[Stage, string]> = [
+const STAGES: Stage[] = ["input", "reading", "results", "booking"];
+
+/** The staging tabs, in the order the sequence runs. */
+const STAGE_TABS: Array<[Stage, string]> = [
   ["input", "Input"],
   ["reading", "Measurement"],
   ["results", "Diagnosis"],
   ["booking", "Consultation"],
 ];
+
+/**
+ * A made-up reading, used only to open 03 and 04 directly (see the effect in
+ * Instrument). The numbers are plausible rather than real, and the face says on screen
+ * that they are a sample whenever they are the ones being shown.
+ */
+const SAMPLE: Result = {
+  url: "https://example.com",
+  scores: { performance: 34, accessibility: 72, practices: 93 },
+  timings: { paint: "2.8 s", usable: "9.1 s" },
+};
 
 /** Google's own bands: 0–49 poor, 50–89 needs improvement, 90–100 good. */
 type Band = "good" | "fair" | "poor";
@@ -115,7 +129,9 @@ export function Instrument({ bookHref }: { bookHref: string }) {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
-  const panel = useRef<HTMLOListElement>(null);
+  /** True while the readings on screen are the sample, not Google's. */
+  const [sample, setSample] = useState(false);
+  const panel = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   /** The run in flight, so the reading stage can be abandoned rather than waited out. */
   const run = useRef<AbortController | null>(null);
@@ -135,6 +151,58 @@ export function Instrument({ bookHref }: { bookHref: string }) {
 
   /* G13: a run still open when the instrument unmounts is cancelled, not left hanging. */
   useEffect(() => () => run.current?.abort(), []);
+
+  /**
+   * Put a stage on screen without running a reading.
+   *
+   * Used by the query string on load and by the staging tabs. 02 needs an address to
+   * name, and 03 and 04 need a reading to show, so both are supplied from SAMPLE — and
+   * `sample` stays true while they are, which is what makes the diagnosis face say so
+   * instead of naming Google as the source.
+   */
+  const show = (want: Stage) => {
+    run.current?.abort();
+    run.current = null;
+    setError("");
+    if (want === "input") {
+      setResult(null);
+      setSample(false);
+    } else {
+      setUrl((u) => u || SAMPLE.url.replace(/^https?:\/\//, ""));
+      if (want === "reading") {
+        setResult(null);
+      } else if (!result) {
+        /* A real reading already on screen is kept: only an empty instrument is given
+           the sample, so jumping back to 03 after a genuine run still shows the run. */
+        setResult(SAMPLE);
+        setSample(true);
+      }
+    }
+    setStage(want);
+  };
+
+  /* The other three stages, opened directly.
+   *
+   * 02, 03 and 04 are only reachable by running a real reading, which takes half a
+   * minute, needs the PageSpeed key and gives whatever scores the site happens to have
+   * that day — so the three faces that carry most of this page's design could not be
+   * looked at, or shown to anyone, without that. `?stage=reading|results|booking` opens
+   * one of them. 03 and 04 need a reading to show, so they are given the SAMPLE below.
+   *
+   * This is for looking at the page, not for using it: the scores it shows are made up,
+   * which is why the face says so in as many words while the sample is on, and why the
+   * page is noindex (see app/check-2/page.tsx). Nothing here changes what a real run
+   * does — a reading started from 01 replaces the sample with Google's own answer. */
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps --
+     the query string can only be read after mount: putting it in the initial state
+     would make the server's render (always stage 01) disagree with the client's. It
+     runs once, and re-running it would fight the staging tabs. */
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get("stage");
+    if (want && STAGES.includes(want as Stage)) show(want as Stage);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+
 
   const start = async (e: FormEvent) => {
     e.preventDefault();
@@ -158,22 +226,47 @@ export function Instrument({ bookHref }: { bookHref: string }) {
         body: JSON.stringify({ url: site }),
         signal: ctl.signal,
       });
-      const data = await answer.json();
+      const data = await answer.json().catch(() => null);
       if (!answer.ok) {
-        setError(typeof data?.error === "string" ? data.error : "We couldn’t check that website.");
-        setStage("input");
+        /* No key, no route, or Google refused. Rather than dead-ending at 01 — which is
+           where this page spent its whole life while PAGESPEED_API_KEY was unset, with
+           no way to reach 02, 03 or 04 at all — the sequence carries on against the
+           sample. It is labelled as a sample on the face itself, so nobody can mistake
+           it for a measurement of the address they typed. */
+        fallBack(site);
         return;
       }
       setResult(data as Result);
+      setSample(false);
       setStage("results");
     } catch (err) {
       /* An abort is the visitor's own decision, not a failure: say nothing. */
       if ((err as Error)?.name === "AbortError") return;
-      setError("The check didn’t come back. Try again in a moment.");
-      setStage("input");
+      fallBack(site);
     } finally {
       run.current = null;
     }
+  };
+
+  /**
+   * Carry on without Google.
+   *
+   * The reading could not be made — no PAGESPEED_API_KEY, no /api/pagespeed, or the
+   * request failed — so the instrument shows the SAMPLE and walks the rest of the
+   * sequence. The visitor can still see what the assessment gives them and still ask
+   * for a review; the numbers simply are not theirs, and the face says so where it
+   * would otherwise name Google as the source.
+   *
+   * FLAGGED: this makes a FAILED check look like a working one to anyone who misses the
+   * label. It is right for a page being shown and reviewed before the key is placed; it
+   * is NOT right once the key is in and a real failure should be reported as a failure.
+   * When PAGESPEED_API_KEY is set, this should become an error path again.
+   */
+  const fallBack = (site: string) => {
+    setResult({ ...SAMPLE, url: site });
+    setSample(true);
+    setError("");
+    setStage("results");
   };
 
   const stop = () => {
@@ -195,44 +288,86 @@ export function Instrument({ bookHref }: { bookHref: string }) {
 
   return (
     <div className="inst" data-stage={stage}>
-      {/* The instrument itself: one bounded plate with the sequence across the top of it,
-          so every stage happens inside the same visible region rather than floating on
-          the page. */}
-      {/* The ref is on the rail below, not on the Frame: Frame holds its own ref for
-          measuring the box, and a second one spread over it would break the line it
-          draws. The rail is the first thing in the panel and names the sequence, so it
-          is the right thing for the focus to land on anyway. */}
-      <Frame className="inst-panel">
-        <span className="inst-rivets" aria-hidden="true">
-          <i /><i /><i /><i />
-        </span>
+      {/* The instrument itself: one unbounded region on the page's own ground. The
+          plate and the stage rail are gone — the sequence is carried by the faces
+          themselves, which crossfade in the same place. The ref is here so each stage
+          can take the focus to the top of what it just put on screen. */}
+      {/* The staging tabs.
+          *
+          * Not part of the page: a review control, so every stage can be put on screen
+          * and looked at without running a reading. It is drawn as a utility strip in
+          * the corner rather than as page furniture, precisely so nobody mistakes it
+          * for the visitor's own navigation — the stage rail that used to sit across
+          * the top was removed for being exactly that.
+          *
+          * /check-2 is noindex and is the side-by-side treatment being reviewed, so it
+          * ships with the page. It belongs behind a flag the day this becomes the live
+          * assessment; FLAGGED here and in app/check-2.css. */}
+      <nav className="inst-tabs" aria-label="Staging: jump to a stage">
+        <b>Staging</b>
+        {STAGE_TABS.map(([s, name], i) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => show(s)}
+            aria-current={stage === s ? "true" : undefined}
+          >
+            <i>{String(i + 1).padStart(2, "0")}</i>
+            <span>{name}</span>
+          </button>
+        ))}
+      </nav>
 
-        {/* The stage rail. One hairline runs the whole width behind the four marks, so
-            they read as positions on one instrument rather than four separate labels. */}
-        <ol className="inst-steps" aria-label="Assessment sequence" ref={panel} tabIndex={-1}>
-          {STEPS.map(([s, name], i) => {
-            const on = stage === s;
-            const done = STEPS.findIndex(([k]) => k === stage) > i;
-            return (
-              <li key={s} data-on={on ? "true" : "false"} data-done={done ? "true" : "false"}>
-                <span className="inst-step-mark" aria-hidden="true">
-                  {done ? <Check className="glyph" /> : String(i + 1).padStart(2, "0")}
-                </span>
-                <b aria-current={on ? "step" : undefined}>{name}</b>
-              </li>
-            );
-          })}
-        </ol>
+      <div className="inst-panel" ref={panel} tabIndex={-1}>
 
         {/* ----------------------------------------------- 01 · INPUT ------ */}
         <section className="inst-face" data-face="input" aria-hidden={stage !== "input"} inert={stage !== "input"}>
           <div className="inst-say">
+            {/* The two companies, each as the thing a reader recognises, and each in a
+                pill of its own.
+                *
+                * The pill is doing work, not decoration: these are two foreign marks
+                * dropped into a sentence set in the brand's own face, and without an
+                * edge around them they read as debris in the line. The pill says "this
+                * is a thing being named", and it gives Google's colour wordmark a piece
+                * of plain paper to sit on so the dither never runs under it.
+                *
+                * Both marks are the companies' own artwork, both in the brand's Steel
+                * Blue so the line reads as one sentence rather than as a sentence with
+                * two logos dropped into it. Google is its full wordmark from Google's
+                * asset host, repainted; ChatGPT is the mark chatgpt.com itself serves.
+                * FLAGGED in public/brand/third-party/README.md: repainting Google's
+                * wordmark is outside Google's brand terms. */}
             <h1 className="inst-h1">
-              Your website looks fine. <span>TO YOU.</span>
+              <span className="inst-h1-a">Your website looks fine.</span>
+              <span className="inst-h1-b">
+                But does{" "}
+                <span className="inst-pill">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="inst-pill-mark inst-pill-mark--google"
+                    src="/brand/third-party/google-wordmark-steel.png"
+                    alt="Google"
+                    width={540}
+                    height={179}
+                  />
+                </span>{" "}
+                and{" "}
+                <span className="inst-pill">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="inst-pill-mark"
+                    src="/brand/third-party/chatgpt-mark.svg"
+                    alt=""
+                    width={180}
+                    height={180}
+                  />
+                  ChatGPT
+                </span>{" "}
+                think so?
+              </span>
             </h1>
-            <p className="inst-lede">
-              Does it for everyone? Find out what your customers experience.
-            </p>
+            <p className="inst-lede">Find out what your customers experience.</p>
           </div>
 
           <form className="inst-form" onSubmit={start} noValidate>
@@ -289,11 +424,17 @@ export function Instrument({ bookHref }: { bookHref: string }) {
               reason="Enter your website address first."
             >
               Check my website
+              <ChevronRight className="glyph" aria-hidden="true" />
             </Cta>
           </form>
 
           <p className={`inst-fine${error ? " is-bad" : ""}`} role={error ? "alert" : undefined}>
-            {error || "Free assessment. Takes about half a minute. No password needed."}
+            {error || (
+              <>
+                Free assessment <span aria-hidden="true">·</span> Takes about half a minute{" "}
+                <span aria-hidden="true">·</span> No password needed
+              </>
+            )}
           </p>
         </section>
 
@@ -314,7 +455,16 @@ export function Instrument({ bookHref }: { bookHref: string }) {
           {result && low && (
             <>
               <p className="inst-whose">
-                Google PageSpeed Insights · mobile · <b>{hostOf(result.url)}</b>
+                {sample ? (
+                  <>
+                    <span className="inst-sample">Sample reading</span> · not a real
+                    measurement
+                  </>
+                ) : (
+                  <>
+                    Google PageSpeed Insights · mobile · <b>{hostOf(result.url)}</b>
+                  </>
+                )}
               </p>
 
               {/* The headline reading: the weakest of the three, set large. Everything
@@ -387,7 +537,7 @@ export function Instrument({ bookHref }: { bookHref: string }) {
             onBack={() => setStage("results")}
           />
         </section>
-      </Frame>
+      </div>
     </div>
   );
 }
