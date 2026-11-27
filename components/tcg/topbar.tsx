@@ -32,7 +32,20 @@ import { NAV } from "./nav-data";
  * (app/check/page.tsx) passes it, because that page has no full masthead for the bar to
  * replace — the bar IS its header, as it already is on a phone.
  */
-export function TopBar({ always = false }: { always?: boolean }) {
+export function TopBar({
+  always = false,
+  bookHref = "/book",
+  bookEvent,
+}: {
+  always?: boolean;
+  /** Where the appointment control goes. A page that holds the booking itself points
+   *  it at its own stage instead of the /book route. */
+  bookHref?: string;
+  /** When set, the control fires this window event instead of following its href, so a
+   *  page whose booking is a state of itself opens it in place and keeps what is on
+   *  screen. The href stays as the no-JS answer and as the middle-click target. */
+  bookEvent?: string;
+}) {
   const [stuck, setStuck] = useState(false);
   /* On phones this bar is not a scrolled state at all: it IS the header, in
      every instance, and the full masthead below is hidden (globals.css). So it
@@ -142,7 +155,22 @@ export function TopBar({ always = false }: { always?: boolean }) {
           </Cta>
           {/* The calendar glyph only shows where a page asks for the compact bar
               (app/check-2.css, phones); everywhere else the words carry it. */}
-          <Cta as="a" href="/book" label="Book appointment" className="topbar-book">
+          <Cta
+            as="a"
+            href={bookHref}
+            label="Book appointment"
+            className="topbar-book"
+            onActivate={
+              bookEvent
+                ? (e) => {
+                    /* Plain presses only: a new tab or window still wants the href. */
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    window.dispatchEvent(new CustomEvent(bookEvent));
+                  }
+                : undefined
+            }
+          >
             <CalendarDays className="glyph topbar-book-icon" aria-hidden="true" />
             <span className="topbar-book-label">Book appointment</span>
           </Cta>

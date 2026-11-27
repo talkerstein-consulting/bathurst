@@ -33,7 +33,10 @@ export const metadata: Metadata = {
 export default function CheckTwo() {
   return (
     <>
-      <TopBar always />
+      {/* The appointment control opens stage 04 here instead of the /book stub: this
+          page IS the booking. The href is what a middle-click or a browser without JS
+          gets, and it lands on the same stage. */}
+      <TopBar always bookHref="/check-2?stage=booking" bookEvent="tcg:book" />
       <main className="inst-page">
         {/* The ground: the home hero's dither, full screen, in a vintage beige — warmer
             and brighter than the map's own paper, so the page reads as aged stock

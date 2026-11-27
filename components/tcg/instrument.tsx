@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type InputHTMLAttributes, type KeyboardEvent } from "react";
 import { flushSync } from "react-dom";
 import { Check, ChevronRight } from "lucide-react";
 import { completeDomain, toSiteUrl } from "@/lib/domain";
@@ -8,7 +8,7 @@ import { CONTACT } from "@/lib/bathurst/data";
 import Awards from "@/components/bathurst/Awards";
 import { Cta } from "./cta";
 import { Frame } from "./frame";
-import { SweepGauge, sweptBy } from "./sweep-gauge";
+import { FINISH_MS, SweepGauge, sweptBy } from "./sweep-gauge";
 import { byDay, slotDay, slotTime, tzLabel, useSlots, type Slot } from "./slots";
 
 /**
@@ -72,13 +72,6 @@ const DIALS: Array<[keyof Scores, string]> = [
 
 const STAGES: Stage[] = ["input", "reading", "results", "booking"];
 
-/** The staging tabs, in the order the sequence runs. */
-const STAGE_TABS: Array<[Stage, string]> = [
-  ["input", "Input"],
-  ["reading", "Measurement"],
-  ["results", "Diagnosis"],
-  ["booking", "Consultation"],
-];
 
 /**
  * A made-up reading, used only to open 03 and 04 directly (see the effect in
@@ -289,6 +282,9 @@ export function Instrument() {
    *  new instruments rather than the same three coming to rest. */
   const startedAt = useRef(0);
   const [swept, setSwept] = useState(0);
+  /** True from the moment Google answers until 03 is on screen: the reading face runs
+   *  its needle up to a finished reading rather than being cut off mid-climb. */
+  const [finishing, setFinishing] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   /** The run in flight, so the reading stage can be abandoned rather than waited out. */
@@ -313,7 +309,7 @@ export function Instrument() {
   /**
    * Put a stage on screen without running a reading.
    *
-   * Used by the query string on load and by the staging tabs. 02 needs an address to
+   * Used by the query string on load. 02 needs an address to
    * name, and 03 and 04 need a reading to show, so both are supplied from SAMPLE — and
    * `sample` stays true while they are, which is what makes the diagnosis face say so
    * instead of naming Google as the source.
@@ -322,6 +318,7 @@ export function Instrument() {
     run.current?.abort();
     run.current = null;
     setError("");
+    setFinishing(false);
     if (want === "input") {
       setResult(null);
       setSample(false);
@@ -354,7 +351,7 @@ export function Instrument() {
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps --
      the query string can only be read after mount: putting it in the initial state
      would make the server's render (always stage 01) disagree with the client's. It
-     runs once, and re-running it would fight the staging tabs. */
+     runs once. */
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get("stage");
     if (want && STAGES.includes(want as Stage)) show(want as Stage);
@@ -395,10 +392,17 @@ export function Instrument() {
         fallBack(site);
         return;
       }
+      /* The answer is in, but the gauge is paced for a slow run. Let it finish the
+         reading first — a beat, not a wait — and hand over to 03 on the other side of
+         it, with the dials settling from where the catch-up left them. */
+      setFinishing(true);
+      await new Promise((r) => setTimeout(r, FINISH_MS));
+      if (ctl.signal.aborted) return;
       land(() => {
         setResult(data as Result);
         setSample(false);
         setStage("results");
+        setFinishing(false);
       });
     } catch (err) {
       /* An abort is the visitor's own decision, not a failure: say nothing. */
@@ -446,6 +450,20 @@ export function Instrument() {
     vt?.ready?.catch(() => {});
   };
 
+  /* THE BAR'S APPOINTMENT CONTROL. On this page the booking is a stage, not another
+     route, so the bar opens 04 in place rather than leaving for /book — a reading
+     already on screen is still behind it when it does. The bar is given the event name
+     in app/check-2/page.tsx; its href is the answer for anything that does not run
+     this. Held in a ref because the listener is bound once and `show` closes over the
+     reading, which it must read as it is pressed, not as it was at mount. */
+  const openBook = useRef<(() => void) | null>(null);
+  useEffect(() => { openBook.current = () => land(() => show("booking")); });
+  useEffect(() => {
+    const open = () => openBook.current?.();
+    window.addEventListener("tcg:book", open);
+    return () => window.removeEventListener("tcg:book", open); // G13
+  }, []);
+
   /**
    * Carry on without Google.
    *
@@ -487,30 +505,6 @@ export function Instrument() {
           plate and the stage rail are gone — the sequence is carried by the faces
           themselves, which crossfade in the same place. The ref is here so each stage
           can take the focus to the top of what it just put on screen. */}
-      {/* The staging tabs.
-          *
-          * Not part of the page: a review control, so every stage can be put on screen
-          * and looked at without running a reading. It is drawn as a utility strip in
-          * the corner rather than as page furniture, precisely so nobody mistakes it
-          * for the visitor's own navigation.
-          *
-          * /check-2 is noindex and is the side-by-side treatment being reviewed, so it
-          * ships with the page. It belongs behind a flag the day this becomes the live
-          * assessment; FLAGGED here and in app/check-2.css. */}
-      <nav className="inst-tabs" aria-label="Staging: jump to a stage">
-        <b>Staging</b>
-        {STAGE_TABS.map(([s, name], i) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => show(s)}
-            aria-current={stage === s ? "true" : undefined}
-          >
-            <i>{String(i + 1).padStart(2, "0")}</i>
-            <span>{name}</span>
-          </button>
-        ))}
-      </nav>
 
       <div className="inst-panel" ref={panel} tabIndex={-1}>
 
@@ -642,7 +636,7 @@ export function Instrument() {
           </h2>
           {/* Mounted only while this face is up, so its clock starts when the reading
               does — mounted from page load it was already near 99% at the first press. */}
-          {stage === "reading" && <SweepGauge />}
+          {stage === "reading" && <SweepGauge finish={finishing} />}
 
           {/* The three category dials, in the same row and the same order they hold on
               03. They are not a second progress bar: nothing is known about any category
@@ -665,7 +659,7 @@ export function Instrument() {
             </ul>
           )}
           {/* FLAGGED (D06): the "Stop the reading" control was removed on request. This
-              face now has no way back but the staging strip and the browser's own back. */}
+              face now has no way back but the browser's own back. */}
         </section>
 
         {/* -------------------------------------------- 03 · DIAGNOSIS ----- */}
@@ -728,7 +722,14 @@ export function Instrument() {
                 ))}
               </ul>
 
-              <Fixes fixes={fixes} onBook={() => land(() => setStage("booking"))} />
+              {/* Every category Google answered with is in its good band. `stats` is
+                  already the categories that came back, so a missing one cannot make a
+                  reading look clean by being absent. */}
+              <Fixes
+                fixes={fixes}
+                green={stats.length > 0 && stats.every((s) => bandOf(s.value) === "good")}
+                onBook={() => land(() => setStage("booking"))}
+              />
               </div>
             </>
           )}
@@ -802,28 +803,58 @@ export function Instrument() {
  */
 function Fixes({
   fixes,
+  green,
   onBook,
 }: {
   fixes: NonNullable<Result["fixes"]>;
+  /** Every category Google returned is in its good band (90+). */
+  green: boolean;
   onBook: () => void;
 }) {
   /* Three stand in the clear. Everything after them runs on down the sheet under the
      card, struck through — the sheet is plainly longer than what is being shown. */
   const OPEN = 3;
   const held = Math.max(0, fixes.length - OPEN);
-  const label = held > 0 ? "Book a review to see them all" : "Book a review";
+  /* A CLEAN READING STILL HAS AN ASK — a different one.
+     The ask below was written for a site in trouble: it points at the list and offers to
+     work through it. Shown over a wall of green it argues against itself, and the page
+     ends on "you are fine", which is the one ending that cannot convert. So the clean
+     reading changes what is being offered rather than how loudly it is offered: these
+     are Google's technical checks, which the site clears, and the things that decide
+     whether a visitor finds it, trusts it and gets in touch are not measured here at
+     all. That is the truth of this report and it is also the pitch — no invented
+     problem, no "but did you know", and nothing that contradicts the dials above it or
+     a short fix list beside it. */
+  const label = green ? "Book a review" : held > 0 ? "Book a review to see them all" : "Book a review";
 
   const ask = (
     <div className="inst-ask">
       <p className="inst-ask-eyebrow">Assessment complete</p>
-      <h3 className="inst-ask-h">
-        The numbers are in.
-        <br />
-        What&rsquo;s your next move?
-      </h3>
-      <p className="inst-ask-say">
-        We&rsquo;ve measured your website. Now let&rsquo;s put those findings to work.
-      </p>
+      {green ? (
+        <>
+          <h3 className="inst-ask-h">
+            Your website passes.
+            <br />
+            Passing isn&rsquo;t the same as working.
+          </h3>
+          <p className="inst-ask-say">
+            These are Google&rsquo;s technical checks, and you clear them. What a visitor
+            finds, trusts and does next is not in this report — and that is the half a
+            review looks at.
+          </p>
+        </>
+      ) : (
+        <>
+          <h3 className="inst-ask-h">
+            The numbers are in.
+            <br />
+            What&rsquo;s your next move?
+          </h3>
+          <p className="inst-ask-say">
+            We&rsquo;ve measured your website. Now let&rsquo;s put those findings to work.
+          </p>
+        </>
+      )}
       <Cta as="button" type="button" primary className="inst-go" label={label} onActivate={onBook}>
         {label}
       </Cta>
@@ -835,7 +866,10 @@ function Fixes({
   return (
     <div className="inst-fixes">
       <div className="inst-paper">
-        <h3 className="inst-fixes-h">Top fixes</h3>
+        {/* "Top fixes" over a green reading overstates what the list is: on a site that
+            clears every band these are housekeeping, and calling them fixes fights the
+            card below. */}
+        <h3 className="inst-fixes-h">{green ? "Still on the list" : "Top fixes"}</h3>
         <ol className="inst-fixes-list">
           {fixes.slice(0, OPEN).map((f, i) => {
             const saved = savingOf(f.detail);
@@ -879,8 +913,10 @@ function Fixes({
               <i aria-hidden="true">&bull;</i>
               <b>
                 Caught you in the inspector. Fair enough — but reading the list is the
-                easy half. Book the review and we&rsquo;ll work through all {fixes.length} of
-                them with you.
+                easy half.{" "}
+                {green
+                  ? <>Nothing here is on fire. What a review is for is the part Google does not measure.</>
+                  : <>Book the review and we&rsquo;ll work through all {fixes.length} of them with you.</>}
               </b>
             </li>
           )}
@@ -930,21 +966,125 @@ function SlotPicker({
   onDay: (i: number) => void;
   onSlot: (s: Slot) => void;
 }) {
-  const open = days[Math.min(day, days.length - 1)];
+  const here = Math.min(day, days.length - 1);
+  const open = days[here];
   const times = open ? open[1] : [];
+  const strip = useRef<HTMLDivElement>(null);
+
+  /* PULLING THE RAIL SIDEWAYS.
+     There is no scrollbar under the dates any more, so the row has to move the way a
+     row of cards is expected to: grab it and pull, and let it carry on a little when
+     let go. Touch is left to the platform — a finger already gets momentum, and
+     handling the same gesture twice fights it — so this is mouse and pen only, plus a
+     wheel that is turned sideways over the rail.
+     The glide holds `is-dragging` until it stops, because snap and a decaying scroll
+     pull in opposite directions; the class drops at the end and the nearest plate
+     lands square. A drag past the slop swallows the click that follows it, so pulling
+     the rail never picks a day by accident. */
+  useEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const calm = matchMedia("(prefers-reduced-motion: reduce)");
+    let down = false, moved = false, id = -1;
+    let startX = 0, startLeft = 0, lastX = 0, lastT = 0, v = 0, raf = 0;
+
+    const stop = () => { cancelAnimationFrame(raf); raf = 0; el.classList.remove("is-dragging"); };
+    const glide = () => {
+      v *= 0.94;                       // ~16 frames to rest
+      el.scrollLeft -= v * 16;
+      const end = el.scrollLeft <= 0 || el.scrollLeft >= el.scrollWidth - el.clientWidth - 1;
+      if (Math.abs(v) < 0.02 || end) { stop(); return; }
+      raf = requestAnimationFrame(glide);
+    };
+
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch" || e.button !== 0) return;
+      stop();
+      down = true; moved = false; id = e.pointerId;
+      startX = lastX = e.clientX; startLeft = el.scrollLeft; lastT = e.timeStamp; v = 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!down || e.pointerId !== id) return;
+      const dx = e.clientX - startX;
+      if (!moved) {
+        if (Math.abs(dx) < 6) return;   // slop, so a click is still a click
+        moved = true;
+        el.classList.add("is-dragging");
+        el.setPointerCapture(id);
+      }
+      e.preventDefault();
+      el.scrollLeft = startLeft - dx;
+      const dt = e.timeStamp - lastT;
+      if (dt > 0) { v = (e.clientX - lastX) / dt; lastX = e.clientX; lastT = e.timeStamp; }
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!down || e.pointerId !== id) return;
+      down = false;
+      if (!moved) return;
+      if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
+      if (calm.matches || Math.abs(v) < 0.05) { stop(); return; }
+      raf = requestAnimationFrame(glide);
+    };
+    const onClick = (e: MouseEvent) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } };
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;   // already sideways
+      const room = e.deltaY > 0
+        ? el.scrollLeft < el.scrollWidth - el.clientWidth - 1
+        : el.scrollLeft > 0;
+      if (!room) return;                                       // let the page have it
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+    el.addEventListener("click", onClick, true);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {                                             // G13
+      stop();
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onUp);
+      el.removeEventListener("click", onClick, true);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  /* ARIA tabs are a roving tab stop, not five of them: one plate is in the page's tab
+     order and the arrows move between them (APG). Without this a keyboard visitor is
+     told "tab 1 of 5" and then finds the arrow keys do nothing, and tabbing out of the
+     strip takes five presses. Moving selection with focus is correct here because the
+     panel is the times immediately below and switching it costs nothing. */
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    const to = step ? (here + step + days.length) % days.length
+      : e.key === "Home" ? 0
+      : e.key === "End" ? days.length - 1
+      : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    onDay(to);
+    strip.current?.querySelectorAll<HTMLButtonElement>(".inst-day")[to]?.focus();
+  };
 
   return (
     <>
-      <div className="inst-days" role="tablist" aria-label="Days">
+      <div className="inst-days" role="tablist" aria-label="Days" ref={strip} onKeyDown={onKey}>
         {days.map(([key, list], i) => {
           const d = slotDay(list[0].start);
-          const on = i === Math.min(day, days.length - 1);
+          const on = i === here;
           return (
             <button
               key={key}
               type="button"
               role="tab"
+              id={`inst-day-${i}`}
               aria-selected={on}
+              aria-controls="inst-times"
+              tabIndex={on ? 0 : -1}
               className="inst-day"
               onClick={() => onDay(i)}
             >
@@ -956,7 +1096,12 @@ function SlotPicker({
         })}
       </div>
 
-      <div className="inst-times" role="group" aria-label="Times">
+      <div
+        className="inst-times"
+        role="tabpanel"
+        id="inst-times"
+        aria-labelledby={`inst-day-${here}`}
+      >
         {times.map((t) => {
           const on = slot?.id === t.id;
           return (
@@ -989,8 +1134,10 @@ function hostOf(url: string) {
  *
  * Five fields: full name, business email and company name (required), the website (filled
  * in from the check, editable, optional) and what they would like to discuss (optional).
- * There are no times offered: no calendar is connected to this page. On success it says
- * the request was sent; it never says anything is booked.
+ * Two ways in, chosen on the face: SCHEDULE asks for one of the week's openings (the
+ * times are a placeholder — components/tcg/slots.tsx), INTAKE sends the details with no
+ * time and TCG replies with some. On success it says the request was sent; it never says
+ * anything is booked, because nothing behind this page can hold a time.
  *
  * It posts to /api/book, the same endpoint the site's booking form uses. That route is not
  * in this repository yet, so in practice the post fails and the visitor is handed the same
@@ -1005,6 +1152,13 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
   const slots = useSlots();
   const [day, setDay] = useState(0);
   const [slot, setSlot] = useState<Slot | null>(null);
+  /* Changing the day MUST drop the time: the grid below only highlights a slot that
+     belongs to the open day, so a time held across a day change is invisible on screen
+     and still goes out in the payload — the visitor sees Wednesday and books Monday. */
+  const pickDay = (i: number) => {
+    setDay(i);
+    setSlot(null);
+  };
   const set = (k: keyof typeof f) => (v: string) => {
     setF((o) => ({ ...o, [k]: v }));
     setBad((x) => x.filter((y) => y !== k));
@@ -1050,6 +1204,9 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
              stands for. See components/tcg/slots.tsx for the contract — and note that
              this is a REQUEST for that time, not a claim on it. */
           slot: slot ? { id: slot.id, start: slot.start } : null,
+          /* Read off the form rather than chosen: a request with a time is a scheduling
+             request, one without is an intake and TCG replies with times. */
+          mode: slot ? "schedule" : "intake",
           goal: "website-check",
           goalLabel: "Website check",
           services: ["Website assessment"],
@@ -1120,6 +1277,34 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
       </div>
 
       <form className="inst-book-form" onSubmit={send} noValidate>
+        <div className="inst-row">
+          {field("name", "Full name", { autoComplete: "name", maxLength: 80 })}
+          {field("email", "Business email", { type: "email", autoComplete: "email", maxLength: 120 })}
+        </div>
+        <div className="inst-row">
+          {field("company", "Company name", { autoComplete: "organization", maxLength: 120 })}
+          {field("website", "Website (optional)", { inputMode: "url", autoComplete: "url", maxLength: 200 })}
+        </div>
+        <label className="inst-label">
+          <span>What would you like to discuss? (optional)</span>
+          <Frame className="inst-field inst-field--area" single>
+            <textarea
+              className="inst-input inst-textarea"
+              name="message"
+              rows={3}
+              maxLength={1000}
+              value={f.message}
+              onChange={(e) => set("message")(e.target.value)}
+            />
+          </Frame>
+        </label>
+
+        {/* The two ways in, on the one screen rather than behind a switch: the fields
+            above are the intake and stand on their own, and under this rule is the week,
+            for anyone who would rather take a time now. Picking one is optional — the
+            submit sends either way — so the rule reads "Or" and not a heading. */}
+        <p className="inst-or"><span>Or</span></p>
+
         {/* THE OPENINGS.
             Drawn from the instrument's own language rather than a calendar widget: the
             days are a strip of plates that scrolls sideways in ONE row (D06, never
@@ -1135,7 +1320,7 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
             in it. */}
         <fieldset className="inst-when">
           <legend className="inst-when-h">
-            Pick a time
+            Schedule a time
             {/* The zone is named for the week being shown, from its first opening —
                 not from the clock, which a component may not read as it renders. */}
             {slots && slots.length > 0 && (
@@ -1158,33 +1343,11 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
               days={byDay(slots)}
               day={day}
               slot={slot}
-              onDay={setDay}
+              onDay={pickDay}
               onSlot={setSlot}
             />
           )}
         </fieldset>
-
-        <div className="inst-row">
-          {field("name", "Full name", { autoComplete: "name", maxLength: 80 })}
-          {field("email", "Business email", { type: "email", autoComplete: "email", maxLength: 120 })}
-        </div>
-        <div className="inst-row">
-          {field("company", "Company name", { autoComplete: "organization", maxLength: 120 })}
-          {field("website", "Website (optional)", { inputMode: "url", autoComplete: "url", maxLength: 200 })}
-        </div>
-        <label className="inst-label">
-          <span>What would you like to discuss? (optional)</span>
-          <Frame className="inst-field inst-field--area" single>
-            <textarea
-              className="inst-input inst-textarea"
-              name="message"
-              rows={3}
-              maxLength={1000}
-              value={f.message}
-              onChange={(e) => set("message")(e.target.value)}
-            />
-          </Frame>
-        </label>
 
         {bad.length > 0 && (
           <p className="inst-bad" role="alert">

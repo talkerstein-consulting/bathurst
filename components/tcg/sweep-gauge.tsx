@@ -127,8 +127,14 @@ export const CAP = 95;
  *  reading afterwards all read it from here. */
 export const sweptBy = (ms: number) => Math.min(CAP, (ms / CLIMB_MS) * CAP);
 
-export function SweepGauge() {
+/** The catch-up when Google answers early: how long the needle takes to run from
+ *  wherever it had got to up to a finished reading. */
+export const FINISH_MS = 480;
+
+export function SweepGauge({ finish = false }: { finish?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
+  /** Set the moment the answer lands: where the needle was, and when. */
+  const done = useRef<{ from: number; at: number } | null>(null);
   const [pct, setPct] = useState(0);
   const [line, setLine] = useState(0);
 
@@ -147,7 +153,13 @@ export function SweepGauge() {
     let said = -1;
     const frame = (now: number) => {
       const ms = calm ? Math.floor((now - t0) / 1000) * 1000 : now - t0;
-      const p = sweptBy(ms);
+      /* THE CATCH-UP. The climb is paced for a slow Lighthouse run, so an answer that
+         lands in eight seconds used to cut the gauge off at a fifth of its scale and
+         jump to the result. When the answer is in, the needle runs on from where it
+         had got to and FINISHES the reading first — the same travel, in less time. */
+      const p = done.current !== null
+        ? done.current.from + (100 - done.current.from) * Math.min(1, (now - done.current.at) / FINISH_MS)
+        : sweptBy(ms);
       el.style.setProperty("--p", p.toFixed(3));
       const whole = Math.floor(p);
       if (whole !== shown) { shown = whole; setPct(whole); }
@@ -158,6 +170,14 @@ export function SweepGauge() {
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf); // G13
   }, []);
+
+  /* Noted in a ref, not state: the loop above owns the needle and must not be torn
+     down and restarted to hear about this. */
+  useEffect(() => {
+    if (!finish || done.current) return;
+    const el = root.current;
+    done.current = { from: Number(el?.style.getPropertyValue("--p") || 0), at: performance.now() };
+  }, [finish]);
 
   const now = LINES[line];
 

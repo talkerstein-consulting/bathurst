@@ -94,7 +94,7 @@ export const tzLabel = (iso: string) => {
 };
 
 /* ---- the placeholder ------------------------------------------------------------
-   Five working days, four openings a day, starting tomorrow. */
+   Ten working days, four openings a day, starting tomorrow. */
 
 /** The business zone's own clock reading for an instant. */
 function partsAt(t: number) {
@@ -131,7 +131,10 @@ function instantFor(y: number, mo: number, d: number, h: number, mi: number) {
 }
 
 const HOURS: Array<[number, number]> = [[10, 0], [11, 30], [14, 0], [15, 30]];
-const DAYS = 5;
+/* Two working weeks. The rail is a scrolling row of dates (D06), so a single week of
+   five plates left it half empty on a desktop; ten fills it, and gives a visitor who
+   cannot make this week somewhere to go. */
+const DAYS = 10;
 
 /**
  * FOR NOW: made-up openings, so the screen can be built and clicked through.

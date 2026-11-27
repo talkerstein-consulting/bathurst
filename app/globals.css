@@ -1926,7 +1926,11 @@ svg.glyph {
      applies wherever it appears. The appointment stays: it is the page's
      conversion CTA and this is now the only place it is visible (D04). */
   .mast-acct > a[href="/sign-in"] { display: none; }
-  .topbar-in { grid-template-columns: auto 1fr auto; gap: var(--s2); }
+  /* Symmetric side tracks so the wordmark between them is on the page's centre line,
+     not merely in the middle of whatever is left over: the roundel on one edge and the
+     appointment control on the other are different widths, and an auto/1fr/auto bar put
+     the logotype 7px off centre. */
+  .topbar-in { grid-template-columns: 1fr auto 1fr; gap: var(--s2); }
   .topbar-l { display: contents; }
   /* grid-row: 1 on all three is load-bearing. With an explicit column but an
      auto row, the placement cursor advances past column 3 once the burger is
@@ -1934,7 +1938,10 @@ svg.glyph {
      what put the wordmark under the bar and doubled its height. Pinning the
      row keeps them on one line. */
   .topbar-icon { grid-column: 1; grid-row: 1; justify-self: start; }
-  .topbar-word { grid-column: 2; grid-row: 1; justify-self: start; }
+  /* Centred on a phone: the roundel and the burger are both small and sit on the
+     edges, so the wordmark reads as the masthead between them rather than as a label
+     trailing the mark. */
+  .topbar-word { grid-column: 2; grid-row: 1; justify-self: center; }
   .burger      { grid-column: 3; grid-row: 1; justify-self: end; }
 
   /* D06: the titles stay on one row and scroll sideways rather than stacking. */

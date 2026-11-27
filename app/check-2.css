@@ -85,59 +85,6 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   outline: none;
 }
 
-/* ------------------------------------------------------ staging tabs ---- */
-/* FLAGGED: a review control, not part of the page. It puts any of the four stages on
-   screen without running a reading, so the whole sequence can be looked at while there
-   is no PageSpeed key. /check-2 is noindex and is the treatment being reviewed, so it
-   ships with it — but it belongs behind a flag the day this becomes the live page.
-
-   It is deliberately NOT the stage rail that was removed from the top of the panel: it
-   sits in the corner as a utility strip, in the quiet end of the palette, so it reads
-   as a tool laid over the page rather than as the visitor's own navigation. */
-.inst-tabs {
-  position: fixed;
-  left: max(var(--gut), env(safe-area-inset-left, 0px));
-  /* Under the bar, not along the bottom: the logo rail already owns the foot of the
-     screen, and a tool sitting on top of the clients' marks looks like a fault. */
-  top: calc(var(--topbar-h) + var(--s2));
-  z-index: 5;
-  display: flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 3px;
-  border-radius: var(--r-btn);
-  background: var(--sea-70);
-  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
-  backdrop-filter: blur(6px);
-}
-.inst-tabs b {
-  display: inline-flex; align-items: center;
-  padding-inline: var(--s1);
-  font: 400 var(--t-micro)/1 var(--head);
-  letter-spacing: .14em; text-transform: uppercase;
-  color: var(--steel-35);
-}
-.inst-tabs button {
-  appearance: none; border: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 5px;
-  /* FITTS: 30px of box in a corner the pointer can throw itself at. It is a tool, so
-     it is allowed to be smaller than a CTA. */
-  min-height: 30px;
-  padding-inline: var(--s2);
-  border-radius: var(--r-inner);
-  background: transparent;
-  font: 400 var(--t-micro)/1 var(--head);
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--steel-55);
-  transition: background var(--tumble) var(--ease-out), color var(--tumble) var(--ease-out);
-}
-.inst-tabs button i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .6; }
-.inst-tabs button:hover { color: var(--steel); background: var(--steel-06); }
-.inst-tabs button:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
-/* The stage on screen. Steel, not orange: a tab is operable, but the brand keeps orange
-   for the one thing the page wants pressed, and that is the CTA. */
-.inst-tabs button[aria-current] { color: var(--sea); background: var(--steel); }
-.inst-tabs button[aria-current] i { opacity: .7; }
 
 /* The stage rail is gone. It was a progress tracker for a sequence the visitor is
    carried through in under a minute, and it spent the top of the screen saying so. */
@@ -587,7 +534,13 @@ html body .inst-go.btn.is-off {
    summary floating level with the middle of the other column. The order is the argument:
    the score, the three categories, what it means, then what to do. */
 .inst-results {
-  display: grid; justify-items: center; justify-content: center;
+  /* minmax(0) — NOT an auto column. Left to itself the single implicit track sized to
+     its widest child (the three dials at their own measure, 316px) and kept that width
+     inside a narrower face, which, centred under the face's overflow-x: hidden, cut the
+     readings off at BOTH edges on a 320px phone. The track is the column now, and the
+     dials shrink into it. justify-items still centres the rows inside it. */
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   gap: var(--s3); width: 100%; min-width: 0; text-align: center;
 }
 .inst-headline-num small {
@@ -604,7 +557,12 @@ html body .inst-go.btn.is-off {
   display: flex; justify-content: center; gap: var(--s2);
   list-style: none; margin: 0; padding: 0; width: 100%;
 }
-.score-dial { margin: 0; width: 128px; display: grid; justify-items: center; gap: 2px; }
+/* Shares the row three ways and gives up width as the phone narrows, rather than
+   holding 128px and pushing the row past the column. */
+.score-dial {
+  margin: 0; flex: 1 1 0; width: auto; max-width: 128px; min-width: 0;
+  display: grid; justify-items: center; gap: 2px;
+}
 .score-dial svg { width: 100%; height: auto; display: block; overflow: visible; }
 
 /* The same parts as the big gauge (.gauge, above), at a size that only carries the
@@ -872,6 +830,21 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 .inst-carried b { color: var(--steel); text-transform: none; letter-spacing: 0; }
 
 /* ---------------------------------------------- the openings (stage 04) --- */
+/* THE RULE BETWEEN THE TWO WAYS IN. The fields above are the intake and send on their
+   own; the week below is there for anyone who would rather take a time now. A hairline
+   with the word sitting in it, set in the picker's own caption type — a divider, not a
+   heading, because neither side outranks the other and the one thing being ranked on
+   this screen is the orange submit under both (D04). */
+.inst-or {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: var(--s1); margin: var(--s1) 0;
+  font: 700 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel-35);
+}
+.inst-or::before, .inst-or::after {
+  content: ""; height: var(--hairline); background: var(--steel-20);
+}
+
 /* Built from the instrument's own parts, not from a calendar widget: a strip of day
    plates on the dials' cream stock, and the times under it as outline controls. The
    chosen one fills STEEL — orange stays on the single thing this screen wants pressed,
@@ -903,10 +876,23 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   overflow-x: auto; overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   padding-bottom: 2px;
-  scrollbar-width: thin; scrollbar-color: var(--steel-20) transparent;
+  /* No bar under the dates: the row is pulled sideways (pointer drag, wheel, swipe —
+     components/tcg/instrument.tsx) and the part-plate at the edge is what says there is
+     more. A scrollbar under five plates read as a fault in the card. */
+  scrollbar-width: none;
+  /* Dragging the rail must not start a text or image selection. */
+  user-select: none; -webkit-user-select: none;
+  cursor: grab;
 }
+.inst-days::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.inst-days.is-dragging { cursor: grabbing; scroll-snap-type: none; }
+/* The plates are the drag surface, so the pointer never lands on something draggable
+   of its own. */
+.inst-days img, .inst-days svg { -webkit-user-drag: none; }
 .inst-day {
-  flex: none; scroll-snap-align: start;
+  /* Grows into spare room so the rail is a full row of dates at any width, and never
+     shrinks below the plate's own measure — past that the row scrolls (D06). */
+  flex: 1 0 58px; scroll-snap-align: start;
   display: grid; justify-items: center; gap: 0;
   width: 58px; padding: 6px 0 7px;
   border: 0; border-radius: var(--r-inner);
@@ -1128,6 +1114,7 @@ html body .inst-go--wide.btn .label { justify-content: center; }
      target rather than a desktop one, and the times go two-up so a thumb has width. */
   .inst-day { width: 52px; }
   .inst-times { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inst-or { margin: 2px 0; }
   .inst-time { min-height: 44px; }
   .inst-when-wait { min-height: 72px; }
 
@@ -1136,10 +1123,8 @@ html body .inst-go--wide.btn .label { justify-content: center; }
      inner scroll below is the last resort for a short window in landscape, not
      the way these faces are meant to be read — the page itself never scrolls. */
   .inst-face { gap: var(--s3); }
-  /* The staging strip is fixed just under the bar; the panel starts below it so the
-     headline never runs under the strip, and the input face closes up to fit. */
   .inst {
-    padding-top: calc(var(--s2) + 34px + var(--s1));
+    padding-top: var(--s2);
     /* minmax(0) so the panel is held inside the gutter on both sides — without it
        its content's intrinsic width pushed it 17px past the right gutter. */
     grid-template-columns: minmax(0, 1fr);
@@ -1154,7 +1139,9 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-h1 { font-size: 24px; width: auto; margin-inline: 0; justify-self: stretch; min-width: 0; max-width: 100%; }
   .inst-results { gap: var(--s2); }
   .inst-dials { gap: var(--s1); }
-  .score-dial { width: 100px; }
+  /* A CAP, not a width: at 320px three 100px plates plus their gaps are 36px wider
+     than the column, and a centred row that wide is cut off at both edges. */
+  .score-dial { max-width: 100px; }
   .score-dial figcaption strong { font-size: 22px; }
   .inst-headline { width: 100%; }
 
@@ -1168,14 +1155,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-field--sm { min-height: 44px; }
   .inst-alt { margin-top: 0; }
 
-  /* On a phone the stage names come off: the numbers alone still say which is up, and
-     the strip stays out of the instrument's way. */
-  .inst-tabs { gap: 0; padding: 2px; }
-  .inst-tabs b, .inst-tabs button span { display: none; }
-  .inst-tabs button {
-    padding-inline: var(--s1); min-width: 34px;
-    justify-content: center; font-size: 10px;
-  }
 
   /* The foot keeps both rows on a phone, tightened: the logos are what a visitor
      recognises at a glance, and the ratings are the reason to trust the reading. */
@@ -1212,6 +1191,23 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-foot .inst-awards .aw-badge img { height: 22px; }
   .inst-foot .inst-awards .aw-badge small { max-width: none; }
 
+  /* The sheet is capped on a phone so the ask card lands ON SCREEN. The card is laid
+     over the foot of the paper and covers the rest of the list by design — the list
+     running out mid-sentence is the effect, not a casualty — so clipping the list at
+     the cap costs nothing that was readable anyway. Without this the sheet grew with
+     every wrapped line until the one thing the face wants pressed sat below the fold
+     behind an inner scroll with no affordance (D04). */
+  .inst-fixes-list { max-height: 30vh; overflow: hidden; }
+
+  /* The booking face is the one face a phone cannot hold outright: five fields, a week
+     of openings and a submit. Two blocks come off rather than squeezing the controls —
+     the awards, which the proof bar already carries at the foot of this very page, and
+     a line of the message box. What is left is one short scroll with the submit at the
+     end of it, instead of three. */
+  .inst-book-awards { display: none; }
+  .inst-textarea { min-height: 0; }
+  .inst-book-form textarea.inst-textarea { height: 3.4em; }
+
   /* D01: the face scrolls on a phone, but only down. `overflow-y: auto` alone leaves the
      other axis at `visible`, which the box model promotes to `auto` the moment a child
      is wider than the column — so a single wide child gave the face a sideways scroll as
@@ -1227,8 +1223,13 @@ html body .inst-go--wide.btn .label { justify-content: center; }
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--steel-35) transparent;
+    /* Scrolls, but draws no bar: on this ground the platform's slab read as a hard
+       rule down the side of the page. */
+    scrollbar-width: none;
+  }
+  .inst-face[data-face="booking"]::-webkit-scrollbar,
+  .inst-face[data-face="results"]::-webkit-scrollbar {
+    width: 0; height: 0; display: none;
   }
 }
 
@@ -1253,8 +1254,13 @@ html body .inst-go--wide.btn .label { justify-content: center; }
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--steel-35) transparent;
+    /* Scrolls, but draws no bar: on this ground the platform's slab read as a hard
+       rule down the side of the page. */
+    scrollbar-width: none;
+  }
+  .inst-face[data-face="booking"]::-webkit-scrollbar,
+  .inst-face[data-face="results"]::-webkit-scrollbar {
+    width: 0; height: 0; display: none;
   }
 }
 
@@ -1273,7 +1279,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-page:has(.inst:not([data-stage="input"])) .inst-foot { transition: none; filter: none; }
   .gauge-line-text.is-in { animation: none; }
   .gauge-line-text.is-out { display: none; }
-  .inst-tabs button { transition: none; }
   /* The sweeping needle rests at the start of its scale rather than travelling. */
   /* The climb still happens — it is the one thing on this face that says the
      instrument is running — but in steps rather than a glide is not available to a
