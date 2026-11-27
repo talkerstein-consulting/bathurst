@@ -26,12 +26,60 @@ const CATEGORIES = ["performance", "accessibility", "best-practices"] as const;
 /* A Lighthouse run is slow. Vercel's default would cut it off mid-audit. */
 export const maxDuration = 60;
 
+type Audit = {
+  title?: string;
+  displayValue?: string;
+  score?: number | null;
+  scoreDisplayMode?: string;
+  details?: { overallSavingsMs?: number };
+};
 type Lighthouse = {
   lighthouseResult?: {
-    categories?: Record<string, { score?: number | null; title?: string }>;
-    audits?: Record<string, { displayValue?: string }>;
+    categories?: Record<
+      string,
+      { score?: number | null; title?: string; auditRefs?: { id: string; weight?: number; group?: string }[] }
+    >;
+    audits?: Record<string, Audit>;
   };
 };
+
+/**
+ * The fixes: Lighthouse's own failing audits across the three categories, in its own
+ * wording, ranked the way PageSpeed ranks its Opportunities — estimated time saved
+ * first, then how much the audit weighs in its category times how badly it failed.
+ * Metrics (the timings themselves) are not fixes and are left out. Nothing here is
+ * written by us: the title is Google's, the figure is Google's displayValue.
+ */
+const MAX_FIXES = 8;
+function fixesFrom(lh: NonNullable<Lighthouse["lighthouseResult"]>) {
+  const audits = lh.audits ?? {};
+  const weight = new Map<string, number>();
+  const metrics = new Set<string>();
+  for (const c of CATEGORIES) {
+    for (const ref of lh.categories?.[c]?.auditRefs ?? []) {
+      if (ref.group === "metrics") metrics.add(ref.id);
+      weight.set(ref.id, Math.max(weight.get(ref.id) ?? 0, ref.weight ?? 0));
+    }
+  }
+  const scored = new Set(["numeric", "binary", "metricSavings"]);
+  return Object.entries(audits)
+    .filter(([id, a]) =>
+      !metrics.has(id) &&
+      typeof a.score === "number" && a.score < 0.9 &&
+      scored.has(a.scoreDisplayMode ?? "") &&
+      typeof a.title === "string" && a.title.length > 0,
+    )
+    .map(([id, a]) => ({
+      id,
+      title: a.title as string,
+      detail: a.displayValue ?? null,
+      saves: a.details?.overallSavingsMs ?? 0,
+      impact: (weight.get(id) ?? 0) * (1 - (a.score as number)),
+    }))
+    .sort((x, y) => y.saves - x.saves || y.impact - x.impact)
+    .slice(0, MAX_FIXES)
+    .map(({ id, title, detail }) => ({ id, title, detail }));
+}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -115,6 +163,7 @@ export async function POST(request: Request) {
         paint: audits["first-contentful-paint"]?.displayValue ?? null,
         usable: audits["largest-contentful-paint"]?.displayValue ?? null,
       },
+      fixes: data.lighthouseResult ? fixesFrom(data.lighthouseResult) : [],
     },
     { headers: { "cache-control": "no-store" } },
   );

@@ -15,13 +15,29 @@ export const Stars = ({ r }: { r: number }) => (
   </span>
 );
 
-export default function Awards({ className = "", style }: { className?: string; style?: CSSProperties }) {
+/**
+ * `logos` swaps the platform names for each company's full logo, from its own site
+ * (public/brand/third-party/README.md): Clutch's logotype, Google's colour wordmark and
+ * HighLevel's Space Blue lockup. Only /check-2 asks for it; the map and home keep the
+ * text names until they are moved over too.
+ */
+export default function Awards({ className = "", style, logos = false }: { className?: string; style?: CSSProperties; logos?: boolean }) {
+  /* eslint-disable @next/next/no-img-element */
+  const clutch = logos
+    ? <small className="aw-src"><img src="/brand/third-party/clutch-logo.svg" alt="Clutch" width={406} height={115} className="aw-logo aw-logo--clutch" />{REVIEW.count} reviews</small>
+    : <small>{REVIEW.count} reviews on Clutch</small>;
+  const google = logos
+    ? <small className="aw-src"><img src="/brand/third-party/google-wordmark.png" alt="Google" width={540} height={179} className="aw-logo aw-logo--google" />{GOOGLE.count ? `${GOOGLE.count} reviews` : "Rating"}</small>
+    : <small>{GOOGLE.count ? `${GOOGLE.count} reviews on Google` : "Rating on Google"}</small>;
   return (
     <ul className={`hero-awards ${className}`.trim()} style={style} aria-label="Ratings and certifications">
-      <li><a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} /><small>{REVIEW.count} reviews on Clutch</small></span></a></li>
-      <li><a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} /><small>{GOOGLE.count ? `${GOOGLE.count} reviews on Google` : "Rating on Google"}</small></span></a></li>
+      <li><a href={CONTACT.clutch} target="_blank" rel="noopener"><b>{REVIEW.rating.toFixed(1)}</b><span><Stars r={REVIEW.rating} />{clutch}</span></a></li>
+      <li><a href={GOOGLE.url} target="_blank" rel="noopener"><b>{GOOGLE.rating?.toFixed(1)}</b><span><Stars r={GOOGLE.rating ?? 5} />{google}</span></a></li>
       <li className="aw-badge"><img src="/badges/shopify.avif" alt="" width={512} height={85} className="cert-shopify" /><small>Shopify Partner</small></li>
-      <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>GoHighLevel Certified Admin</small></li>
+      {logos
+        ? <li className="aw-badge"><img src="/brand/third-party/highlevel-logo.png" alt="HighLevel" width={1200} height={269} className="aw-logo aw-logo--highlevel" /><small>Certified Admin</small></li>
+        : <li className="aw-badge"><img src="/badges/ghl.avif" alt="" width={256} height={256} className="cert-ghl" /><small>GoHighLevel Certified Admin</small></li>}
     </ul>
   );
+  /* eslint-enable @next/next/no-img-element */
 }

@@ -22,6 +22,8 @@ export interface DialStat {
   prefix?: string;
   unit?: string;
   decimals?: number;
+  /** Colour of this dial's lit ticks. Any CSS colour, including var(--token). Falls back to accentColor. */
+  color?: string;
 }
 
 export interface InstrumentDialHandle {
@@ -232,10 +234,10 @@ const InstrumentDial = forwardRef<InstrumentDialHandle, InstrumentDialProps>(fun
   const geometry = GEOMETRY[variant] ?? GEOMETRY.gauge;
   const count = clamp(Math.round(finite(ticks, variant === "chrono" ? 60 : variant === "meter" ? 51 : 101)), 8, 240);
   const major = Math.max(1, Math.round(finite(majorEvery, variant === "chrono" ? 5 : 10)));
-  const statsKey = JSON.stringify(stats.map((stat) => [stat.label, stat.value, stat.min ?? 0, stat.max ?? 100, stat.prefix ?? "", stat.unit ?? "", stat.decimals ?? null]));
+  const statsKey = JSON.stringify(stats.map((stat) => [stat.label, stat.value, stat.min ?? 0, stat.max ?? 100, stat.prefix ?? "", stat.unit ?? "", stat.decimals ?? null, stat.color ?? null]));
   const list = useMemo(() => {
-    const parsed = JSON.parse(statsKey) as [string, number, number, number, string, string, number | null][];
-    return parsed.map(([label, value, min, max, prefix, unit, decimals]) => {
+    const parsed = JSON.parse(statsKey) as [string, number, number, number, string, string, number | null, string | null][];
+    return parsed.map(([label, value, min, max, prefix, unit, decimals, color]) => {
       const stat: DialStat = { label, value, min, max, prefix, unit, decimals: decimals ?? undefined };
       const low = finite(min, 0);
       const high = finite(max, 100) > low ? finite(max, 100) : low + 1;
@@ -249,6 +251,7 @@ const InstrumentDial = forwardRef<InstrumentDialHandle, InstrumentDialProps>(fun
         unit,
         fraction: clamp((finite(value, 0) - low) / (high - low), 0, 1),
         format: formatter(places),
+        color: color ?? undefined,
       };
     });
   }, [statsKey]);
@@ -581,7 +584,8 @@ const InstrumentDial = forwardRef<InstrumentDialHandle, InstrumentDialProps>(fun
                       stroke={palette.accent}
                       strokeWidth={isMajor ? 1.8 : 1.4}
                       strokeLinecap="round"
-                      style={{ opacity: 0 }}
+                      /* style, not the attribute: a presentation attribute cannot take var(). */
+                      style={{ opacity: 0, stroke: dial.color }}
                     />
                   );
                 })}
@@ -627,6 +631,7 @@ const InstrumentDial = forwardRef<InstrumentDialHandle, InstrumentDialProps>(fun
                 </g>
               ) : null}
               <text
+                className="dial-value"
                 x={geometry.cx}
                 y={geometry.valueY}
                 textAnchor="middle"
@@ -654,7 +659,7 @@ const InstrumentDial = forwardRef<InstrumentDialHandle, InstrumentDialProps>(fun
                   </tspan>
                 ) : null}
               </text>
-              <text x={geometry.cx} y={geometry.labelY} textAnchor="middle" fill={palette.muted} fontSize={labelSize} fontWeight={500}>
+              <text className="dial-label" x={geometry.cx} y={geometry.labelY} textAnchor="middle" fill={palette.muted} fontSize={labelSize} fontWeight={500}>
                 {dial.label}
               </text>
             </svg>

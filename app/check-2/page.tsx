@@ -3,7 +3,6 @@ import { HeroGround } from "@/components/tcg/hero-ground";
 import { Instrument } from "@/components/tcg/instrument";
 import { ProofBar } from "@/components/tcg/proof-bar";
 import { TopBar } from "@/components/tcg/topbar";
-import { assessHref } from "@/lib/book";
 /* Awards carries .hero-awards, which lives with the map's stylesheet. It is imported
    before check-2.css so this page's own rules still win where the two meet. */
 import "../bathurst-map.css";
@@ -53,7 +52,7 @@ export default function CheckTwo() {
             property is not available; the loading state in app/check-2.css carries the
             paper value a second time and follows these by hand. */}
         <HeroGround ink="#E9E0D2" paper="#FCF8F1" />
-        <Instrument bookHref={assessHref()} />
+        <Instrument />
         <ProofBar />
       </main>
     </>

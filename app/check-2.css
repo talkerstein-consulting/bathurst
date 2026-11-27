@@ -21,6 +21,8 @@
   display: grid;
   /* The instrument takes what is left; the foot takes what it needs. */
   grid-template-rows: minmax(0, 1fr) auto;
+  /* minmax(0) so the logo strip's intrinsic width cannot push the page past the viewport. */
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -46,6 +48,14 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   body:has(.inst-page) .topbar-r {
     display: flex; grid-column: 3; grid-row: 1; justify-self: end;
   }
+  /* On a phone the appointment is a calendar icon button, the size of every other
+     icon button, so the roundel and the wordmark keep their full size beside it.
+     The words stay in the accessible name (the Cta's label). */
+  body:has(.inst-page) .topbar-book {
+    width: var(--icon-btn); padding-inline: 0; justify-content: center;
+  }
+  body:has(.inst-page) .topbar-book-label { display: none; }
+  body:has(.inst-page) .topbar-book .topbar-book-icon { display: block; }
 }
 
 /* --------------------------------------------------------------- panel --- */
@@ -69,6 +79,9 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   min-height: 0;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
+  /* minmax(0): the column is the panel's own width. Without it the headline's wider
+     measure stretched the column to 1060px and every stage sat 90px right of centre. */
+  grid-template-columns: minmax(0, 1fr);
   outline: none;
 }
 
@@ -146,12 +159,18 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
      face reads as two or three groups rather than five loose lines. */
   gap: var(--s4);
   text-align: center;
+  /* THE STAGE SHIFT: the face on its way out goes soft and fades, the next one
+     resolves out of the same softness in the same cell. No slide, no scale, nothing
+     entering from off screen — the plane itself is what changes focus, which is why the
+     four stages read as one surface being re-read rather than four screens.
+     The blur is only on the faces that are off stage, so the face on screen carries no
+     filter layer and its WebGL ground composites as it would on its own. */
   opacity: 0;
   visibility: hidden;
-  transform: scale(.985);
+  filter: blur(14px);
   transition:
     opacity var(--cta-draw) var(--ease-out),
-    transform var(--cta-draw) var(--ease-out),
+    filter var(--cta-draw) var(--ease-out),
     visibility 0s linear var(--cta-draw);
 }
 .inst[data-stage="input"]   .inst-face[data-face="input"],
@@ -160,8 +179,13 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 .inst[data-stage="booking"] .inst-face[data-face="booking"] {
   opacity: 1;
   visibility: visible;
-  transform: none;
-  transition-delay: 0s, 0s, 0s;
+  filter: none;
+  /* The incoming face waits out most of the outgoing one's blur, so the two are never
+     both legible at once and the cell is never crowded. */
+  transition:
+    opacity var(--cta-draw) var(--ease-out) calc(var(--cta-draw) * .55),
+    filter var(--cta-draw) var(--ease-out) calc(var(--cta-draw) * .55),
+    visibility 0s;
 }
 
 /* The faces share one grid cell, so the cell is as tall as the tallest of them.
@@ -202,7 +226,9 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
      inside the window's own gutters at every width, so nothing can scroll sideways. */
   width: min(94vw, 1060px);
   max-width: none;
-  margin-inline: auto;
+  /* Wider than the panel on purpose, so it is centred by equal negative margins —
+     auto margins cannot go below zero and would push all the overflow to the right. */
+  margin-inline: calc((100% - min(94vw, 1060px)) / 2);
 }
 /* Two lines, written deliberately: the claim, then the question that undoes it. D10 —
    a heading with nothing beside it spans its width rather than stacking by accident;
@@ -222,7 +248,10 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   display: inline-flex;
   align-items: center;
   gap: .18em;
-  padding: .16em .42em;
+  /* Fixed height so the Google and ChatGPT chips match whatever their marks measure. */
+  box-sizing: border-box;
+  height: 1.12em;
+  padding: 0 .38em;
   margin-inline: .04em;
   border-radius: var(--r-pill);
   background: var(--sea);
@@ -237,8 +266,17 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
    its file, while the Google wordmark is lowercase with descenders and carries its own
    padding, so matching their box heights would leave Google looking the smaller of the
    two. The pair below measures the same on screen. */
-.inst-pill-mark { display: block; width: auto; height: .74em; }
-.inst-pill-mark--google { height: .92em; }
+.inst-pill-mark { display: block; width: auto; height: .62em; }
+.inst-pill-mark--google { height: .78em; }
+/* The lockup's box is 28 tall with the letters ~14 of it; 1em keeps the headline on two lines. */
+.inst-pill-mark--chatgpt { height: .84em; }
+
+/* Full platform logos in the proof row (Awards with `logos`). */
+.inst-awards .aw-src { display: inline-flex; align-items: center; gap: 6px; }
+.inst-awards .aw-logo { display: block; width: auto; }
+.inst-awards .aw-logo--clutch { height: 17px; }
+.inst-awards .aw-logo--google { height: 21px; margin-top: 3px; }
+.inst-awards .aw-logo--highlevel { height: 26px; }
 
 .inst-h2 {
   font: 700 var(--t-h3)/1.05 var(--head);
@@ -326,6 +364,15 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
    size. SIMILARITY: one kind of input across the whole instrument. */
 .inst-field--sm { min-height: 46px; }
 .inst-field--sm .inst-input { font-size: var(--t-small); }
+/* The one multi-line field: same frame, taller, text from the top. */
+.inst-field--area { align-items: stretch; padding-block: 10px; }
+.inst-textarea {
+  font: 400 var(--t-small)/1.5 var(--body); resize: vertical; min-height: 4.5em;
+}
+
+/* Stage 04: the cover's ratings under the form, the same Awards row with full logos. */
+.inst-book-awards { margin-top: var(--s2); }
+.inst-book-awards .aw-src { display: inline-flex; align-items: center; gap: 6px; }
 
 /* The one CTA on the page is filled.
  *
@@ -364,59 +411,102 @@ html body .inst-go.btn.is-off {
 /* The chevron is the direction, not an arrow (D03), and takes the button's own gap. */
 .inst-go .glyph { width: 18px; height: 18px; flex: none; }
 
-/* ---------------------------------------------------- 02 · the dial ----- */
+/* -------------------------------------------------- 02 · the gauge ----- */
 
-.sweep { display: grid; justify-items: center; gap: var(--s2); }
+/* A speedometer: the run outside, the scale inside it, a ring of fine dots, and the
+   needle on a hub. Steel Blue throughout; what the needle has passed is drawn at full
+   strength and what is still to come at the palette's quiet step. */
+.gauge {
+  display: grid; justify-items: center; gap: var(--s2); width: 100%;
+}
+/* Stage 02 breathes: the heading stands clear of the gauge, and the gauge of the copy. */
+.inst-face[data-face="reading"] { gap: var(--s4); align-content: center; }
+/* The heading's trailing ellipsis: each dot fades up in turn, on a loop. The dots sit
+   outside the centred measure's width calculation only by their own width, so the
+   heading shifts by at most a dot's width — not at all while they animate. */
+.inst-dots { display: inline-flex; margin-left: 1px; }
+.inst-dots i { font-style: normal; animation: inst-dot 1.4s ease-in-out infinite; }
+.inst-dots i:nth-child(2) { animation-delay: .2s; }
+.inst-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes inst-dot {
+  0%, 60%, 100% { opacity: .2; transform: none; }
+  30%           { opacity: 1;  transform: translateY(-.12em); }
+}/* Large on desktop: with the footer out of the flow on this stage there is the room. */
+.gauge-face { grid-area: 1 / 1; width: min(100%, 500px); height: auto; overflow: visible; }
 
-/* The ring and its figure share one box: the number is centred in the circle because it
-   is what the circle is of, not a caption under it. */
-.dial {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(62vw, 240px);
-  aspect-ratio: 1;
+.gauge-track, .gauge-run, .gauge-inner { fill: none; stroke-linecap: round; }
+.gauge-track { stroke: var(--steel-12); stroke-width: 6; }
+/* The run and the needle read --p (0–95), set every frame by the component's one
+   clock — the same value the figure shows, so the three never disagree. */
+.gauge { --p: 0; }
+.gauge-run {
+  stroke: var(--steel); stroke-width: 6;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: calc(100 - var(--p));
 }
-.dial-face {
-  grid-area: 1 / 1;
-  width: 100%; height: 100%;
-  /* Twelve o'clock, not three: a dial that starts at the side reads as half finished
-     before it begins. */
-  transform: rotate(-90deg);
-  overflow: visible;
+.gauge-tick { stroke: var(--steel-55); stroke-width: 1.2; stroke-linecap: round; }
+.gauge-tick.is-major { stroke: var(--steel); stroke-width: 2.2; }
+.gauge-fig {
+  font: 700 13px/1 var(--head); fill: var(--steel);
+  text-anchor: middle; dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
 }
-.dial-track, .dial-run {
-  fill: none;
-  stroke-width: 10;
-  stroke-linecap: round;
-}
-/* The whole journey, so what is left to go is visible rather than implied by a gap. */
-.dial-track { stroke: var(--steel-12); }
-/* The run. Steel Blue, not orange: the brand keeps orange for what can be pressed, and
-   a loader cannot be pressed. */
-.dial-run {
-  stroke: var(--steel);
-  transition: stroke-dashoffset 900ms var(--ease-out);
-}
+.gauge-inner { stroke: var(--steel-20); stroke-width: 1; }
+.gauge-dot { fill: var(--steel-35); }
 
-.dial-read {
-  grid-area: 1 / 1;
+.gauge-needle {
+  fill: var(--steel);
+  transform-box: view-box;
+  transform-origin: 160px 150px;
+  /* 0 on the scale is -120°, 100 is +120°. */
+  transform: rotate(calc(-120deg + 2.4deg * var(--p)));
+  filter: drop-shadow(0 1.5px 1px rgb(25 37 74 / .25));
+}
+.needle-blade, .needle-tail, .needle-weight { fill: var(--steel); }
+.needle-weight-eye, .needle-jewel { fill: var(--sea); }
+.needle-spine { stroke: var(--sea); stroke-width: .9; stroke-linecap: round; opacity: .85; }
+.gauge-hub-ring { fill: none; stroke: var(--steel-35); stroke-width: 1; }
+.gauge-hub { fill: var(--steel); }
+.gauge-hub-eye { fill: var(--sea); stroke: var(--steel); stroke-width: 1; }
+.gauge-hub-pin { fill: var(--steel); }
+
+/* The figure sits under the hub, in the gap the 240° sweep leaves open: laid over the
+   dial's own cell and set on its foot, so it stays in that gap at any size. */
+.gauge-read {
+  grid-area: 1 / 1; align-self: end;
+  /* Large, so it overhangs the dial's foot into the gap below it. */
+  transform: translateY(60%);
   display: flex; align-items: baseline; gap: 2px;
   color: var(--steel);
 }
-.dial-num {
-  font: 700 clamp(40px, 11vw, 64px)/1 var(--head);
+.gauge-num {
+  font: 700 clamp(56px, 8vw, 120px)/1 var(--head);
   letter-spacing: -0.02em;
-  /* Tabular, so the number does not jitter sideways as it counts. */
   font-variant-numeric: tabular-nums;
 }
-.dial-pc { font: 400 var(--t-h5)/1 var(--head); color: var(--steel-55); }
+.gauge-pc { font: 400 clamp(20px, 2.4vw, 34px)/1 var(--head); color: var(--steel-55); }
 
-.sweep-status {
-  font: 400 var(--t-caption)/1.2 var(--head);
-  letter-spacing: .12em; text-transform: uppercase; color: var(--steel);
+/* The changing line. Both copies share one cell; the old tumbles up and out while the
+   new tumbles up and in — the same motion as the buttons' label tumble (globals.css).
+   It also holds the space under the figure, which is set large and overhangs the dial's
+   foot: without this line the category dials ride up into it. */
+.gauge-line {
+  grid-row: 2;
+  /* Set well down, clear of the figure's overhang. */
+  margin-top: var(--s7);
+  display: grid; place-items: center;
+  min-height: 1.4em; width: 100%;
+  clip-path: inset(-.15em 0);
+  font: 400 var(--t-lede)/1.4 var(--body); color: var(--steel);
+  text-align: center;
 }
-.sweep-fine {
+.gauge-line-text { grid-area: 1 / 1; transform-origin: 50% 100%; }
+.gauge-line-text.is-in  { animation: gauge-in  var(--tumble) cubic-bezier(.5, 0, .2, 1) both; }
+.gauge-line-text.is-out { animation: gauge-out var(--tumble) cubic-bezier(.5, 0, .2, 1) both; }
+@keyframes gauge-in  { from { transform: translateY(110%) rotate(6deg);  opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes gauge-out { from { transform: none; opacity: 1; } to { transform: translateY(-110%) rotate(-6deg); opacity: 0; } }
+
+.gauge-fine {
   font-size: var(--t-small); line-height: 1.5;
   color: var(--steel-55); max-width: 44ch; text-align: center;
 }
@@ -427,13 +517,24 @@ html body .inst-go.btn.is-off {
    the three, which is the answer the visitor came for. The three dials under it
    are the working, not the headline. The band is said in words beside it, so
    the emphasis never rests on colour alone. */
+/* THE BAND COLOURS. Google's own order: green good, yellow needs improvement, red poor.
+   Each is dark enough for AA as text on the Sea Breeze card (green 5.0, yellow 4.9,
+   red 5.3 : 1) and for 3:1 as a graphic on the darkest step of the ground. The yellow
+   is an ochre for that reason: a bright yellow fails on this paper. None is the brand's
+   orange, which stays on what can be pressed. The band is always said in words too. */
+.inst {
+  --band-good: #0E7A3A;
+  --band-fair: #8C6500;
+  --band-poor: #C4271B;
+}
+
 .inst-headline {
   display: flex; align-items: center; justify-content: center;
   gap: var(--s3);
   padding: var(--s2) var(--s4);
   border-radius: var(--r-card);
-  background: var(--sea);
-  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  /* No fill: the page's ground shows through, unbroken. */
+  background: transparent;
 }
 .inst-headline-num {
   font: 700 clamp(56px, 9vw, 84px)/1 var(--head);
@@ -442,51 +543,325 @@ html body .inst-go.btn.is-off {
 }
 .inst-headline-say { display: grid; gap: 2px; text-align: left; }
 .inst-headline-say b {
-  font: 400 var(--t-h4)/1.1 var(--head); letter-spacing: var(--track-head);
+  font: 700 var(--t-h4)/1.1 var(--head); letter-spacing: var(--track-head);
 }
 .inst-headline-say i {
   font-style: normal; font-size: var(--t-small); color: var(--steel-70);
+  /* The plain name, then Google's band on its own line, so neither wraps mid-phrase. */
+  display: grid; gap: 2px;
 }
+.inst-headline-say i > span[aria-hidden] { display: none; }
 /* The band is marked by a rule on the reading, at one of three weights. It is
    never orange: a score is not operable, and the brand keeps orange for things
    that can be pressed. */
-.inst-headline[data-band="poor"] { box-shadow: inset 0 0 0 var(--rule-mod) var(--steel); }
-.inst-headline[data-band="fair"] { box-shadow: inset 0 0 0 var(--hairline) var(--steel-55); }
+/* The score box and the stage-04 recap: a double rule in the band's colour, drawn as
+   its own layer through the site's #grunge filter (components/tcg/grunge.tsx) — the
+   same treatment as the masthead's rules — so the line wears and the text stays crisp. */
+/* Both boxes are a rule drawn ON the page's ground, with nothing of their own behind
+   them — no fill, no second canvas. The ground is one continuous plane across every
+   stage, which is the whole point of the blur handoff between faces. */
+.inst-headline { position: relative; box-shadow: none; border: 0; }
+.inst-headline > * { position: relative; z-index: 1; }
+.inst-headline::before { z-index: 2; }
+.inst-headline::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border: 4px double var(--band, var(--steel-35));
+  border-radius: inherit;
+  filter: url(#grunge);
+}
+.inst-headline[data-band="good"] { --band: var(--band-good); }
+.inst-headline[data-band="fair"] { --band: var(--band-fair); }
+.inst-headline[data-band="poor"] { --band: var(--band-poor); }
+.inst-band { font-weight: 600; }
+.inst-band[data-band="good"] { color: var(--band-good); }
+.inst-band[data-band="fair"] { color: var(--band-fair); }
+.inst-band[data-band="poor"] { color: var(--band-poor); }
 
-.inst-dials { width: 100%; }
-.inst-summary {
-  font-size: var(--t-body); line-height: 1.6; color: var(--steel); max-width: 56ch;
+/* The diagnosis carries the most blocks of any face, so its air is one step tighter,
+   and the source line sits close over the heading it labels — the two read as one. */
+.inst-face[data-face="results"] { gap: var(--s3); }
+.inst-face[data-face="results"] .inst-whose + .inst-h2 { margin-top: calc(var(--s1) - var(--s3)); }
+
+/* One centred column at every width. It was two on desktop — the reading on the left,
+   the fixes on the right — which gave the face two places to start reading and left the
+   summary floating level with the middle of the other column. The order is the argument:
+   the score, the three categories, what it means, then what to do. */
+.inst-results {
+  display: grid; justify-items: center; justify-content: center;
+  gap: var(--s3); width: 100%; min-width: 0; text-align: center;
 }
-.inst-caveat {
-  display: grid; gap: 4px; max-width: 54ch;
+.inst-headline-num small {
+  font-size: .38em; font-weight: 400; letter-spacing: 0; color: var(--steel-55);
+  margin-left: 2px;
+}
+
+/* The category dials, vintage: a cream plate in a double ring, notches, three
+   numerals and a needle — all in steel ink. The band's colour is only BEHIND, a soft
+   wedge from 0 to the score. FLAGGED (D00.2): --plate is a new value (a warm cream the
+   palette lacks), defined once here and used only by these plates. */
+.inst { --plate: #FBF4E4; }
+.inst-dials {
+  display: flex; justify-content: center; gap: var(--s2);
+  list-style: none; margin: 0; padding: 0; width: 100%;
+}
+.score-dial { margin: 0; width: 128px; display: grid; justify-items: center; gap: 2px; }
+.score-dial svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+/* The same parts as the big gauge (.gauge, above), at a size that only carries the
+   ones that still read: the track and the run, a scale of ticks and three figures, a
+   needle on a hub. No inner ring of dots, no half ticks, no counterweight, no spine,
+   no jewel. */
+.score-dial-track, .score-dial-run { fill: none; stroke-linecap: round; }
+.score-dial-track { stroke: var(--steel-12); stroke-width: 3.4; }
+/* The run — the span the needle has covered — is the coloured thing, in the colour of
+   the third the reading lands in: red in the first, amber in the second, green in the
+   last. Nothing else on the dial is coloured; a painted full scale was tried and taken
+   back out, because the run then covered the very thirds it was being read against. */
+.score-dial-run {
+  stroke: var(--band, var(--steel)); stroke-width: 3.4;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: calc(100 - var(--v));
+  animation: score-run 900ms cubic-bezier(.34, 1.3, .5, 1) var(--delay, 0ms) both;
+}
+/* The settle starts where the climb left off (--from), not at the peg. */
+@keyframes score-run { from { stroke-dashoffset: calc(100 - var(--from, 0)); } }
+.score-dial-notch { stroke: var(--steel-55); stroke-width: .9; stroke-linecap: round; }
+.score-dial-notch.is-long { stroke: var(--steel); stroke-width: 1.6; }
+.score-dial-fig {
+  font: 700 8px/1 var(--head); fill: var(--steel);
+  text-anchor: middle; dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
+}
+.score-dial-needle {
+  fill: var(--steel);
+  transform-box: view-box; transform-origin: 64px 62px;
+  /* The big gauge's own scale: 0 is -120°, 100 is +120°. */
+  transform: rotate(calc(-120deg + 2.4deg * var(--v)));
+  animation: score-needle 700ms cubic-bezier(.34, 1.2, .5, 1) var(--delay, 0ms) both;
+  filter: drop-shadow(0 1px .8px rgb(25 37 74 / .22));
+}
+@keyframes score-needle { from { transform: rotate(calc(-120deg + 2.4deg * var(--from, 0))); } }
+.score-dial-hub-ring { fill: none; stroke: var(--steel-35); stroke-width: .8; }
+.score-dial-hub { fill: var(--steel); }
+.score-dial-pin { fill: var(--sea); }
+
+/* THE DIAL BEFORE IT HAS A READING (stage 02).
+   ONE slow run from the left of the scale to the right, and it stays there — not a
+   loop and not a wobble. It is the big gauge's own rate: 0 to 95 over the same 32
+   seconds, linear, so the three small needles travel with the big one rather than at
+   some pace of their own. No run arc and no number; the caption says Measuring. */
+.score-dial.is-sweeping .score-dial-needle {
+  animation: score-dial-climb 32000ms linear both;
+}
+@keyframes score-dial-climb {
+  from { transform: rotate(-120deg); }
+  to   { transform: rotate(108deg); } /* -120 + 2.4 × 95 */
+}
+/* The run climbs with the needle and changes colour under it as the reading crosses
+   each third. The climb is linear 0 → 95, so 33 falls at 34.7% of the way through it
+   and 66 at 69.5% — the colour steps there, not at a round fraction of the duration,
+   so the switch lands exactly where the needle meets the mark. Two animations on the
+   one element: the length, and the colour. */
+.score-dial.is-sweeping .score-dial-run {
+  animation:
+    score-dial-run-climb 32000ms linear both,
+    score-dial-run-hue 32000ms linear both;
+}
+@keyframes score-dial-run-climb {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 5; } /* 100 − 95 */
+}
+@keyframes score-dial-run-hue {
+  0%,     34.6% { stroke: var(--band-poor); }
+  34.7%,  69.4% { stroke: var(--band-fair); }
+  69.5%,  100%  { stroke: var(--band-good); }
+}
+.score-dial.is-sweeping figcaption strong { color: var(--steel-35); }
+.score-dial.is-sweeping figcaption span { color: var(--steel-55); }
+
+.score-dial figcaption { display: grid; gap: 1px; text-align: center; }
+.score-dial figcaption strong {
+  font: 700 26px/1 var(--head); color: var(--steel);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.score-dial figcaption b { font: 600 var(--t-caption)/1.3 var(--body); color: var(--steel); }
+.score-dial figcaption span { font: 500 var(--t-micro)/1.3 var(--body); letter-spacing: .02em; color: var(--steel-70); }
+.score-dial[data-band="good"] { --band: var(--band-good); }
+.score-dial[data-band="fair"] { --band: var(--band-fair); }
+.score-dial[data-band="poor"] { --band: var(--band-poor); }
+
+/* D01: 56ch is wider than a phone, and this block is not a direct child of the face,
+   so the face's own max-width does not reach it — the measure is capped by the column
+   it sits in as well. */
+/* ONE TYPE SCALE ON THE SHEET. The paper carries three sizes and no more, which is
+   what makes a reading, a heading and a figure read as one document:
+     LABEL      --t-caption, uppercase, tracked, steel-55   (section headings)
+     BODY       --t-small                                   (the reading, each fix)
+     SUPPORTING --t-caption                                 (index, saving, detail)
+   The reading used to be --t-h5 over --t-body — a heading and a paragraph a step above
+   everything under them, which is why the two blocks read as two findings rather than
+   one sheet. */
+.inst-paper-head { display: grid; gap: var(--s1); }
+.inst-paper-say { margin: 0; font: 400 var(--t-small)/1.6 var(--body); color: var(--steel); }
+
+/* ------------------------------------------- the fixes, and the ask ---- */
+/* The receipt printer is gone from this page. What it was for is kept in three rules:
+   the list is printed on a sheet of paper, it runs out mid-sentence, and the ask sits
+   on top of the cut. */
+.inst-fixes {
+  position: relative; isolation: isolate;
+  display: grid; justify-items: center;
+  width: 100%; max-width: 48ch;
+  /* Room under the sheet for the part of the card that hangs past its foot. */
+  padding-bottom: var(--s5);
+}
+
+/* THE PAPER: the same warm cream the dial plates are printed on, so the sheet and the
+   instrument faces are the same stock. A hairline and one soft shadow lift it off the
+   dithered ground; nothing is skeuomorphic beyond that — no curl, no torn edge, no
+   perforation. */
+.inst-paper {
+  width: 100%;
+  padding: var(--s3) var(--s3) var(--s4);
+  border-radius: var(--r-inner);
+  background: var(--plate);
+  box-shadow:
+    inset 0 0 0 var(--hairline) var(--steel-15),
+    0 2px 10px rgb(25 37 74 / .07);
+  text-align: left;
+}
+.inst-fixes-h {
+  margin: 0 0 var(--s1);
+  font: 700 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel-55);
+}
+/* The second label on the sheet takes a rule above it, which is the only thing dividing
+   the reading from the list — one document, two parts. */
+.inst-fixes-h--rule {
+  margin-top: var(--s3);
   padding-top: var(--s2);
-  border-top: var(--hairline) solid var(--steel-20);
+  border-top: var(--hairline) solid var(--steel-15);
 }
-.inst-caveat-h { font: 400 var(--t-h5)/1.2 var(--head); letter-spacing: var(--track-head); }
-.inst-caveat p:last-child { font-size: var(--t-small); line-height: 1.5; color: var(--steel-70); }
+/* THE LIST: a three-column readout, not a paragraph with a number in front of it —
+   the index in its own narrow column, the fix, and what it is worth, each on its own
+   edge. The fix and its figure sit on ONE line, so the eye runs down two straight
+   columns instead of down a ladder of wrapped sentences; a hairline between rows keeps
+   them apart without a bullet. Left aligned although the face is centred: this is the
+   only block here that is scanned rather than read. */
+.inst-fixes-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+}
+.inst-fixes-list li {
+  display: grid;
+  grid-template-columns: 1.6em minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--s1); row-gap: 1px;
+  padding: var(--s1) 0;
+}
+.inst-fixes-list li + li { border-top: var(--hairline) solid var(--steel-15); }
+.inst-fixes-list i {
+  font: 600 var(--t-small)/1.45 var(--body); font-style: normal;
+  color: var(--steel-35); font-variant-numeric: tabular-nums;
+}
+.inst-fixes-list b { font: 600 var(--t-small)/1.45 var(--body); color: var(--steel); }
+/* The saving: a figure, set in the dials' own tabular numerals so the column lines up
+   down the sheet however long the titles beside it run. */
+.inst-fixes-list em {
+  font: 600 var(--t-caption)/1.45 var(--body); font-style: normal;
+  color: var(--steel-70); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* A detail that is not a saving keeps its sentence, under the title, in both columns. */
+.inst-fixes-list span {
+  grid-column: 2 / -1;
+  font: 400 var(--t-caption)/1.45 var(--body); color: var(--steel-70);
+}
+/* The line to whoever opened the inspector. It sits under the card with the rest of the
+   sheet, so it is read by exactly the person it is addressed to. */
+.inst-fixes-list .is-held-say {
+  grid-template-columns: 1.6em minmax(0, 1fr);
+}
+.inst-fixes-list .is-held-say b {
+  font: 400 var(--t-caption)/1.5 var(--body);
+  color: var(--band-poor);
+}
+.inst-fixes-list .is-held-say i { color: var(--band-poor); opacity: .55; }
+
+/* THE ASK: a module laid over the foot of the paper, not after it. The double border is
+   the same treatment the score box carries, so the two bounded things on this face are
+   the reading and the thing to do about it. Above everything on the face (z-index), so
+   the CTA is never the thing behind the text. */
+.inst-ask {
+  /* LAID ON THE SHEET, not placed after it. The card is positioned over the foot of the
+     paper and covers the rest of the list — that is the arrangement, not a side effect
+     of it: the sheet is visibly longer than the part anyone gets to read, and the card
+     is what is in the way. */
+  position: absolute; left: 50%; bottom: calc(var(--s3) * -1);
+  transform: translateX(-50%);
+  z-index: 3;
+  display: grid; justify-items: center; gap: var(--s1);
+  padding: var(--s3);
+  border: 4px double var(--steel-35);
+  border-radius: var(--r-card);
+  background: var(--sea);
+  text-align: center;
+  width: 100%; max-width: 42ch;
+}
+.inst-ask-eyebrow {
+  margin: 0;
+  font: 400 var(--t-micro)/1 var(--head);
+  letter-spacing: .14em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-ask-h {
+  margin: 0;
+  font: 700 var(--t-h4)/1.1 var(--head);
+  letter-spacing: var(--track-head); color: var(--steel);
+}
+.inst-ask-say {
+  margin: 0 0 var(--s1);
+  font: 400 var(--t-small)/1.5 var(--body); color: var(--steel-70);
+  max-width: 34ch;
+}
 
 /* ----------------------------------------------- 04 · the consultation -- */
 
-/* WORKING MEMORY: the reading the visitor is deciding about stays legible while
-   they fill the form in, rather than receding into decoration. */
-.inst-recap {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: var(--s1) var(--s3);
-  padding: var(--s1) var(--s3);
-  border-radius: var(--r-pill);
-  background: var(--sea);
-  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
-  font: 400 var(--t-caption)/1.3 var(--head);
-  letter-spacing: .08em; text-transform: uppercase; color: var(--steel-55);
-}
-.inst-recap b { color: var(--steel); text-transform: none; letter-spacing: 0; font-weight: 600; }
-.inst-recap-score b { font-variant-numeric: tabular-nums; }
-.inst-recap-score[data-band="poor"] { color: var(--steel); }
+/* WORKING MEMORY: the reading the visitor is deciding about stays on screen while they
+   fill the form in. It is the diagnosis module itself, one step smaller — same double
+   rule, same figure, same band — not a pill summarising it. */
+.inst-headline--recap { padding: var(--s1) var(--s3); gap: var(--s2); }
+.inst-headline--recap .inst-headline-num { font-size: clamp(38px, 6vw, 52px); }
+.inst-headline--recap .inst-headline-say b { font-size: var(--t-h5); }
 
-.inst-book { display: grid; justify-items: center; gap: var(--s2); width: 100%; }
+/* THE SUBMIT: centred and spanning the form, in the page's one orange fill. */
+.inst-book-foot { display: grid; width: 100%; }
+html body .inst-go--wide.btn { width: 100%; }
+html body .inst-go--wide.btn .label { justify-content: center; }
+
+/* D: the proof row under the form breaks two-up, so Shopify Partner and the HighLevel
+   certification share the last row instead of one badge hanging alone under three. */
+.inst-book-awards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--s5); row-gap: var(--s3);
+  width: max-content; max-width: 100%; margin-inline: auto;
+}
+/* The flex row's own dividers do not survive a two-up grid — a left border on every
+   second cell draws a line down the middle of a block that has no middle. The air is
+   the separation here. */
+.inst-book-awards li { justify-content: center; padding: 0; border: 0; }
+
+/* `minmax(0, 1fr)`, not the implicit `auto`: an auto column is sized by its widest
+   item's MAX-content, so one long unbroken line of lede set the column wider than the
+   box and every child inherited that width — the whole booking face ran 28px past the
+   panel on a phone. The explicit minimum is what stops a grid item refusing to shrink. */
+.inst-book {
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  justify-items: center; gap: var(--s2); width: 100%; min-width: 0;
+}
+.inst-book > * { min-width: 0; max-width: 100%; }
 .inst-book-form {
-  display: grid; gap: var(--s2);
-  width: min(100%, 560px);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2);
+  width: min(100%, 560px); min-width: 0;
   text-align: left;
   margin-top: var(--s1);
 }
@@ -495,6 +870,89 @@ html body .inst-go.btn.is-off {
   letter-spacing: .1em; text-transform: uppercase; color: var(--steel-55);
 }
 .inst-carried b { color: var(--steel); text-transform: none; letter-spacing: 0; }
+
+/* ---------------------------------------------- the openings (stage 04) --- */
+/* Built from the instrument's own parts, not from a calendar widget: a strip of day
+   plates on the dials' cream stock, and the times under it as outline controls. The
+   chosen one fills STEEL — orange stays on the single thing this screen wants pressed,
+   the submit at the foot of the form (D04). */
+.inst-when {
+  display: grid; gap: var(--s1);
+  margin: 0 0 var(--s1); padding: 0; border: 0; min-width: 0;
+}
+.inst-when-h {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1);
+  padding: 0; margin-bottom: 4px;
+  font: 700 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-when-h small {
+  font: 400 var(--t-micro)/1.2 var(--head);
+  letter-spacing: .1em; color: var(--steel-35); text-transform: uppercase;
+}
+/* D07: the waiting and empty states stand at the picker's own height, so the fields
+   below do not jump when the week lands. */
+.inst-when-wait {
+  margin: 0; min-height: 96px; display: grid; align-content: center;
+  font: 400 var(--t-caption)/1.5 var(--body); color: var(--steel-55);
+}
+
+/* THE DAYS: one row, scrolled sideways, never stacked (D06). */
+.inst-days {
+  display: flex; gap: var(--s1);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 2px;
+  scrollbar-width: thin; scrollbar-color: var(--steel-20) transparent;
+}
+.inst-day {
+  flex: none; scroll-snap-align: start;
+  display: grid; justify-items: center; gap: 0;
+  width: 58px; padding: 6px 0 7px;
+  border: 0; border-radius: var(--r-inner);
+  background: var(--plate);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  color: var(--steel); cursor: pointer;
+  transition: background var(--tumble) var(--ease-out), color var(--tumble) var(--ease-out);
+}
+.inst-day-dow {
+  font: 600 var(--t-micro)/1.3 var(--body);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--steel-55);
+}
+/* The date set like a dial's figure: the numeral large, its label small under it. */
+.inst-day-num { font: 700 20px/1.1 var(--head); font-variant-numeric: tabular-nums; }
+.inst-day-mon {
+  font: 500 var(--t-micro)/1.3 var(--body);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-day:hover { background: var(--sea); }
+.inst-day[aria-selected="true"] {
+  background: var(--steel); color: var(--sea);
+  box-shadow: none;
+}
+.inst-day[aria-selected="true"] .inst-day-dow,
+.inst-day[aria-selected="true"] .inst-day-mon { color: var(--sea); opacity: .75; }
+.inst-day:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* THE TIMES: outline controls, filling steel when asked for. */
+.inst-times {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: var(--s1);
+}
+.inst-time {
+  padding: 9px 6px; min-height: 42px;
+  border: 0; border-radius: var(--r-inner);
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-35);
+  font: 600 var(--t-small)/1 var(--body); font-variant-numeric: tabular-nums;
+  color: var(--steel); cursor: pointer;
+  transition: background var(--tumble) var(--ease-out), color var(--tumble) var(--ease-out);
+}
+.inst-time:hover { background: var(--steel-06); }
+.inst-time[aria-pressed="true"] {
+  background: var(--steel); color: var(--sea); box-shadow: none;
+}
+.inst-time:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
 .inst-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 .inst-label { display: grid; gap: 4px; min-width: 0; }
@@ -558,17 +1016,27 @@ html body .inst-go.btn.is-off {
    * Driven off the instrument's own stage, which is on .inst as a data attribute, so
    * there is one source for which stage is up and no second flag to keep in step. */
 .inst-page:has(.inst:not([data-stage="input"])) .inst-foot {
+  /* Out of the flow as well as out of sight, so stages 02–04 centre on the whole
+     screen instead of the space above an invisible footer. */
+  position: absolute; inset: auto 0 0 0;
   opacity: 0;
   visibility: hidden;
+  /* It goes soft on the way out with the face it sits under, so the whole plane
+     changes focus at once rather than the panel blurring over a crisp footer. */
+  filter: blur(14px);
   transition:
     opacity var(--cta-draw) var(--ease-out),
+    filter var(--cta-draw) var(--ease-out),
     visibility 0s linear var(--cta-draw);
 }
 
 .inst-foot {
   opacity: 1;
   visibility: visible;
-  transition: opacity var(--cta-draw) var(--ease-out);
+  filter: none;
+  transition:
+    opacity var(--cta-draw) var(--ease-out),
+    filter var(--cta-draw) var(--ease-out);
   display: grid;
   /* The column is pinned to the page's width, not to its content. The logo row is a
      track several screens wide: in an `auto` column it would set the column's width,
@@ -640,7 +1108,7 @@ html body .inst-go.btn.is-off {
 .inst-foot .inst-awards b { font-size: 52px; }
 .inst-foot .inst-awards .stars { font-size: 20px; }
 .inst-foot .inst-awards small { font-size: 15px; }
-.inst-foot .inst-awards .aw-badge img { height: 44px; }
+.inst-foot .inst-awards .aw-badge img { height: 32px; }
 .inst-foot .inst-awards .aw-badge small { max-width: 16ch; }
 
 /* ----------------------------------------------------------- phones ----- */
@@ -654,17 +1122,40 @@ html body .inst-go.btn.is-off {
   .inst-go { width: 100%; }
   .inst-go .label { justify-content: center; }
 
-  .dial { width: min(70vw, 200px); }
+  .gauge-face { width: min(100%, 280px); }
   .inst-row { grid-template-columns: minmax(0, 1fr); }
+  /* The strip keeps its one row and scrolls; the plates and the times take a touch
+     target rather than a desktop one, and the times go two-up so a thumb has width. */
+  .inst-day { width: 52px; }
+  .inst-times { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inst-time { min-height: 44px; }
+  .inst-when-wait { min-height: 72px; }
 
   /* The two long faces are tightened to fit a phone outright: the dials drop to
      one row (set in the component), and the air between blocks comes in. The
      inner scroll below is the last resort for a short window in landscape, not
      the way these faces are meant to be read — the page itself never scrolls. */
   .inst-face { gap: var(--s3); }
-  .inst-face[data-face="results"] .inst-summary { font-size: var(--t-small); }
-  .inst-face[data-face="results"] .inst-caveat { padding-top: var(--s1); }
-  .inst-face[data-face="results"] .inst-caveat p:last-child { font-size: var(--t-caption); }
+  /* The staging strip is fixed just under the bar; the panel starts below it so the
+     headline never runs under the strip, and the input face closes up to fit. */
+  .inst {
+    padding-top: calc(var(--s2) + 34px + var(--s1));
+    /* minmax(0) so the panel is held inside the gutter on both sides — without it
+       its content's intrinsic width pushed it 17px past the right gutter. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Same for the panel and every face laid into it. */
+  .inst-panel, .inst-face { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  .inst-face[data-face="input"] { gap: var(--s2); }
+  /* "Your website looks fine." does not wrap; at the 26px floor it measured 352px
+     against a 335px column on a 375 phone. 24px holds it inside the gutter. */
+  /* The desktop width (94vw, to let it pass the panel measure) is wider than the
+     phone column and pushed the centred lines 9px right; on a phone it is the column. */
+  .inst-h1 { font-size: 24px; width: auto; margin-inline: 0; justify-self: stretch; min-width: 0; max-width: 100%; }
+  .inst-results { gap: var(--s2); }
+  .inst-dials { gap: var(--s1); }
+  .score-dial { width: 100px; }
+  .score-dial figcaption strong { font-size: 22px; }
   .inst-headline { width: 100%; }
 
   /* The consultation face is the longest of the four. On a phone it is tightened
@@ -675,11 +1166,6 @@ html body .inst-go.btn.is-off {
   .inst-book { gap: var(--s1); }
   .inst-book-form { gap: var(--s1); margin-top: 0; }
   .inst-field--sm { min-height: 44px; }
-  .inst-recap {
-    gap: 2px var(--s2);
-    padding: 4px var(--s2);
-    font-size: var(--t-micro);
-  }
   .inst-alt { margin-top: 0; }
 
   /* On a phone the stage names come off: the numbers alone still say which is up, and
@@ -697,24 +1183,104 @@ html body .inst-go.btn.is-off {
   .inst-foot .inst-awards b { font-size: 32px; }
   .inst-foot .inst-awards .stars { font-size: 15px; }
   .inst-foot .inst-awards small { font-size: 12px; }
-  .inst-foot .inst-awards .aw-badge img { height: 30px; }
+  .inst-foot .inst-awards .aw-badge img { height: 24px; }
 
+  /* A 2x2 grid on a phone: the two ratings on the first row, the two certifications
+     on the second. Every cell is one centred stack — for a rating the number, then
+     the stars, then the platform's logo, then the review count; for a badge the
+     logo, then its caption. Hairlines between the columns and between the rows. */
+  .inst-foot .inst-awards {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: auto; margin-inline: 0; row-gap: 0;
+    padding-inline: max(var(--gut), env(safe-area-inset-left, 0px));
+  }
+  .inst-foot .inst-awards li {
+    flex-direction: column; justify-content: center; align-items: center;
+    gap: 2px; padding: 6px var(--s1); text-align: center;
+  }
+  .inst-foot .inst-awards li + li { border-left: 0; }
+  .inst-foot .inst-awards li:nth-child(even) { border-left: 1.5px solid var(--steel-15); }
+  .inst-foot .inst-awards li:nth-child(n+3) { border-top: 1.5px solid var(--steel-15); }
+  .inst-foot .inst-awards a { flex-direction: column; align-items: center; gap: 2px; }
+  .inst-foot .inst-awards a > span { align-items: center; gap: 3px; }
+  .inst-foot .inst-awards b { font-size: 34px; align-self: center; }
+  .inst-foot .inst-awards .stars { font-size: 15px; text-box: none; }
+  .inst-foot .inst-awards a > span small { text-box: none; }
+  .inst-foot .inst-awards .aw-src { flex-direction: column; align-items: center; gap: 2px; }
+  .inst-foot .inst-awards .aw-logo--clutch { height: 17px; }
+  .inst-foot .inst-awards .aw-logo--google { height: 21px; margin-top: 2px; }
+  .inst-foot .inst-awards .aw-badge img { height: 22px; }
+  .inst-foot .inst-awards .aw-badge small { max-width: none; }
+
+  /* D01: the face scrolls on a phone, but only down. `overflow-y: auto` alone leaves the
+     other axis at `visible`, which the box model promotes to `auto` the moment a child
+     is wider than the column — so a single wide child gave the face a sideways scroll as
+     well. It is clipped here, and the children that caused it are capped above
+     (.inst-paper) and capped to the column (.inst-fixes).
+
+     The bar itself is drawn thin and in the page's own ink rather than left as the
+     platform's default slab, which on this ground read as a hard rule down the middle of
+     the screen. */
   .inst-face[data-face="booking"],
   .inst-face[data-face="results"] {
     align-content: start;
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--steel-35) transparent;
+  }
+}
+
+/* The 02 → 03 and 03 → 04 morphs (see land() in components/tcg/instrument.tsx). The
+   named elements — the three dials and the reading — are tweened from where they were
+   to where they now are; everything else cross-fades. One duration and one curve, the
+   page's own. */
+::view-transition-group(*) {
+  animation-duration: 520ms;
+  animation-timing-function: var(--ease-out, cubic-bezier(.2, .7, .3, 1));
+}
+
+/* SHORT VIEWPORTS, at any width. The booking face is the tallest of the four — a
+   reading, a heading, a week of openings, five fields and a proof row — and a centred
+   face taller than its cell is clipped at BOTH ends, so the score module at its head
+   simply disappeared on a 13" laptop. It starts at the top and scrolls instead, which
+   is what the phone rule already did; the height is what matters here, not the width. */
+@media (max-height: 920px) {
+  .inst-face[data-face="booking"],
+  .inst-face[data-face="results"] {
+    align-content: start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--steel-35) transparent;
   }
 }
 
 /* D11 */
 @media (prefers-reduced-motion: reduce) {
-  .inst-face { transition: opacity .01ms linear; transform: none; }
+  /* No softening and no delay: the faces cut over. The blur is a motion effect, so it
+     goes with the rest of them here. */
+  .inst-face { transition: opacity .01ms linear; transform: none; filter: none; }
+  .inst[data-stage="input"]   .inst-face[data-face="input"],
+  .inst[data-stage="reading"] .inst-face[data-face="reading"],
+  .inst[data-stage="results"] .inst-face[data-face="results"],
+  .inst[data-stage="booking"] .inst-face[data-face="booking"] {
+    transition: opacity .01ms linear, visibility 0s;
+  }
   .inst-foot,
-  .inst-page:has(.inst:not([data-stage="input"])) .inst-foot { transition: none; }
+  .inst-page:has(.inst:not([data-stage="input"])) .inst-foot { transition: none; filter: none; }
+  .gauge-line-text.is-in { animation: none; }
+  .gauge-line-text.is-out { display: none; }
   .inst-tabs button { transition: none; }
+  /* The sweeping needle rests at the start of its scale rather than travelling. */
+  /* The climb still happens — it is the one thing on this face that says the
+     instrument is running — but in steps rather than a glide is not available to a
+     CSS keyframe, so it simply holds at the start of its scale. */
+  .score-dial.is-sweeping .score-dial-needle { animation: none; }
+  .score-dial.is-sweeping .score-dial-run { animation: none; stroke-dashoffset: 100; }
+  .inst-dots i { animation: none; opacity: 1; }
   /* LogoLoop parks itself under reduced motion; nothing to add here. */
-  /* The ring still fills: that fill IS the information. Only the glide between one
-     figure and the next is dropped, so it steps instead. */
-  .dial-run { transition: none; }
+  /* The climb still happens — it IS the information — but in ten steps, not a glide. */
 }

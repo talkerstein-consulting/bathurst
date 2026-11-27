@@ -44,7 +44,12 @@ import { CLIENT_LOGOS } from "./client-logos";
  * name is on `title`, which the component also uses for the label, and each item still
  * carries `ariaLabel`, so a screen reader hears the business rather than the tooltip.
  */
-const MARKS = CLIENT_LOGOS.map(({ src, alt, w, h, ground }) => ({
+/** Two marks are held back from this row at the client's request: Paloma Blanca and
+ *  Beker Fashions. They stay in CLIENT_LOGOS, which the map reads, so only /check-2
+ *  drops them. */
+const WITHHELD = new Set(["/clients/paloma/logo.png", "/clients/beker/logo-cut.png"]);
+
+const MARKS = CLIENT_LOGOS.filter(({ src }) => !WITHHELD.has(src)).map(({ src, alt, w, h, ground }) => ({
   node: (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -64,7 +69,7 @@ const MARKS = CLIENT_LOGOS.map(({ src, alt, w, h, ground }) => ({
 export function ProofBar() {
   return (
     <footer className="inst-foot">
-      <Awards className="inst-awards" />
+      <Awards className="inst-awards" logos />
 
       <LogoLoop
         className="inst-logos"

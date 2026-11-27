@@ -4,6 +4,24 @@ Other companies' logos. They are here because the headline names those companies
 name set as a word is weaker than the mark the reader already recognises. Nothing here
 is redrawn, recoloured or rebuilt.
 
+## In use on /check-2 (as of 2026-11-27) — all unmodified, each company's own colours
+
+- **google-wordmark.png** — Google's colour wordmark, from
+  `https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png`,
+  trimmed to its ink. Headline pill and the proof row.
+- **chatgpt-wordmark.svg** — the blossom + "ChatGPT" lockup chatgpt.com puts in its own
+  header (https://chatgpt.com/overview/, 118x28). Paths untouched; its `currentColor` is
+  set to black. Headline pill.
+- **clutch-logo.svg** — Clutch's logotype exactly as clutch.co serves it in its header
+  (dark slate + red dot). Proof row.
+- **highlevel-logo.png** — HighLevel's Space Blue horizontal logo from its brand kit,
+  https://marketing.gohighlevel.com/brandkit, trimmed and scaled to 1200px wide. Proof row.
+
+None of these companies has approved this use. Anyone shipping this publicly should check
+it against each company's brand terms first.
+
+## Superseded (kept for reference, not used by the page)
+
 ## google-wordmark.png — the real one
 Google's own full colour wordmark, taken from Google's asset host:
 `https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png`

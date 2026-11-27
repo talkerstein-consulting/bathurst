@@ -354,6 +354,7 @@ img { display: block; max-width: 100%; }
 /* Same pinning as the masthead: a standard CTA stands 51px and an icon button
    --icon-btn, so both are held to the icon button's measure. */
 .topbar-r .btn { height: var(--icon-btn); padding-block: 0; }
+.topbar-book .topbar-book-icon { display: none; }
 /* Inert figures, exactly as in the masthead: the paper's name, not a control. */
 .topbar-icon { width: 34px; height: 34px; flex: none; }
 .topbar-word { justify-self: center; width: 150px; height: auto; }

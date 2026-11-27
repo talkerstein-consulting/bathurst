@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { User } from "lucide-react";
+import { CalendarDays, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Cta } from "./cta";
 import { NAV } from "./nav-data";
@@ -140,8 +140,11 @@ export function TopBar({ always = false }: { always?: boolean }) {
           <Cta as="a" href="/sign-in" variant="icon" label="Sign in">
             <User className="glyph" aria-hidden="true" />
           </Cta>
-          <Cta as="a" href="/book" label="Book appointment">
-            Book appointment
+          {/* The calendar glyph only shows where a page asks for the compact bar
+              (app/check-2.css, phones); everywhere else the words carry it. */}
+          <Cta as="a" href="/book" label="Book appointment" className="topbar-book">
+            <CalendarDays className="glyph topbar-book-icon" aria-hidden="true" />
+            <span className="topbar-book-label">Book appointment</span>
           </Cta>
         </div>
       </div>
