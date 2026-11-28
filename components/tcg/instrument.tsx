@@ -56,6 +56,9 @@ type Scores = { performance: number | null; accessibility: number | null; practi
 type Result = {
   url: string;
   scores: Scores;
+  /** Lighthouse's own stack detection, from app/api/pagespeed/route.ts. "unknown" is a
+   *  real answer here, not a missing one — see the WORDPRESS block below. */
+  wordpress?: "yes" | "no" | "unknown";
   timings: { paint: string | null; usable: string | null };
   /** Lighthouse's failing audits, ranked by app/api/pagespeed/route.ts. Google's wording. */
   fixes?: { id: string; title: string; detail: string | null }[];
@@ -82,6 +85,8 @@ const STAGES: Stage[] = ["input", "reading", "results", "booking"];
 const SAMPLE: Result = {
   url: "https://example.com",
   scores: { performance: 34, accessibility: 72, practices: 93 },
+  /* A sample has no site behind it, so there is nothing to have detected. */
+  wordpress: "unknown",
   timings: { paint: "2.8 s", usable: "9.1 s" },
   fixes: [
     { id: "render-blocking-resources", title: "Eliminate render-blocking resources", detail: "Potential savings of 1,850 ms" },
@@ -289,6 +294,9 @@ export function Instrument() {
   const field = useRef<HTMLInputElement>(null);
   /** The run in flight, so the reading stage can be abandoned rather than waited out. */
   const run = useRef<AbortController | null>(null);
+  /** The intake box. The field inside it is measured from here, so its white can be
+   *  opened out to full bleed on scroll. */
+  const intake = useRef<HTMLDivElement>(null);
 
   const tail = completeDomain(url);
   const locked = stage !== "input";
@@ -319,6 +327,50 @@ export function Instrument() {
     document.body.classList.toggle("inst-open", stage !== "input");
     return () => document.body.classList.remove("inst-open");
   }, [stage]);
+
+  /**
+   * THE INTAKE'S OWN RECTANGLE, in pixels from each edge of the window, written onto
+   * the element as custom properties.
+   *
+   * The box opens from its boxed size out to full bleed as the first screen is
+   * scrolled through, and it does that the way components/tcg/footprint.tsx opens the
+   * map: the blue is a full-bleed layer that never resizes, and what animates is the
+   * window cut out of it. The field, the button and the four marks therefore stay
+   * exactly where they are and at the size they are — a box that really grew would
+   * drag its own contents up to the size of the screen with it.
+   *
+   * A clip-path cannot find the box's rectangle on its own, so it is measured here and
+   * handed to the stylesheet. Measured, not assumed: the box's position depends on the
+   * headline above it, which re-wraps with the window.
+   */
+  useEffect(() => {
+    const box = intake.current;
+    if (!box) return;
+    const write = () => {
+      /* THE FIELD'S rectangle, not the box's. The thing that opens is the white the
+         visitor types into — the page goes INTO the address field and comes out the
+         other side of it — so the window that widens starts at the field's own edges
+         and the layer is the field's own colour. */
+      const field = box.querySelector(".inst-field") ?? box;
+      const r = field.getBoundingClientRect();
+      /* Against the WINDOW, because the layer being clipped is fixed to it. The hero
+         is itself fixed, so these hold while the page scrolls and only have to be
+         taken again when the window changes shape. */
+      box.style.setProperty("--ix-top", `${Math.max(0, r.top)}px`);
+      box.style.setProperty("--ix-right", `${Math.max(0, window.innerWidth - r.right)}px`);
+      box.style.setProperty("--ix-bottom", `${Math.max(0, window.innerHeight - r.bottom)}px`);
+      box.style.setProperty("--ix-left", `${Math.max(0, r.left)}px`);
+    };
+    write();
+    const ro = new ResizeObserver(write);
+    ro.observe(box);
+    ro.observe(document.documentElement);
+    window.addEventListener("resize", write);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", write);
+    };
+  }, []);
 
   /**
    * Put a stage on screen without running a reading.
@@ -540,34 +592,14 @@ export function Instrument() {
                 * puts in its header, in black.
                 * See public/brand/third-party/README.md. */}
             <h1 className="inst-h1">
-              <span className="inst-h1-a">Your website looks fine.</span>
-              <span className="inst-h1-b">
-                But does{" "}
-                <span className="inst-pill">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="inst-pill-mark inst-pill-mark--google"
-                    src="/brand/third-party/google-wordmark.png"
-                    alt="Google"
-                    width={540}
-                    height={179}
-                  />
-                </span>{" "}
-                and{" "}
-                <span className="inst-pill">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="inst-pill-mark inst-pill-mark--chatgpt"
-                    src="/brand/third-party/chatgpt-wordmark.svg"
-                    alt="ChatGPT"
-                    width={118}
-                    height={28}
-                  />
-                </span>{" "}
-                think so?
-              </span>
+              <span className="inst-h1-a">Canada’s WordPress security advisory.</span>
+              <span className="inst-h1-b">Is your website affected?</span>
             </h1>
-            <p className="inst-lede">Find out what your customers experience.</p>
+            <p className="inst-lede">
+              The Canadian Centre for Cyber Security has issued a warning about
+              vulnerable WordPress websites. Find out what your website might be
+              exposing to customers.
+            </p>
           </div>
 
           {/* ONE CONTAINER for the whole intake: the address field, the button that
@@ -577,7 +609,7 @@ export function Instrument() {
 
               The form spans the box — full width inside it, field and button on one
               line — and the ratings sit under it across the same span. */}
-          <div className="inst-intake">
+          <div className="inst-intake" ref={intake}>
           <form className="inst-form" onSubmit={start} noValidate>
             <label className="sr-only" htmlFor="inst-url">
               Your website address
@@ -700,7 +732,10 @@ export function Instrument() {
               {/* No source line. It has been asked for twice now: the face opens on the
                   heading. The receipt still prints "<host> · mobile" at its head, which
                   is where the source is named. Do not put it back. */}
-              <h2 className="inst-h2">Results for {hostOf(result.url)}</h2>
+              <h2 className="inst-h2">
+                Your website has been assessed.
+                <span className="inst-h2-b">Here’s what we found.</span>
+              </h2>
 
               {/* One centred column, at every width: the reading, then the dials, then
                   what it means, then the fixes with the ask laid over them. The two-column
@@ -739,6 +774,51 @@ export function Instrument() {
                     {BAND_RANGE[bandOf(low.value)]}
                   </i>
                 </span>
+
+                {/* WORDPRESS, YES OR NO.
+                    *
+                    * It sits in the score container because it is the other half of the
+                    * reading now: the page above is about an advisory that applies to
+                    * WordPress sites, so "is this one" is the first thing the owner is
+                    * here to learn.
+                    *
+                    * THREE ANSWERS, NOT TWO. Lighthouse either recognised WordPress,
+                    * profiled the page and did not, or could not profile it at all. The
+                    * third is said out loud rather than rounded down to "No" — under a
+                    * security advisory, a confident No we have not earned is the one
+                    * answer that could cost somebody something. It is also what the
+                    * sample reads, since a sample has no site to detect.
+                    */}
+                <span className="inst-wp" data-wp={result.wordpress ?? "unknown"}>
+                  <b className="inst-wp-a">
+                    {result.wordpress === "yes" ? "Yes" : result.wordpress === "no" ? "No" : "—"}
+                  </b>
+                  <i>
+                    {/* The name is a CHIP, not a word: the same device the headline used
+                        for Google and ChatGPT, and for the same reason — a mark the
+                        reader already knows is read faster than its name set in
+                        somebody else's typeface. The file is the one already in this
+                        repo (public/logos-color/wordpress.svg), in WordPress's own
+                        #21759B, unmodified. */}
+                    Built on{" "}
+                    <span className="inst-pill inst-pill--wp">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        className="inst-wp-mark"
+                        src="/logos-color/wordpress.svg"
+                        alt=""
+                        width={24}
+                        height={24}
+                      />
+                      WordPress
+                    </span>
+                    {result.wordpress === "unknown" && (
+                      <>
+                        <span aria-hidden="true"> · </span>could not be determined
+                      </>
+                    )}
+                  </i>
+                </span>
               </div>
 
               {/* The three categories, each a white half dial: the arc filled to the
@@ -756,6 +836,10 @@ export function Instrument() {
               {/* Every category Google answered with is in its good band. `stats` is
                   already the categories that came back, so a missing one cannot make a
                   reading look clean by being absent. */}
+              {/* The question the reading leaves the owner with, asked before the list
+                  that answers it. */}
+              <h3 className="inst-next-h">What should you do next?</h3>
+
               <Fixes
                 fixes={fixes}
                 green={stats.length > 0 && stats.every((s) => bandOf(s.value) === "good")}
@@ -799,6 +883,7 @@ export function Instrument() {
                     {BAND_RANGE[bandOf(low.value)]}
                   </i>
                 </span>
+
               </div>
             </>
           )}

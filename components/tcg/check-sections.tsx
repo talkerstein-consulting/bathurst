@@ -1,4 +1,5 @@
-import { Card } from "./card";
+import Device from "@/components/react-bits/device";
+import Awards from "@/components/bathurst/Awards";
 import { Cta } from "./cta";
 import { Ground } from "./figures";
 import { ServiceCard } from "./service-card";
@@ -10,16 +11,19 @@ import { ServiceCard } from "./service-card";
  * address rather than asking for it again. Three sections and one repeat of the CTA,
  * in the order the brief sets them:
  *
- *   1  what we are actually checking, and what this is not
- *   2  the business that thought its site was fine
- *   3  what happens if something IS wrong — and the CTA again
+ *   1  the advisory, and a link straight to it
+ *   2  what we are actually checking
+ *   3  what happens if something IS wrong
+ *   4  the last word, and the CTA again
  *
- * FORMATS ARE THE HOME PAGE'S, NOT NEW ONES. The section shell is `.sec` with the
- * `.sec-head` rule over the headline, the three checks are `.svc-grid` of
- * <ServiceCard> (the same row the capabilities use, two to a row and one on a phone),
- * and the story is the wide `<Card lead>` from the selected-work row. Nothing here
- * invents a card: if one of these needs to change shape, it changes on the home page
- * and this follows.
+ * The redirect story ("They thought their website was fine, too.") was removed at the
+ * client's request, with the wide lead card and the two-browser drawing that carried
+ * it. So was the "first look, not a full security audit" qualification under section 1.
+ *
+ * FORMATS ARE THE HOME PAGE'S, NOT NEW ONES. The section shell is `.sec-head` over a
+ * `.svc-grid` of <ServiceCard> — the same row the capabilities use. Nothing here
+ * invents a card: if one needs to change shape, it changes on the home page and this
+ * follows.
  *
  * The headings are the client's own copy, supplied verbatim. Do not reword them.
  */
@@ -62,6 +66,107 @@ const CHECKS: Array<[string, string]> = [
   ],
 ];
 
+/**
+ * The advisory itself, in the client's own words.
+ *
+ * VERIFIED against the source on 2026-11-28: cyber.gc.ca serves AV26-1117, dated
+ * November 3 2026, naming WordPress Core prior to 7.1.4, and stating that CISA added
+ * CVE-2026-119977 to the Known Exploited Vulnerabilities catalogue that day. Every
+ * claim this section makes is in that document. The specific version and CVE are NOT
+ * named here because the supplied copy does not name them — they are in the advisory
+ * one click away, and the link is the point of the section.
+ *
+ * It goes first under the fold because it is the evidence for the headline above it:
+ * the hero asserts an advisory exists, and this is where a reader goes to check.
+ */
+export function CyberCentreWarning() {
+  return (
+    <section className="chk-sec" id="advisory" aria-labelledby="advisory-h">
+      <Head id="advisory-h">A warning from Canada’s Cyber Centre.</Head>
+
+      <div className="chk-split">
+      <div className="chk-left">
+      <div className="chk-say">
+        <p>
+          On November 3, 2026, the Canadian Centre for Cyber Security issued an advisory
+          concerning vulnerable WordPress installations.
+        </p>
+        <p>
+          The advisory identifies WordPress versions affected by a security
+          vulnerability. The US Cybersecurity and Infrastructure Security Agency also
+          added the vulnerability to its Known Exploited Vulnerabilities catalogue.
+        </p>
+        <p>
+          <b>That means this isn’t just a theoretical security concern.</b>
+        </p>
+        <p>
+          If your business runs WordPress, it’s worth confirming that your website is up
+          to date.
+        </p>
+      </div>
+
+      {/* Straight to the Cyber Centre, not to a page of ours about it: the whole value
+          of citing an advisory is that the reader can go and read it. It opens in its
+          own tab so the check they came for is not navigated away from, and says where
+          it goes, because a link that leaves the site should say so before it is taken. */}
+      <p className="chk-source">
+        <a
+          className="chk-source-link"
+          href="https://www.cyber.gc.ca/en/alerts-advisories/wordpress-security-advisory-av26-1117"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Read the official Canadian advisory
+          <span className="chk-source-out" aria-hidden="true">↗</span>
+          <span className="sr-only"> (opens cyber.gc.ca in a new tab)</span>
+        </a>
+      </p>
+      </div>
+
+      {/* The check, in the hand it is actually done in.
+          *
+          * The frame is @reactbits-starter/device-tw (components/react-bits/device.tsx),
+          * which takes children rather than a screenshot — so what is inside the glass
+          * is the page's own markup in the page's own classes, not a picture of it. It
+          * is the mobile layout of the intake shown on desktop too, which is the point:
+          * most of the people this advisory reaches will open the check on a phone.
+          *
+          * NOT INTERACTIVE, and deliberately so. The live field is the one in the hero;
+          * a second <form> with a second #inst-url would be two of the only control on
+          * the page. This one is inert, hidden from the tab order and from screen
+          * readers, and the caption under the section is what points at the real one. */}
+      <div className="chk-device" aria-hidden="true">
+        <Device
+          finish="titanium"
+          island
+          width={248}
+          shadow={0.9}
+          /* The component's glass reflection is a grey wash over the whole screen. At
+             its default it took the page's cream down to slate and made the interface
+             inside look switched off. Kept, but faint — enough for glass, not enough to
+             recolour what is under it. */
+          reflection={0}
+          screenColor="#FCF8F1"
+          enableParallax
+          parallaxStrength={6}
+        >
+          <div className="chk-screen">
+            <p className="chk-screen-h">
+              Canada’s WordPress security advisory. Is your website affected?
+            </p>
+            <div className="inst-intake chk-screen-box">
+              <div className="inst-field single chk-screen-field">yourwebsite.com</div>
+              <div className="btn primary inst-go chk-screen-go">Check my website</div>
+              <Awards className="inst-awards inst-awards--intake" logos />
+            </div>
+          </div>
+        </Device>
+      </div>
+      </div>
+    </section>
+  );
+}
+
 export function WhatWeCheck() {
   return (
     <section className="chk-sec" id="what-we-check" aria-labelledby="what-we-check-h">
@@ -86,87 +191,6 @@ export function WhatWeCheck() {
         ))}
       </div>
 
-      {/* The limit of the claim, in the brief's own words and kept on the page rather
-          than in a tooltip: this is a first look, and saying so is what makes the rest
-          of it believable. */}
-      <p className="chk-note">
-        This is a first look, not a full security audit. If we find something unusual,
-        we’ll explain what it means and what to do next.
-      </p>
-    </section>
-  );
-}
-
-/**
- * The redirect story, as the wide lead card.
- *
- * The art is a drawing, not a screenshot: two browser windows, the same address in
- * both, and a different page under it in the second. Nothing in it names a real
- * business or reproduces a real site — it is a diagram of the thing that happened,
- * which is all the story needs and all we can honestly show.
- */
-function BrowserPair() {
-  return (
-    <svg
-      className="chk-pair"
-      viewBox="0 0 520 240"
-      role="img"
-      aria-label="The same website address showing the business's own page to the owner, and a different page to a customer"
-    >
-      {/* The owner's window: the site as they know it. */}
-      <g className="chk-win">
-        <rect x="8" y="24" width="232" height="186" rx="10" />
-        <line x1="8" y1="52" x2="240" y2="52" />
-        <circle cx="24" cy="38" r="3.5" />
-        <circle cx="36" cy="38" r="3.5" />
-        <circle cx="48" cy="38" r="3.5" />
-        <rect className="chk-bar" x="62" y="32" width="164" height="12" rx="6" />
-        {/* The page under it: a masthead and three lines of copy. */}
-        <rect className="chk-ink" x="28" y="70" width="86" height="10" rx="3" />
-        <rect className="chk-ink chk-ink--soft" x="28" y="92" width="184" height="7" rx="3.5" />
-        <rect className="chk-ink chk-ink--soft" x="28" y="106" width="166" height="7" rx="3.5" />
-        <rect className="chk-ink chk-ink--soft" x="28" y="120" width="176" height="7" rx="3.5" />
-        <rect className="chk-plate" x="28" y="142" width="184" height="52" rx="6" />
-      </g>
-
-      {/* The arrow between them: the same address, a different destination. */}
-      <g className="chk-arrow" aria-hidden="true">
-        <line x1="252" y1="117" x2="268" y2="117" />
-        <polyline points="263,111 269,117 263,123" />
-      </g>
-
-      {/* The customer's window: the address bar is identical, the page is not. */}
-      <g className="chk-win chk-win--bad">
-        <rect x="280" y="24" width="232" height="186" rx="10" />
-        <line x1="280" y1="52" x2="512" y2="52" />
-        <circle cx="296" cy="38" r="3.5" />
-        <circle cx="308" cy="38" r="3.5" />
-        <circle cx="320" cy="38" r="3.5" />
-        <rect className="chk-bar" x="334" y="32" width="164" height="12" rx="6" />
-        {/* Somewhere else entirely: a banner and two blocks, nothing like the page above. */}
-        <rect className="chk-ink chk-ink--bad" x="300" y="70" width="172" height="26" rx="4" />
-        <rect className="chk-plate chk-plate--bad" x="300" y="106" width="82" height="88" rx="6" />
-        <rect className="chk-plate chk-plate--bad" x="392" y="106" width="92" height="88" rx="6" />
-      </g>
-    </svg>
-  );
-}
-
-export function TheyThoughtItWasFine() {
-  return (
-    <section className="chk-sec" id="the-story" aria-labelledby="the-story-h">
-      <Head id="the-story-h">They thought their website was fine, too.</Head>
-
-      <div className="card-lead-row chk-story">
-        <Card
-          lead
-          title="Some customers were being redirected to an online casino."
-          dek="We helped a business whose website appeared normal whenever they visited it. But some customers were being sent somewhere else entirely, and they didn’t know it was happening. Your website is often the first interaction someone has with your business — if something goes wrong, they may simply leave without telling you."
-          art={<BrowserPair />}
-          cta="Check my website"
-          href="#check-2-top"
-        />
-      </div>
     </section>
   );
 }
@@ -189,15 +213,42 @@ export function WhatHappensNext() {
         </p>
       </div>
 
-      {/* The CTA repeated, which is the whole job of the bottom of this page: the
-          visitor who scrolled rather than typed has to be able to start without
-          scrolling back for the field themselves. It goes to the first screen, where
-          the instrument is. */}
+    </section>
+  );
+}
+
+/**
+ * The last word, and the CTA repeated.
+ *
+ * This is the whole job of the bottom of the page: the visitor who scrolled instead of
+ * typing has to be able to start without going back up to look for the field. It goes
+ * to the first screen, where the instrument is.
+ *
+ * The fine print that was taken off the intake earlier in the build lives HERE instead.
+ * Under the field it was a caption on a control that needed none; at the foot of the
+ * page, where the ask is being made of someone who has read the whole argument, the
+ * three answers it gives — free, quick, nothing to sign in to — are the objections
+ * actually left.
+ */
+export function FinalCta() {
+  return (
+    <section className="chk-sec chk-sec--last chk-final" id="final-cta" aria-labelledby="final-cta-h">
+      <Head id="final-cta-h">Don’t wait for a customer to notice.</Head>
+
+      <p className="chk-lead">
+        Find out what your website might be exposing, and what deserves your attention.
+      </p>
+
       <div className="chk-again">
-        <Cta href="#check-2-top" primary className="chk-again-go" label="Start with the free website check">
-          Start with the free website check
+        <Cta href="#check-2-top" primary className="chk-again-go" label="Check my website">
+          Check my website
         </Cta>
       </div>
+
+      <p className="chk-fine">
+        Free check <span aria-hidden="true">·</span> 30 seconds{" "}
+        <span aria-hidden="true">·</span> No password needed
+      </p>
     </section>
   );
 }
@@ -205,9 +256,10 @@ export function WhatHappensNext() {
 export function CheckSections() {
   return (
     <>
+      <CyberCentreWarning />
       <WhatWeCheck />
-      <TheyThoughtItWasFine />
       <WhatHappensNext />
+      <FinalCta />
     </>
   );
 }

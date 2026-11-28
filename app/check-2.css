@@ -1369,7 +1369,7 @@ html body .inst-go--wide.btn .label { justify-content: center; }
      the dither up the page behind the cards. */
   position: relative;
   z-index: 2;
-  background: #FCF8F1;
+  background: var(--bg);
   /* The hero is fixed and contributes no height, so the first screen is held open
      here. dvh for the same reason .inst-page uses it: on a phone 100vh is the window
      without the browser's chrome, which would start the sections a bar too high. */
@@ -1402,6 +1402,13 @@ html body .inst-go--wide.btn .label { justify-content: center; }
    into wallpaper. */
 .chk-sec { position: relative; z-index: 1; display: grid; gap: var(--s4); }
 
+/* CENTRED. globals.css sets the section heading hard left with a 24ch measure, which
+   is right on the home page where a lede sits beside it. Here the heading stands over
+   a centred lead and a centred row of cards, and left-aligned it was the one thing on
+   the page not lined up with the rest. */
+.chk-sec .sec-head h2 { max-width: 28ch; margin-inline: auto; text-align: center; }
+.chk-sec .sec-head { text-align: center; }
+
 /* The lead under each section heading: one sentence, set larger than the body and
    held to a reading measure rather than the full width of the row. */
 .chk-lead {
@@ -1418,41 +1425,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .chk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* The limit of the claim. Smaller than the body and quieter than it, because it is a
-   qualification rather than a sentence of the argument — but on the page, not hidden. */
-.chk-note {
-  margin: var(--s5) auto 0;
-  max-width: 56ch;
-  font: 400 var(--t-small)/1.5 var(--body);
-  color: var(--steel-70);
-  text-align: center;
-}
-
-/* ------------------------------------------- the redirect story -------- */
-
-/* The two windows, drawn rather than screenshotted. The strokes are the page's own
-   steel; the second window's page is the only place a warm accent appears, which is
-   what carries "this is not your site" without a word of label. */
-.chk-pair { display: block; width: 100%; height: 100%; }
-.chk-win rect,
-.chk-win circle,
-.chk-win line { fill: none; stroke: var(--steel-15); stroke-width: 1.5; }
-.chk-win > rect:first-of-type { fill: var(--paper, #FCF8F1); }
-.chk-win circle { fill: var(--steel-15); stroke: none; }
-.chk-bar { fill: var(--steel-15); stroke: none !important; }
-.chk-ink { fill: var(--steel); stroke: none !important; }
-.chk-ink--soft { fill: var(--steel-15); }
-.chk-plate { fill: none; stroke: var(--steel-15) !important; stroke-width: 1.5; }
-.chk-ink--bad { fill: var(--orange); }
-.chk-plate--bad { fill: color-mix(in srgb, var(--orange) 12%, transparent); stroke: var(--orange) !important; }
-/* The slot the card puts this drawing in is the dark plate, so the arrow between the
-   two windows is drawn in paper rather than in ink — steel on navy is invisible. */
-.chk-arrow line,
-.chk-arrow polyline { fill: none; stroke: #FCF8F1; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-
-/* The art slot on the lead card is a fixed height with the drawing centred in it,
-   rather than the photographic crop the selected-work row puts there. */
-.chk-story .card-art { display: grid; place-items: center; padding: var(--s4); }
 
 /* ------------------------------------------- what happens next --------- */
 
@@ -1472,93 +1444,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 
 @media (max-width: 760px) {
   .chk-lead { margin-bottom: var(--s4); }
-  .chk-note { margin-top: var(--s4); }
-  .chk-story .card-art { padding: var(--s2); }
-}
-
-/* ==========================================================================
-   THE WARP — "a closer look", taken literally
-   --------------------------------------------------------------------------
-   Scrolling off the first screen does not slide the hero away: it flies INTO
-   the address field. The panel scales up about the field's own centre, so the
-   field is the one thing that does not move while the headline, the ratings
-   and the marks all grow past the edges of the window and dissolve. What is
-   on the other side of it is the first section — the closer look.
-
-   Done on a scroll timeline, so there is no scroll handler, nothing to
-   throttle and nothing running off the main thread's budget: the browser ties
-   the animation's own progress to the document's scroll position. The whole
-   block is behind @supports, and browsers without it get exactly what this
-   page did before — a pinned hero with the sheet drawn over it.
-
-   TRANSFORM ORIGIN is the field's centre inside the panel, measured rather
-   than guessed: 38.4% / 58.4% at the laptop width, where the field sits left
-   of centre because the headline runs wider than the form. The phone block
-   below re-measures it for the narrower column.
-   ========================================================================== */
-
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* Only from 01, and only while the instrument is closed. Once it is open the
-       document is locked anyway, but a frozen scroll position mid-range would
-       otherwise leave the panel sitting at some half-warped scale under the
-       reading. */
-    body:not(.inst-open) .inst[data-stage="input"] .inst-panel {
-      transform-origin: 38.4% 58.4%;
-      animation: inst-warp linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-
-    /* The ground goes with it, but only a little: the dither is the room the
-       instrument stands in, and a room moves less than the thing you are flying at.
-       The difference between the two rates is the depth. */
-    body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) > .hero-bg {
-      transform-origin: 38.4% 58.4%;
-      animation: inst-warp-ground linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-
-    /* The marks go early. They are the furthest thing from the field and the first
-       to leave the frame, so holding them to the end only gives the eye something
-       to follow that is not the field. */
-    body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) .inst-foot {
-      animation: inst-warp-foot linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 55vh;
-    }
-  }
-}
-
-@keyframes inst-warp {
-  /* Eased by hand rather than by a timing function: the three stops make the
-     approach slow at first and then rush, which is what reads as acceleration
-     towards something rather than a linear scale. The blur only arrives at the
-     end, where the scale is large enough that a sharp edge would show the
-     pixels it is made of. */
-  0%   { transform: scale(1);    opacity: 1; filter: blur(0); }
-  55%  { transform: scale(1.55); opacity: 1; filter: blur(0); }
-  100% { transform: scale(4.6);  opacity: 0; filter: blur(7px); }
-}
-
-@keyframes inst-warp-ground {
-  0%   { transform: scale(1);   opacity: 1; }
-  100% { transform: scale(1.9); opacity: 0; }
-}
-
-@keyframes inst-warp-foot {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(12px) scale(1.25); }
-}
-
-@media (max-width: 760px) {
-  /* The column is the width of the screen here and the form fills it, so the field
-     sits dead centre across and a little lower down the face. */
-  body:not(.inst-open) .inst[data-stage="input"] .inst-panel,
-  body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) > .hero-bg {
-    transform-origin: 50% 54%;
-  }
 }
 
 /* --------------------------------------------- the arrival ------------- */
@@ -1582,19 +1467,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
    * meant for the address field underneath it. It is inert until it has arrived. */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .chk-page::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      background: #FCF8F1;
-      opacity: 0;
-      pointer-events: none;
-      animation: chk-curtain linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-
     .chk-below {
       animation: chk-settle linear both;
       animation-timeline: scroll(root);
@@ -1603,19 +1475,12 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   }
 }
 
-@keyframes chk-curtain {
-  /* Nothing for the first half: the warp has to be read as the instrument flying
-     apart, not as a fade to paper over the top of it. The sheet closes only once
-     the panel is already past the edges of the window. */
-  0%   { opacity: 0; }
-  52%  { opacity: 0; }
-  100% { opacity: 1; }
-}
-
 @keyframes chk-settle {
   0%   { transform: translateY(-100vh); opacity: 0; pointer-events: none; }
-  /* Still nothing to see while the curtain is drawing. */
-  74%  { opacity: 0; pointer-events: none; }
+  /* Nothing to see until the blue has finished opening. The sections carry their own
+     paper, so this fade is also what takes the screen from the intake's blue back to
+     the page's stock. */
+  76%  { opacity: 0; pointer-events: none; }
   99%  { pointer-events: none; }
   100% { transform: translateY(0); opacity: 1; pointer-events: auto; }
 }
@@ -1647,9 +1512,87 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   border-radius: var(--r-card);
   /* IN BLUE. The box is the page's one dark object: Steel Blue, the brand's own, so
      the instrument's input reads as a piece of equipment set on the paper rather than
-     a lighter patch of the same stock. Everything inside it inverts to suit. */
+     a lighter patch of the same stock. Everything inside it inverts to suit.
+     *
+     * The box does not move or change on scroll. What moves is the white inside it —
+     * see THE OPENING below. */
   border: 1.5px solid var(--steel);
   background: var(--steel);
+  position: relative;
+  isolation: isolate;
+}
+
+/* ============================ THE OPENING ================================
+   THE FIELD OPENS. Scrolling off the first screen widens the white the visitor types
+   into until it is the whole window — the page goes into the address field, and the
+   closer look is what is on the other side of it.
+
+   It is the technique components/tcg/footprint.tsx uses on the map: the white is a
+   FULL-BLEED LAYER THAT NEVER RESIZES, and what animates is the window cut out of it.
+   Nothing inside the box is scaled, so the field, the button and the four marks keep
+   their own size and position for as long as they are visible; the white simply
+   arrives over them.
+
+   The layer is the field's own colour (--bg, the same rgb(243,247,243) the input is
+   painted in) and the sections below carry that colour too, so the screen the
+   opening ends on and the page it hands over to are one surface.
+
+   The rectangle it starts from is measured in components/tcg/instrument.tsx — the
+   FIELD's rectangle — and handed here as --ix-top/right/bottom/left, because a
+   clip-path cannot find it and it moves with every re-wrap of the headline above.
+   ========================================================================= */
+.inst-intake::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /* Over the box's own contents: this is a sheet laid on top of the instrument, not a
+     ground behind it. The box isolates, so this cannot reach past it to the bar. */
+  z-index: 3;
+  background: var(--bg);
+  pointer-events: none;
+  /* Invisible at rest. The layer sits exactly over the field when nothing has been
+     scrolled, and at full strength it would hide the placeholder and the Tab hint
+     under a blank plate of the same colour. It is only there once the page moves. */
+  opacity: 0;
+  clip-path: inset(
+    var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
+    round var(--r-btn)
+  );
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Shut again from 02 on: the reading has its own full screen and does not want the
+       field opened out underneath it. */
+    body:not(.inst-open) .inst[data-stage="input"] .inst-intake::before {
+      animation: inst-open linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+@keyframes inst-open {
+  0% {
+    opacity: 0;
+    clip-path: inset(
+      var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
+      round var(--r-btn)
+    );
+  }
+  /* Up to full strength almost at once, while the cut-out is still the field: the
+     opening has to read as the field itself widening, which it cannot do if the white
+     is still half transparent over the blue as it goes. */
+  6% {
+    opacity: 1;
+    clip-path: inset(
+      var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
+      round var(--r-btn)
+    );
+  }
+  /* Open by three quarters of the screen and held there, so the last of the range is
+     the sections arriving on a field that has already stopped moving. */
+  75%, 100% { opacity: 1; clip-path: inset(0 0 0 0 round 0); }
 }
 
 /* FULL SPAN. Outside the box the form was held to 520px so it would not run the
@@ -1706,3 +1649,193 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-intake .inst-awards--intake { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inst-intake .inst-awards--intake li { padding-inline: var(--s1); }
 }
+
+/* --------------------------------------------- the WordPress reading --- */
+/* The second half of the score container: whether the site is built on WordPress,
+   which under this campaign's advisory is the first thing the owner came to find out.
+   It is set to the same shape as the band beside it — a figure, then a label — so the
+   container reads as two answers to one question rather than a score with a note
+   stuck to it. */
+.inst-wp {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding-left: var(--s3);
+  border-left: 1.5px solid var(--steel-15);
+}
+.inst-wp-a {
+  font: 700 var(--t-h4)/1 var(--head);
+  letter-spacing: -0.01em;
+  color: var(--steel);
+}
+.inst-wp i {
+  font: 400 var(--t-small)/1.3 var(--body);
+  font-style: normal;
+  color: var(--steel-70);
+}
+/* Yes is the answer the advisory is about, so it is the one that carries the colour.
+   No is plain — it is good news and does not need announcing. The undetermined state
+   is quieter still, because it is not a result. */
+.inst-wp[data-wp="yes"] .inst-wp-a { color: var(--orange); }
+.inst-wp[data-wp="unknown"] .inst-wp-a { color: var(--steel-35); }
+
+/* The second line of the results heading: the same size, dropped to its own line, so
+   the statement and the handover read as two beats rather than one long sentence. */
+.inst-h2-b { display: block; }
+
+/* The question over the list of fixes. */
+.inst-next-h {
+  margin: var(--s4) 0 0;
+  font: 700 var(--t-h5)/1.2 var(--head);
+  letter-spacing: -0.01em;
+  color: var(--steel);
+  text-align: center;
+}
+
+/* ------------------------------------------- the headline, re-measured - */
+/* The claim is no longer a short sentence that can hold one line at any width:
+   "Canada's WordPress security advisory." is more than twice the length of what used
+   to be here, and kept nowrap it ran off the side of a phone. It wraps now, and the
+   size is a plain clamp again rather than the vw figure that was tuned to the old
+   line's nowrap measure. */
+.inst-h1-a { white-space: normal; }
+@media (max-width: 760px) {
+  .inst-h1 { font-size: clamp(26px, 7.4vw, 32px); }
+}
+
+/* --------------------------------------------- the advisory ------------ */
+/* The link out to cyber.gc.ca. It is set apart from the paragraphs above it and given
+   the orange, because it is the one thing on this page that can be independently
+   checked by the reader — the section is an assertion about a government advisory, and
+   this is the advisory. */
+.chk-source { margin: 0; text-align: center; }
+.chk-source-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 400 var(--t-lede)/1.4 var(--body);
+  color: var(--orange);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.chk-source-link:hover { text-decoration-thickness: 2px; }
+/* The mark that says this leaves the site. Decorative — the destination is named in
+   the screen-reader text beside it, not in this glyph. */
+.chk-source-out { font-size: .8em; }
+
+/* ------------------------------------------- the final CTA ------------- */
+/* The foot of the argument, centred on its own. */
+.chk-final { justify-items: center; }
+.chk-final .chk-lead { margin-bottom: 0; }
+.chk-final .chk-again { margin-top: var(--s4); }
+
+/* The three answers under the button: free, quick, nothing to sign in to. Quiet, and
+   below the ask rather than above it — they are what is left of the objections, not
+   part of the pitch. */
+.chk-fine {
+  margin: var(--s3) 0 0;
+  font: 400 var(--t-small)/1.4 var(--body);
+  color: var(--steel-70);
+  text-align: center;
+}
+
+/* The WordPress chip in the score container. The pill it reuses was built for the
+   headline, where it sits in a 45px line; here it sits in the small label under the
+   reading, so it takes its own height and a little more air around the mark. */
+.inst-pill--wp {
+  height: 1.5em;
+  gap: .3em;
+  padding: 0 .5em;
+  font: 400 inherit/1 var(--body);
+  font-size: .95em;
+  color: var(--steel);
+  vertical-align: -.3em;
+}
+.inst-wp-mark { display: block; width: auto; height: 1em; }
+/* Undetermined: the chip is reporting a question, not an answer, so it is held back
+   with the rest of that state rather than sitting on the page at full strength. */
+.inst-wp[data-wp="unknown"] .inst-pill--wp { opacity: .62; }
+
+/* The final CTA is the SAME action as the one in the intake, so it wears the same
+   button: filled orange with the sea ink, not the outline the base `primary` gives.
+   Two different-looking buttons for one action read as two different offers. */
+html body .chk-again-go.btn {
+  --ink: var(--sea);
+  color: var(--sea);
+  background: var(--orange) padding-box;
+  border-color: transparent;
+}
+html body .chk-again-go.btn .stroke { display: none; }
+html body .chk-again-go.btn:active { transform: translateY(1px); }
+html body .chk-again-go.btn:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
+
+/* --------------------------------------------- the advisory, split ----- */
+/* Prose left, the check in a phone right. Below the laptop it stacks and the phone
+   goes under the words, because at that width the reader is holding the thing the
+   picture is of. */
+.chk-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: center;
+}
+@media (min-width: 1000px) {
+  .chk-split { grid-template-columns: minmax(0, 1fr) auto; gap: var(--s6); }
+  /* The prose stops being centred once it has a column of its own: centred text beside
+     a picture has no edge to line up with. */
+  .chk-left .chk-say { text-align: left; margin-inline: 0; }
+  .chk-left .chk-source { text-align: left; }
+}
+.chk-left { display: grid; gap: var(--s4); }
+.chk-device { display: flex; justify-content: center; }
+
+/* ------------------------------------------- inside the glass ---------- */
+/* The mobile layout of the intake, at the size it really is on a phone. The classes
+   are the page's own (.inst-intake, .inst-field, .inst-awards--intake), so the box in
+   the picture is the box on the page and cannot drift from it; only the sizes are
+   restated here, because the screen is 248px wide and the page's own steps are set for
+   a window. */
+.chk-screen {
+  height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: 18px 12px;
+  background: #FCF8F1;
+}
+.chk-screen-h {
+  margin: 0;
+  font: 700 15px/1.2 var(--head);
+  letter-spacing: -0.01em;
+  color: var(--steel);
+  text-align: center;
+}
+.chk-screen-box { width: 100%; padding: 10px; gap: 10px; border-radius: 12px; }
+.chk-screen-field {
+  min-height: 30px;
+  font-size: 10px;
+  color: var(--steel-35);
+  border-radius: 7px;
+  background: var(--bg);
+  display: grid;
+  align-items: center;
+  padding-inline: 9px;
+}
+.chk-screen-go {
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--orange);
+  color: var(--sea);
+  font: 400 10px/1 var(--body);
+}
+/* Two by two in a 248px screen, and down to the smallest the marks stay legible at. */
+.chk-screen .inst-awards--intake { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.chk-screen .inst-awards--intake li { padding: 3px 4px; }
+.chk-screen .inst-awards--intake b { font-size: 15px; }
+.chk-screen .inst-awards--intake .stars { font-size: 7px; }
+.chk-screen .inst-awards--intake small { font-size: 6px; }
+.chk-screen .inst-awards--intake .aw-logo { height: 9px; }
+.chk-screen .inst-awards--intake .aw-badge img { height: 9px; }

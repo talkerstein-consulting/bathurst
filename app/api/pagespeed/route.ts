@@ -35,6 +35,9 @@ type Audit = {
 };
 type Lighthouse = {
   lighthouseResult?: {
+    /* Lighthouse's own detection of what the page is built with. Present only for the
+       stacks it recognises, and absent entirely when it recognises none. */
+    stackPacks?: { id?: string; title?: string }[];
     categories?: Record<
       string,
       { score?: number | null; title?: string; auditRefs?: { id: string; weight?: number; group?: string }[] }
@@ -152,12 +155,35 @@ export async function POST(request: Request) {
     );
   }
 
+  /**
+   * IS IT WORDPRESS? Lighthouse's answer, not ours.
+   *
+   * PSI returns a `stackPacks` entry for each technology it recognises on the page, and
+   * WordPress is one it recognises; the pack is what drives PageSpeed's own
+   * WordPress-specific advice. Taking it from there means this route still fetches
+   * nothing but googleapis.com — the alternative, pulling the page down ourselves to
+   * look for /wp-content/, would make this an open fetcher of arbitrary hosts.
+   *
+   * THREE STATES, NOT TWO. `stackPacks` is absent for a page Lighthouse could not
+   * profile at all, which is not the same as a page it profiled and found no WordPress
+   * on. Those are reported as "unknown" and "no" respectively, because this figure now
+   * sits under a security advisory: telling an owner their site is NOT WordPress when
+   * we simply could not tell is the one wrong answer that costs them something.
+   */
+  const packs = data.lighthouseResult?.stackPacks;
+  const wordpress: "yes" | "no" | "unknown" = !Array.isArray(packs)
+    ? "unknown"
+    : packs.some((p) => (p?.id ?? "").toLowerCase() === "wordpress")
+      ? "yes"
+      : "no";
+
   const audits = data.lighthouseResult?.audits ?? {};
   return NextResponse.json(
     {
       url: site,
       strategy: "mobile",
       scores: { performance, accessibility, practices },
+      wordpress,
       /* The two numbers an owner actually feels, in Lighthouse's own wording. */
       timings: {
         paint: audits["first-contentful-paint"]?.displayValue ?? null,

@@ -16,6 +16,12 @@ is redrawn, recoloured or rebuilt.
   (dark slate + red dot). Proof row.
 - **highlevel-logo.png** — HighLevel's Space Blue horizontal logo from its brand kit,
   https://marketing.gohighlevel.com/brandkit, trimmed and scaled to 1200px wide. Proof row.
+- **../../logos-color/wordpress.svg** — not in this folder, but used by /check-2: the
+  WordPress mark already in the repo, in WordPress's own #21759B, unmodified. It is the
+  chip in the results score container that reports whether the site is built on
+  WordPress. The WordPress mark is a WordPress Foundation trademark; its use here is
+  nominative — naming the software a site runs on — and should be checked against
+  https://wordpressfoundation.org/trademark-policy/ before this ships publicly.
 
 None of these companies has approved this use. Anyone shipping this publicly should check
 it against each company's brand terms first.
