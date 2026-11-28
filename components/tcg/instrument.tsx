@@ -1003,6 +1003,26 @@ function Fixes({
             );
           })}
 
+          {held > 0 && (
+            <li className="is-held-say">
+              <i aria-hidden="true">&bull;</i>
+              {/* The line to whoever opened the inspector, with the CTA in the list
+                  itself. It comes straight after the open rows, so it is the first line
+                  under the card: delete the card and this is what is waiting. At the end
+                  of the list it fell below the cut sheet and was never visible at all.
+                  Out of the tab order: the card's own button is the one a visitor reaches. */}
+              <b>
+                You think you&rsquo;re clever using the page inspector, huh?{" "}
+                {green
+                  ? <>Nothing here is on fire. What a review is for is the part Google does not measure.</>
+                  : <>Reading the list is the easy half. We&rsquo;ll work through all {fixes.length} of them with you.</>}{" "}
+                <button type="button" className="is-held-go" tabIndex={-1} onClick={onBook}>
+                  Book the review
+                </button>
+              </b>
+            </li>
+          )}
+
           {/* THE REST OF THE SHEET.
               Every other fix Google found, set exactly like the three above it — same
               columns, same hairlines, one continuous list — and running on underneath
@@ -1025,23 +1045,6 @@ function Fixes({
             );
           })}
 
-          {held > 0 && (
-            <li className="is-held-say">
-              <i aria-hidden="true">&bull;</i>
-              {/* The line to whoever opened the inspector, with the CTA in the list
-                  itself. Under the card for everyone else, so it is out of the tab
-                  order: the card's own button is the one a visitor reaches. */}
-              <b>
-                You think you&rsquo;re clever using the page inspector, huh?{" "}
-                {green
-                  ? <>Nothing here is on fire. What a review is for is the part Google does not measure.</>
-                  : <>Reading the list is the easy half. We&rsquo;ll work through all {fixes.length} of them with you.</>}{" "}
-                <button type="button" className="is-held-go" tabIndex={-1} onClick={onBook}>
-                  Book the review
-                </button>
-              </b>
-            </li>
-          )}
         </ol>
       </div>
       {ask}

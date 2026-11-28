@@ -1020,6 +1020,13 @@ html body .inst-go.btn.is-off {
    sheet, so it is read by exactly the person it is addressed to. */
 .inst-fixes-list .is-held-say {
   grid-template-columns: 1.6em minmax(0, 1fr);
+  /* It follows the three open rows directly, so it starts a step lower to sit wholly
+     under the card's top edge rather than peeking out above it. */
+  padding-top: var(--s4);
+}
+/* The desktop sidebar's rows are shorter, so the card's edge sits lower against them. */
+@media (min-width: 901px) {
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes-list li.is-held-say { padding-top: calc(var(--s5) + var(--s1)); }
 }
 .inst-fixes-list .is-held-say b {
   font: 400 var(--t-caption)/1.5 var(--body);
