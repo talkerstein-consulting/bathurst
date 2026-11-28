@@ -35,8 +35,30 @@
    colour the canvas resolves to rather than a flash of something else. */
 .inst-page .hero-bg--wait { background: #FCF8F1; }
 
-/* Nothing on this page scrolls the document, including an iOS rubber band. */
-html:has(.inst-page), body:has(.inst-page) { overflow: hidden; overscroll-behavior: none; }
+/* The page below the first screen is a landing page and scrolls like one, so the
+   document-wide lock that used to live here is gone. It comes back only while the
+   instrument is open: <body> carries .inst-open from 02 to 04
+   (components/tcg/instrument.tsx), and for as long as it does, nothing behind the
+   modal moves — including an iOS rubber band. */
+body.inst-open { overflow: hidden; overscroll-behavior: none; }
+
+/* The first screen is PINNED, always — not only while the instrument is open.
+   *
+   * It is fixed to the window at the bottom of the stack, and the page below scrolls
+   * up over it like a sheet drawn across a plate: the hero does not move, it is
+   * covered. That is why .chk-below carries an opaque ground and a z-index above this
+   * one, and why the document still has to be tall enough to scroll — the fixed
+   * element is out of the flow and contributes no height, so .chk-below opens with a
+   * screen's worth of margin standing in for it.
+   *
+   * Because it is already fixed, opening the instrument is only a change of layer:
+   * .inst-open lifts it over the sections (and locks the document behind it), and
+   * everything inside — the dither ground, the panel, the stage machinery — carries
+   * across untouched, so the sequence from 02 to 04 is the one that was already there.
+   * Both layers sit under the top bar (z-index 140 in globals.css), which stays
+   * reachable throughout. */
+.inst-page { position: fixed; inset: 0; z-index: 0; }
+body.inst-open .inst-page { z-index: 60; }
 
 /* The bar is a header here, as it is on /check: no titles row, no megamenu, no
    sign-in, and the appointment kept on the right at every width. */
@@ -346,14 +368,19 @@ html body .inst-go.btn .stroke { display: none; }
    already the system's hover, and the press answers with a shift. */
 html body .inst-go.btn:active { transform: translateY(1px); }
 html body .inst-go.btn:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; }
-/* D04: the disabled state keeps the button orange — it is the one thing on the screen
-   to press, and greying it out before a single character is typed reads as broken — but
-   at the token's own faded weight, so it is plainly not ready. It is aria-disabled, so
-   a press still answers with the reason rather than doing nothing. */
+/* D04: the button is FULL ORANGE at every state, the not-ready one included. It used
+   to sit at --orange-35 before a character was typed, which on the blue box read as a
+   control that had been switched off rather than one waiting for input.
+   *
+   * The state has not gone, only its colour: the button is still aria-disabled, so a
+   press before there is an address answers with the reason ("Enter your website
+   address first.") instead of doing nothing. What it no longer does is SHOW that it
+   is not ready before it is pressed — a deliberate trade, at the client's request. */
 html body .inst-go.btn.is-off {
   --ink: var(--sea);
   color: var(--sea);
-  background: var(--orange-35) padding-box;
+  background: var(--orange) padding-box;
+  opacity: 1;
 }
 /* The chevron is the direction, not an arrow (D03), and takes the button's own gap. */
 .inst-go .glyph { width: 18px; height: 18px; flex: none; }
@@ -1031,14 +1058,21 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   grid-template-columns: minmax(0, 1fr);
   /* PROXIMITY: the ratings and the logo row are two separate claims, so the air between
      them is larger than the air inside either. */
-  gap: var(--s5);
-  padding: var(--s2) 0 max(var(--s3), env(safe-area-inset-bottom, 0px));
+  gap: var(--s3);
+  padding: var(--s2) 0 max(var(--s1), env(safe-area-inset-bottom, 0px));
 }
 
 /* The travelling row of client logos (components/LogoLoop.jsx, which draws its own
    fade at both ends and stops itself under prefers-reduced-motion). The marks are held
    back from the headline: this is a footing, and the ink is other people's. */
 .inst-logos { width: 100%; min-width: 0; }
+/* LogoLoop reserves equal padding above and below the marks for the reach of its own
+   tilt and hover (it writes the figure to --logoloop-pad itself, so it changes with the
+   mark height). The label is flipped to sit ABOVE the row on this page, which leaves the
+   lower reserve doing nothing but holding the marks off the bottom of the screen. Most of
+   it is taken back here; a little is left so the row is not flush to the edge. The loop
+   clips its own overflow, so the reclaimed strip is empty space, not a cropped mark. */
+.inst-foot .inst-logos { margin-bottom: calc(var(--logoloop-pad, 0px) * -0.7); }
 
 /* The marks themselves, whole: no disc, no crop. Most of these files are transparent
    and the rest have been knocked out (components/tcg/client-logos.ts), so each logo
@@ -1047,7 +1081,7 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 .inst-logos .inst-mark {
   width: auto;
   height: var(--logoloop-logoHeight);
-  max-width: 180px;
+  max-width: 128px;
   object-fit: contain;
   opacity: .78;
 }
@@ -1089,13 +1123,18 @@ html body .inst-go--wide.btn .label { justify-content: center; }
    page's proof and it is read, not glanced at, so it is set larger here than in the map
    hero — large enough that the two figures and the two certifications carry on their
    own under the form. */
-.inst-foot .inst-awards { margin: 0; }
-.inst-foot .inst-awards li { padding: 4px var(--s4); }
-.inst-foot .inst-awards b { font-size: 52px; }
-.inst-foot .inst-awards .stars { font-size: 20px; }
-.inst-foot .inst-awards small { font-size: 15px; }
-.inst-foot .inst-awards .aw-badge img { height: 32px; }
-.inst-foot .inst-awards .aw-badge small { max-width: 16ch; }
+.inst-awards--intake { margin: 0; }
+/* Set to the PANEL now, not to the screen. In the foot these four had the whole
+   width of the window and could be large; inside the face they have the panel's 880px
+   measure, and at the old sizes the fourth dropped to a second row. Down a step, so the
+   row holds — and the ratings read as the field's footing rather than as a band of
+   their own. */
+.inst-awards--intake li { padding: 4px var(--s3); }
+.inst-awards--intake b { font-size: 38px; }
+.inst-awards--intake .stars { font-size: 16px; }
+.inst-awards--intake small { font-size: 13px; }
+.inst-awards--intake .aw-badge img { height: 26px; }
+.inst-awards--intake .aw-badge small { max-width: 16ch; }
 
 /* ----------------------------------------------------------- phones ----- */
 
@@ -1136,7 +1175,15 @@ html body .inst-go--wide.btn .label { justify-content: center; }
      against a 335px column on a 375 phone. 24px holds it inside the gutter. */
   /* The desktop width (94vw, to let it pass the panel measure) is wider than the
      phone column and pushed the centred lines 9px right; on a phone it is the column. */
-  .inst-h1 { font-size: 24px; width: auto; margin-inline: 0; justify-self: stretch; min-width: 0; max-width: 100%; }
+  /* Larger than the 24px this held before, and tied to the window rather than fixed.
+     "Your website looks fine." is nowrap, so the column sets the ceiling: the line
+     measures 9.69x the font size, which is 28.9px on the 280px column of a 320 phone
+     and 34.6px on the 335px column of a 375 one. 8.8vw sits under both with a few
+     pixels to spare, and the 34px cap stops it running away towards the 760px end of
+     this query. The question goes on wrapping, as it does at every width below the
+     laptop. Nothing on this page scrolls, so a claim wider than its column would be
+     cut off at the gutter rather than pushed out — hence the slack. */
+  .inst-h1 { font-size: min(34px, 8.8vw); width: auto; margin-inline: 0; justify-self: stretch; min-width: 0; max-width: 100%; }
   .inst-results { gap: var(--s2); }
   .inst-dials { gap: var(--s1); }
   /* A CAP, not a width: at 320px three 100px plates plus their gaps are 36px wider
@@ -1158,38 +1205,38 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 
   /* The foot keeps both rows on a phone, tightened: the logos are what a visitor
      recognises at a glance, and the ratings are the reason to trust the reading. */
-  .inst-foot { gap: var(--s1); padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px)); }
-  .inst-foot .inst-awards b { font-size: 32px; }
-  .inst-foot .inst-awards .stars { font-size: 15px; }
-  .inst-foot .inst-awards small { font-size: 12px; }
-  .inst-foot .inst-awards .aw-badge img { height: 24px; }
+  .inst-foot { gap: var(--s1); padding-bottom: calc(var(--s1) + env(safe-area-inset-bottom, 0px)); }
+  .inst-awards--intake b { font-size: 32px; }
+  .inst-awards--intake .stars { font-size: 15px; }
+  .inst-awards--intake small { font-size: 12px; }
+  .inst-awards--intake .aw-badge img { height: 24px; }
 
   /* A 2x2 grid on a phone: the two ratings on the first row, the two certifications
      on the second. Every cell is one centred stack — for a rating the number, then
      the stars, then the platform's logo, then the review count; for a badge the
      logo, then its caption. Hairlines between the columns and between the rows. */
-  .inst-foot .inst-awards {
+  .inst-awards--intake {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     width: auto; margin-inline: 0; row-gap: 0;
     padding-inline: max(var(--gut), env(safe-area-inset-left, 0px));
   }
-  .inst-foot .inst-awards li {
+  .inst-awards--intake li {
     flex-direction: column; justify-content: center; align-items: center;
     gap: 2px; padding: 6px var(--s1); text-align: center;
   }
-  .inst-foot .inst-awards li + li { border-left: 0; }
-  .inst-foot .inst-awards li:nth-child(even) { border-left: 1.5px solid var(--steel-15); }
-  .inst-foot .inst-awards li:nth-child(n+3) { border-top: 1.5px solid var(--steel-15); }
-  .inst-foot .inst-awards a { flex-direction: column; align-items: center; gap: 2px; }
-  .inst-foot .inst-awards a > span { align-items: center; gap: 3px; }
-  .inst-foot .inst-awards b { font-size: 34px; align-self: center; }
-  .inst-foot .inst-awards .stars { font-size: 15px; text-box: none; }
-  .inst-foot .inst-awards a > span small { text-box: none; }
-  .inst-foot .inst-awards .aw-src { flex-direction: column; align-items: center; gap: 2px; }
-  .inst-foot .inst-awards .aw-logo--clutch { height: 17px; }
-  .inst-foot .inst-awards .aw-logo--google { height: 21px; margin-top: 2px; }
-  .inst-foot .inst-awards .aw-badge img { height: 22px; }
-  .inst-foot .inst-awards .aw-badge small { max-width: none; }
+  .inst-awards--intake li + li { border-left: 0; }
+  .inst-awards--intake li:nth-child(even) { border-left: 1.5px solid var(--steel-15); }
+  .inst-awards--intake li:nth-child(n+3) { border-top: 1.5px solid var(--steel-15); }
+  .inst-awards--intake a { flex-direction: column; align-items: center; gap: 2px; }
+  .inst-awards--intake a > span { align-items: center; gap: 3px; }
+  .inst-awards--intake b { font-size: 34px; align-self: center; }
+  .inst-awards--intake .stars { font-size: 15px; text-box: none; }
+  .inst-awards--intake a > span small { text-box: none; }
+  .inst-awards--intake .aw-src { flex-direction: column; align-items: center; gap: 2px; }
+  .inst-awards--intake .aw-logo--clutch { height: 17px; }
+  .inst-awards--intake .aw-logo--google { height: 21px; margin-top: 2px; }
+  .inst-awards--intake .aw-badge img { height: 22px; }
+  .inst-awards--intake .aw-badge small { max-width: none; }
 
   /* The sheet is capped on a phone so the ask card lands ON SCREEN. The card is laid
      over the foot of the paper and covers the rest of the list by design — the list
@@ -1288,4 +1335,374 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .inst-dots i { animation: none; opacity: 1; }
   /* LogoLoop parks itself under reduced motion; nothing to add here. */
   /* The climb still happens — it IS the information — but in ten steps, not a glide. */
+}
+
+/* ==========================================================================
+   BELOW THE FOLD
+   --------------------------------------------------------------------------
+   The first screen is the instrument; everything under it is an ordinary
+   landing page, built out of the home page's own section and card formats
+   (components/tcg/check-sections.tsx). Only the things that are particular to
+   this page are set here — the shells themselves come from globals.css, so a
+   change to `.sec`, `.svc-grid` or `.card` reaches this page too.
+   ========================================================================== */
+
+/* The page scrolls; the first screen is one window of it. The anchor target is the
+   same element, so the repeated CTA at the bottom returns to the instrument. */
+.chk-page { position: relative; }
+.inst-page { scroll-margin-top: 0; }
+
+/* The page's column below the first screen: the same 1460px measure and the same
+   gutters .shell gives the home page, since these sections are the home page's
+   sections and they should sit on the same grid. */
+.chk-below {
+  /* Over the pinned hero, on the INTAKE'S OWN PAPER — not the site's --bg, which is a
+     cooler, greener white and announced the join as a change of stock halfway down the
+     screen. This is the paper the dither quantises up to (the `paper` the HeroGround is
+     given in app/check-2/page.tsx), so the sheet that rides over the hero arrives in the
+     same colour the hero resolves to and the page reads as one surface.
+
+     FLAGGED, D00.2: literal hex, following page.tsx's own pair by hand. If the ground's
+     paper changes there, it changes here.
+
+     Opaque on purpose: this sheet covers the plate, and anything translucent would drag
+     the dither up the page behind the cards. */
+  position: relative;
+  z-index: 2;
+  background: #FCF8F1;
+  /* The hero is fixed and contributes no height, so the first screen is held open
+     here. dvh for the same reason .inst-page uses it: on a phone 100vh is the window
+     without the browser's chrome, which would start the sections a bar too high. */
+  margin-top: 100vh;
+  margin-top: 100dvh;
+  /* FULL WIDTH, not a centred 1460px box: the ground has to reach both edges of the
+     window or the pinned hero shows down the sides of it on a wide screen. The 1460px
+     measure is kept by the padding instead — the gutter, or half of whatever the window
+     is wider than the measure, whichever is larger — so the content sits exactly where
+     .shell would have put it. */
+  padding-left:  max(var(--gut), calc((100% - 1460px) / 2), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gut), calc((100% - 1460px) / 2), env(safe-area-inset-right, 0px));
+  /* The block arrives at the TOP of the window, where the fixed bar is, so it opens
+     with the bar's own height plus a step of air. Without it the first heading lands
+     under the bar and the closer look begins with its title already lost. */
+  padding-top: calc(var(--topbar-h) + var(--s5));
+  padding-bottom: var(--s7);
+  display: grid;
+  gap: var(--col-gap);
+}
+
+/* The section shell, copied from globals.css `.sec` rather than reused by name.
+   app/bathurst-map.css — which this page imports for .hero-awards — defines a DIFFERENT
+   .sec (a flex header row with a link on the right), and it loads after globals, so a
+   section marked `.sec` here comes out as that instead. Same declarations, different
+   name, no collision.
+
+   The sections stand on the page's own paper rather than the dither: the ground is the
+   first screen's, and running it the length of the document would turn a printed plate
+   into wallpaper. */
+.chk-sec { position: relative; z-index: 1; display: grid; gap: var(--s4); }
+
+/* The lead under each section heading: one sentence, set larger than the body and
+   held to a reading measure rather than the full width of the row. */
+.chk-lead {
+  margin: 0 auto var(--s5);
+  max-width: 44ch;
+  font: 400 var(--t-lede)/1.45 var(--body);
+  color: var(--steel);
+  text-align: center;
+}
+
+/* Three to a row here, not the home page's two: these are short cards and a row of
+   two leaves an odd one out. Below the laptop they fall to one, as .svc-grid does. */
+@media (min-width: 900px) {
+  .chk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* The limit of the claim. Smaller than the body and quieter than it, because it is a
+   qualification rather than a sentence of the argument — but on the page, not hidden. */
+.chk-note {
+  margin: var(--s5) auto 0;
+  max-width: 56ch;
+  font: 400 var(--t-small)/1.5 var(--body);
+  color: var(--steel-70);
+  text-align: center;
+}
+
+/* ------------------------------------------- the redirect story -------- */
+
+/* The two windows, drawn rather than screenshotted. The strokes are the page's own
+   steel; the second window's page is the only place a warm accent appears, which is
+   what carries "this is not your site" without a word of label. */
+.chk-pair { display: block; width: 100%; height: 100%; }
+.chk-win rect,
+.chk-win circle,
+.chk-win line { fill: none; stroke: var(--steel-15); stroke-width: 1.5; }
+.chk-win > rect:first-of-type { fill: var(--paper, #FCF8F1); }
+.chk-win circle { fill: var(--steel-15); stroke: none; }
+.chk-bar { fill: var(--steel-15); stroke: none !important; }
+.chk-ink { fill: var(--steel); stroke: none !important; }
+.chk-ink--soft { fill: var(--steel-15); }
+.chk-plate { fill: none; stroke: var(--steel-15) !important; stroke-width: 1.5; }
+.chk-ink--bad { fill: var(--orange); }
+.chk-plate--bad { fill: color-mix(in srgb, var(--orange) 12%, transparent); stroke: var(--orange) !important; }
+/* The slot the card puts this drawing in is the dark plate, so the arrow between the
+   two windows is drawn in paper rather than in ink — steel on navy is invisible. */
+.chk-arrow line,
+.chk-arrow polyline { fill: none; stroke: #FCF8F1; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The art slot on the lead card is a fixed height with the drawing centred in it,
+   rather than the photographic crop the selected-work row puts there. */
+.chk-story .card-art { display: grid; place-items: center; padding: var(--s4); }
+
+/* ------------------------------------------- what happens next --------- */
+
+.chk-say {
+  margin: 0 auto;
+  max-width: 54ch;
+  display: grid;
+  gap: var(--s3);
+  font: 400 var(--t-lede)/1.5 var(--body);
+  color: var(--steel);
+  text-align: center;
+}
+
+/* The CTA again, centred under the last section and given its own air: it is the
+   bottom of the page's whole argument, not a footnote to the paragraph above it. */
+.chk-again { margin-top: var(--s5); display: flex; justify-content: center; }
+
+@media (max-width: 760px) {
+  .chk-lead { margin-bottom: var(--s4); }
+  .chk-note { margin-top: var(--s4); }
+  .chk-story .card-art { padding: var(--s2); }
+}
+
+/* ==========================================================================
+   THE WARP — "a closer look", taken literally
+   --------------------------------------------------------------------------
+   Scrolling off the first screen does not slide the hero away: it flies INTO
+   the address field. The panel scales up about the field's own centre, so the
+   field is the one thing that does not move while the headline, the ratings
+   and the marks all grow past the edges of the window and dissolve. What is
+   on the other side of it is the first section — the closer look.
+
+   Done on a scroll timeline, so there is no scroll handler, nothing to
+   throttle and nothing running off the main thread's budget: the browser ties
+   the animation's own progress to the document's scroll position. The whole
+   block is behind @supports, and browsers without it get exactly what this
+   page did before — a pinned hero with the sheet drawn over it.
+
+   TRANSFORM ORIGIN is the field's centre inside the panel, measured rather
+   than guessed: 38.4% / 58.4% at the laptop width, where the field sits left
+   of centre because the headline runs wider than the form. The phone block
+   below re-measures it for the narrower column.
+   ========================================================================== */
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Only from 01, and only while the instrument is closed. Once it is open the
+       document is locked anyway, but a frozen scroll position mid-range would
+       otherwise leave the panel sitting at some half-warped scale under the
+       reading. */
+    body:not(.inst-open) .inst[data-stage="input"] .inst-panel {
+      transform-origin: 38.4% 58.4%;
+      animation: inst-warp linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    /* The ground goes with it, but only a little: the dither is the room the
+       instrument stands in, and a room moves less than the thing you are flying at.
+       The difference between the two rates is the depth. */
+    body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) > .hero-bg {
+      transform-origin: 38.4% 58.4%;
+      animation: inst-warp-ground linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    /* The marks go early. They are the furthest thing from the field and the first
+       to leave the frame, so holding them to the end only gives the eye something
+       to follow that is not the field. */
+    body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) .inst-foot {
+      animation: inst-warp-foot linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 55vh;
+    }
+  }
+}
+
+@keyframes inst-warp {
+  /* Eased by hand rather than by a timing function: the three stops make the
+     approach slow at first and then rush, which is what reads as acceleration
+     towards something rather than a linear scale. The blur only arrives at the
+     end, where the scale is large enough that a sharp edge would show the
+     pixels it is made of. */
+  0%   { transform: scale(1);    opacity: 1; filter: blur(0); }
+  55%  { transform: scale(1.55); opacity: 1; filter: blur(0); }
+  100% { transform: scale(4.6);  opacity: 0; filter: blur(7px); }
+}
+
+@keyframes inst-warp-ground {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@keyframes inst-warp-foot {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(12px) scale(1.25); }
+}
+
+@media (max-width: 760px) {
+  /* The column is the width of the screen here and the form fills it, so the field
+     sits dead centre across and a little lower down the face. */
+  body:not(.inst-open) .inst[data-stage="input"] .inst-panel,
+  body:not(.inst-open) .inst-page:has(.inst[data-stage="input"]) > .hero-bg {
+    transform-origin: 50% 54%;
+  }
+}
+
+/* --------------------------------------------- the arrival ------------- */
+/* The sections do not slide up over the hero. They are already in place — held at
+   the top of the window for the whole of the first screen by a transform that
+   cancels the document's own scroll — and what changes is only that they become
+   visible, once the warp has filled the screen with the intake's paper.
+   *
+   * The curtain is what fills it: a fixed sheet of that paper between the hero and
+   * the sections, coming up as the panel flies apart, so the last thing before the
+   * closer look is a clean field of the colour the field itself stands on.
+   *
+   * WHY THE TRANSFORM CANCELS SCROLL. .chk-below opens a screen below the fold, so
+   * by the end of the first screen the document has carried it to the top on its
+   * own. Translating it from -100vh to 0 across exactly that range holds its top at
+   * the window's top throughout, and leaves it at its natural place at the end —
+   * so the handover to ordinary scrolling is a no-op, with nothing to unwind.
+   *
+   * POINTER EVENTS ARE PART OF THE ANIMATION, not a detail. Pinned and invisible,
+   * this block still covers the window and would otherwise swallow every click
+   * meant for the address field underneath it. It is inert until it has arrived. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .chk-page::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: #FCF8F1;
+      opacity: 0;
+      pointer-events: none;
+      animation: chk-curtain linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    .chk-below {
+      animation: chk-settle linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+@keyframes chk-curtain {
+  /* Nothing for the first half: the warp has to be read as the instrument flying
+     apart, not as a fade to paper over the top of it. The sheet closes only once
+     the panel is already past the edges of the window. */
+  0%   { opacity: 0; }
+  52%  { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes chk-settle {
+  0%   { transform: translateY(-100vh); opacity: 0; pointer-events: none; }
+  /* Still nothing to see while the curtain is drawing. */
+  74%  { opacity: 0; pointer-events: none; }
+  99%  { pointer-events: none; }
+  100% { transform: translateY(0); opacity: 1; pointer-events: auto; }
+}
+
+/* --------------------------------------------- the intake box ---------- */
+/* The address field, the button and the four marks as ONE object.
+   *
+   * They used to be three things that happened to be near each other on the page's
+   * ground. Enclosing them says what the arrangement already meant: this is the
+   * instrument's input, and the ratings are its footing rather than a band of their
+   * own further down the screen.
+   *
+   * The ground inside is the page's paper at part strength, so the dither still
+   * reads through it — the box is a pane laid on the stock, not a plate covering it.
+   * The field keeps its own double stroke (components/tcg/frame.tsx); this one is a
+   * single hairline, so the two edges cannot be mistaken for each other.
+   *
+   * It is also the thing the page warps into, so its centre is the transform origin
+   * the warp above is measured against. */
+.inst-intake {
+  /* Wide enough that the four marks still hold ONE line inside it. The box is the
+     measure now, so its width is set by the longest thing in it — the ratings row —
+     rather than by the field, which simply spans whatever the box is. */
+  width: min(100%, 820px);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s3);
+  border-radius: var(--r-card);
+  /* IN BLUE. The box is the page's one dark object: Steel Blue, the brand's own, so
+     the instrument's input reads as a piece of equipment set on the paper rather than
+     a lighter patch of the same stock. Everything inside it inverts to suit. */
+  border: 1.5px solid var(--steel);
+  background: var(--steel);
+}
+
+/* FULL SPAN. Outside the box the form was held to 520px so it would not run the
+   width of the screen; inside it the box is the measure, so the field and its button
+   take the whole span and the row of marks sits under exactly the same width. */
+.inst-intake .inst-form { width: 100%; }
+.inst-intake .inst-awards--intake { width: 100%; }
+
+/* SPACED, not packed. Four equal columns across the box instead of a flex row that
+   sizes each cell to its contents, so the gaps between the marks are the same gap
+   four times over and the row reads as a measured scale rather than a huddle. */
+.inst-intake .inst-awards--intake {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  column-gap: 0;
+  row-gap: 0;
+}
+.inst-intake .inst-awards--intake li { padding-inline: var(--s3); }
+
+/* INVERTED. On the blue the type goes to paper and the hairlines between the cells
+   go with it, at the strength the steel ones had on white. */
+.inst-intake .inst-awards--intake a,
+.inst-intake .inst-awards--intake b { color: #FCF8F1; }
+/* "12 reviews" is a label, not a sentence: it keeps one line. The 16ch cap that
+   serves the certifications' two-word captions was breaking it in the narrower
+   columns this grid makes. */
+.inst-intake .inst-awards--intake small { color: rgb(252 248 241 / .72); }
+.inst-intake .inst-awards--intake .aw-src { white-space: nowrap; }
+.inst-intake .inst-awards--intake a:hover small { color: #FCF8F1; }
+.inst-intake .inst-awards--intake li + li { border-left-color: rgb(252 248 241 / .22); }
+
+/* The unfilled stars are the ground the rating is measured against, so they follow
+   the paper at low strength; the filled ones keep the orange, which is the one colour
+   that still carries on the blue. */
+.inst-intake .inst-awards--intake .stars.rated { color: rgb(252 248 241 / .26); }
+
+/* The four marks are a mixed set — two monochrome lockups and two in their owners'
+   colours — and on a dark ground there is no single tint that serves all of them.
+   They are knocked out to solid paper instead: `brightness(0)` flattens each one to
+   black whatever it started as, and `invert(1)` lifts that to white. One treatment,
+   four legible marks, no muddy blues.
+
+   FLAGGED, brand: this drops Google's and HighLevel's own colours, which
+   components/bathurst/Awards.tsx is otherwise careful to keep. It is the usual
+   accommodation for a dark ground, but it IS a departure — if either owner's
+   guidelines forbid a knockout, the box cannot be blue under their mark. */
+.inst-intake .inst-awards--intake .aw-logo,
+.inst-intake .inst-awards--intake .aw-badge img { filter: brightness(0) invert(1); }
+
+@media (max-width: 760px) {
+  .inst-intake { padding: var(--s2); gap: var(--s2); }
+  /* Two by two on a phone, as the row has always fallen there. */
+  .inst-intake .inst-awards--intake { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inst-intake .inst-awards--intake li { padding-inline: var(--s1); }
 }

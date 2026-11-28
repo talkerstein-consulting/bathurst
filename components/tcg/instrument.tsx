@@ -306,6 +306,20 @@ export function Instrument() {
   /* G13: a run still open when the instrument unmounts is cancelled, not left hanging. */
   useEffect(() => () => run.current?.abort(), []);
 
+  /* The page below the first screen is a landing page and scrolls like one. The
+     instrument does not: from 02 onwards it is a full-screen modal, and the document
+     behind it must not move under the visitor's thumb while the reading runs.
+     *
+     * The flag is a class on <body> rather than a style written here, so the lock and
+     * the modal itself are both described in app/check-2.css and there is one place to
+     * read what "open" does to the page. It is removed on unmount as well as on the
+     * way back to 01, so a navigation away mid-reading cannot leave the document
+     * frozen. */
+  useEffect(() => {
+    document.body.classList.toggle("inst-open", stage !== "input");
+    return () => document.body.classList.remove("inst-open");
+  }, [stage]);
+
   /**
    * Put a stage on screen without running a reading.
    *
@@ -556,6 +570,14 @@ export function Instrument() {
             <p className="inst-lede">Find out what your customers experience.</p>
           </div>
 
+          {/* ONE CONTAINER for the whole intake: the address field, the button that
+              acts on it, and the four marks that say why you would. They were three
+              things stacked on the page's ground; the box makes them one, and the
+              ratings stop reading as a separate band that happens to be nearby.
+
+              The form spans the box — full width inside it, field and button on one
+              line — and the ratings sit under it across the same span. */}
+          <div className="inst-intake">
           <form className="inst-form" onSubmit={start} noValidate>
             <label className="sr-only" htmlFor="inst-url">
               Your website address
@@ -614,14 +636,23 @@ export function Instrument() {
             </Cta>
           </form>
 
-          <p className={`inst-fine${error ? " is-bad" : ""}`} role={error ? "alert" : undefined}>
-            {error || (
-              <>
-                Free assessment <span aria-hidden="true">·</span> Takes about half a minute{" "}
-                <span aria-hidden="true">·</span> No password needed
-              </>
-            )}
-          </p>
+          {/* The line that used to stand here ("Free check · 30 seconds") is gone. The
+              paragraph stays, because it is also where a bad address is reported: it is
+              empty and out of the flow until there is an error to carry, so nothing
+              holds space under the button in the ordinary case. */}
+          {error && (
+            <p className="inst-fine is-bad" role="alert">
+              {error}
+            </p>
+          )}
+
+          {/* The ratings belong to the intake, not to the bottom of the screen. They
+              are the answer to "why would I hand you my address", so they sit with the
+              thing they are vouching for — under the field, inside the same face,
+              close enough to read as one block. They go when the face does, which is
+              what the foot used to do on its own. */}
+          <Awards className="inst-awards inst-awards--intake" logos />
+          </div>
         </section>
 
         {/* ----------------------------------------- 02 · MEASUREMENT ------ */}

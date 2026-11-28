@@ -1,16 +1,14 @@
 import LogoLoop from "@/components/LogoLoop";
-import Awards from "@/components/bathurst/Awards";
 import { CLIENT_LOGOS } from "./client-logos";
 
 /**
- * The foot of /check-2: who says we are worth the half minute, and who has already been
- * through it.
+ * The foot of /check-2: who has already been through it.
  *
- * The ratings come first and the logos sit under them. That is the order of the claim:
- * the number and the certifications are the ones a stranger can check, and the row of
- * marks underneath is the evidence behind them. <Awards /> is the same component the map
- * hero and the home page's assessment lead-in use (components/bathurst/Awards.tsx), so
- * the Google figure and the two badges have one source here as everywhere else.
+ * THE RATINGS ARE NO LONGER HERE. The Clutch and Google figures and the two
+ * certifications moved up into the intake box, inside the input face
+ * (components/tcg/instrument.tsx), where they vouch for the field they sit under
+ * instead of standing in a band of their own at the bottom of the screen. This foot
+ * is now the travelling row of client marks and nothing else.
  *
  * The logos are the map's own clients (./client-logos.ts, built from CLIENTS), carried
  * by the react-bits LogoLoop so the row travels and keeps travelling at forty marks —
@@ -69,13 +67,11 @@ const MARKS = CLIENT_LOGOS.filter(({ src }) => !WITHHELD.has(src)).map(({ src, a
 export function ProofBar() {
   return (
     <footer className="inst-foot">
-      <Awards className="inst-awards" logos />
-
       <LogoLoop
         className="inst-logos"
         logos={MARKS}
-        logoHeight={48}
-        gap={56}
+        logoHeight={34}
+        gap={44}
         speed={42}
         direction="left"
         labels="hover"
