@@ -1943,6 +1943,11 @@ svg.glyph {
      trailing the mark. */
   .topbar-word { grid-column: 2; grid-row: 1; justify-self: center; }
   .burger      { grid-column: 3; grid-row: 1; justify-self: end; }
+  /* Narrow phones: the side tracks never go below a control's width, so the roundel
+     keeps its size, and the wordmark is the thing that gives way, never the mark. */
+  .topbar-in { grid-template-columns: minmax(var(--icon-btn), 1fr) minmax(0, auto) minmax(var(--icon-btn), 1fr); }
+  .topbar-icon { min-width: 34px; }
+  .topbar-word { width: min(150px, 100%); }
 
   /* D06: the titles stay on one row and scroll sideways rather than stacking. */
   .topbar-pages ul {
