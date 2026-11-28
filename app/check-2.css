@@ -279,10 +279,22 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
 
 .inst {
   display: grid;
-  align-content: center;
+  /* SAFE centre: centred while it fits, top-aligned when it does not. Plain centring on
+     a short phone pushed the headline up under the fixed bar, where it could not be
+     reached because the first screen does not scroll. */
+  align-content: safe center;
   justify-items: center;
   min-height: 0;
   padding: var(--s3) max(var(--gut), env(safe-area-inset-left, 0px));
+}
+/* Phones: when the intake is taller than the screen, it scrolls inside its own cell
+   (under the bar, never behind it) instead of being cut off at the logo strip. */
+@media (max-width: 900px) {
+  body:not([data-inst-stage]) .inst,
+  body[data-inst-stage="input"] .inst { overflow-y: auto; overscroll-behavior: contain; }
+  /* The panel's one-screen cap is what squeezed the face; here .inst scrolls instead. */
+  body:not([data-inst-stage]) .inst-panel,
+  body[data-inst-stage="input"] .inst-panel { max-height: none; }
 }
 
 /* The instrument has no plate and no rivets any more: it stands on the page's own
@@ -375,7 +387,9 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   grid-area: 1 / 1;
   min-height: 0;
   display: grid;
-  align-content: center;
+  /* Safe, for the same reason as .inst: a face taller than its box starts at the top
+     rather than spilling up under the bar. */
+  align-content: safe center;
   justify-items: center;
   /* PROXIMITY: the air between a face's blocks is larger than the air inside
      any of them (.inst-say holds a heading to its own lede at --s2), so each
