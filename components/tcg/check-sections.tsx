@@ -1,3 +1,4 @@
+import { BookCta } from "./book-cta";
 import { Clients } from "./clients";
 import { Frame } from "./frame";
 import { Ground } from "./figures";
@@ -157,6 +158,7 @@ export function FinalCta() {
             Make sure your website has the attention it needs before problems become
             business interruptions.
           </p>
+          <BookCta className="chk-proof-cta" />
         </div>
         <Clients embedded />
       </Frame>

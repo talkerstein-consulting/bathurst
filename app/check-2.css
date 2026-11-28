@@ -1906,6 +1906,7 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 /* The closing line and its lead, inside the frame over the cards. */
 .chk-proof-head { display: grid; gap: var(--s2); margin-bottom: var(--s4); text-align: center; justify-items: center; }
 .chk-proof-h { margin: 0; max-width: 24ch; font: 700 var(--t-h2)/1.08 var(--head); letter-spacing: var(--track-head); color: var(--steel); }
+.chk-proof-cta { margin-top: var(--s2); }
 .chk-proof-lead { margin: 0; max-width: 44ch; font: 400 var(--t-lede)/1.45 var(--body); color: var(--steel); }
 @media (max-width: 560px) { .chk-proof-head { text-align: left; justify-items: start; } }
 /* Light cards: bathurst-map.css gives every .tc-in a Sea Breeze face, so the type
