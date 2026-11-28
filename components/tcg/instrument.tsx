@@ -918,6 +918,13 @@ export function Instrument() {
  * and the ask is laid over it (`.inst-ask`): a double border, above it in z-index, so
  * the thing to press is in front of the thing it is about.
  */
+/** The stand-in rows under the card, after the joke. Not findings: placeholders. */
+const FILLER = [
+  "Still under the card",
+  "This one is for the review",
+  "Nope, not this one either",
+];
+
 function Fixes({
   fixes,
   green,
@@ -978,7 +985,7 @@ function Fixes({
     </div>
   );
 
-  if (fixes.length === 0) return <div className="inst-fixes">{ask}</div>;
+  if (fixes.length === 0) return <div className="inst-fixes"><div className="inst-ask-wrap">{ask}</div></div>;
 
   return (
     <div className="inst-fixes">
@@ -1003,14 +1010,21 @@ function Fixes({
             );
           })}
 
-          {held > 0 && (
+        </ol>
+      </div>
+      {/* THE CARD AND WHAT IS UNDER IT. The joke and the filler rows are stacked in the
+          same cell as the card, behind it, and clipped to its size — so they are hidden
+          at every width however the rows wrap, and removing the card in the inspector
+          is what shows them. Laid out after the open rows, they kept peeking out above
+          or below the card as the wrapping changed. */}
+      <div className="inst-ask-wrap">
+        {held > 0 && (
+          <ol className="inst-fixes-list inst-held">
             <li className="is-held-say">
-              <i aria-hidden="true">&bull;</i>
+              <i>{OPEN + 1}</i>
               {/* The line to whoever opened the inspector, with the CTA in the list
-                  itself. It comes straight after the open rows, so it is the first line
-                  under the card: delete the card and this is what is waiting. At the end
-                  of the list it fell below the cut sheet and was never visible at all.
-                  Out of the tab order: the card's own button is the one a visitor reaches. */}
+                  itself. Out of the tab order: the card's own button is the one a
+                  visitor reaches. */}
               <b>
                 You think you&rsquo;re clever using the page inspector, huh?{" "}
                 {green
@@ -1021,33 +1035,19 @@ function Fixes({
                 </button>
               </b>
             </li>
-          )}
 
-          {/* THE REST OF THE SHEET.
-              Every other fix Google found, set exactly like the three above it — same
-              columns, same hairlines, one continuous list — and running on underneath
-              the card, which is laid over the foot of the paper. The sheet is plainly
-              longer than the part anyone gets to read, and what is in the way is the
-              thing you press.
-
-              It is real text, deliberately: anyone who opens the inspector can read all
-              of it, and the line at the end of the list is addressed to them. The fixes
-              are Google's own audit titles, not a secret — what the review is for is
-              working through them, which is not something the DOM can hand over. */}
-          {fixes.slice(OPEN).map((f, i) => {
-            const saved = savingOf(f.detail);
-            return (
-              <li key={f.id ?? `held-${i}`}>
-                <i>{OPEN + i + 1}</i>
-                <b>{plain(f.title)}</b>
-                {saved ? <em>{saved}</em> : f.detail ? <span>{f.detail}</span> : null}
+            {/* Filler, not findings: nothing Google found beyond the first three is in
+                the page. */}
+            {FILLER.map((t, i) => (
+              <li key={`filler-${i}`}>
+                <i>{OPEN + 2 + i}</i>
+                <b>{t}</b>
               </li>
-            );
-          })}
-
-        </ol>
+            ))}
+          </ol>
+        )}
+        {ask}
       </div>
-      {ask}
     </div>
   );
 }

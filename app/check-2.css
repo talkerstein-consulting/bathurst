@@ -160,9 +160,10 @@ body[data-inst-stage="results"] .inst-page .inst-foot { display: none; }
   body[data-inst-stage="results"] [data-face="results"] .inst-paper {
     height: var(--sheet); overflow: hidden;
   }
-  body[data-inst-stage="results"] [data-face="results"] .inst-ask {
-    width: calc(100% - var(--s4)); max-width: none; padding: var(--s2);
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask-wrap {
+    width: calc(100% - var(--s4)); max-width: none;
   }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask { padding: var(--s2); }
   /* The staging strip moves over the main column, clear of the sidebar's heading. */
   body[data-inst-stage="results"] .inst-tabs { left: calc(33.333vw + var(--s4)); }
 }
@@ -1034,39 +1035,41 @@ html body .inst-go.btn.is-off {
    sheet, so it is read by exactly the person it is addressed to. */
 .inst-fixes-list .is-held-say {
   grid-template-columns: 1.6em minmax(0, 1fr);
-  /* It follows the three open rows directly, so it starts a step lower to sit wholly
-     under the card's top edge rather than peeking out above it. */
-  padding-top: var(--s4);
 }
-/* The desktop sidebar's rows are shorter, so the card's edge sits lower against them. */
-@media (min-width: 901px) {
-  body[data-inst-stage="results"] [data-face="results"] .inst-fixes-list li.is-held-say { padding-top: calc(var(--s5) + var(--s1)); }
-}
-.inst-fixes-list .is-held-say b {
-  font: 400 var(--t-caption)/1.5 var(--body);
-  color: var(--band-poor);
-}
-.inst-fixes-list .is-held-say i { color: var(--band-poor); opacity: .55; }
+/* The joke row takes the list's own type and colour, like every other row. */
+
 
 /* THE ASK: a module laid over the foot of the paper, not after it. The double border is
    the same treatment the score box carries, so the two bounded things on this face are
    the reading and the thing to do about it. Above everything on the face (z-index), so
    the CTA is never the thing behind the text. */
-.inst-ask {
-  /* LAID ON THE SHEET, not placed after it. The card is positioned over the foot of the
-     paper and covers the rest of the list — that is the arrangement, not a side effect
-     of it: the sheet is visibly longer than the part anyone gets to read, and the card
-     is what is in the way. */
+/* LAID ON THE SHEET, not placed after it. The wrapper is positioned over the foot of
+   the paper; the card and the hidden rows share its one grid cell, the rows behind and
+   clipped to the card's size, so the sheet reads as running on under the card at any
+   width and only removing the card shows what is there. */
+.inst-ask-wrap {
   position: absolute; left: 50%; bottom: calc(var(--s3) * -1);
   transform: translateX(-50%);
   z-index: 3;
+  width: 100%; max-width: 42ch;
+  display: grid;
+}
+.inst-ask-wrap > * { grid-area: 1 / 1; }
+/* Sized by the card, never by itself: zero height, stretched to the cell the card sets. */
+.inst-held {
+  height: 0; min-height: 100%; overflow: hidden; align-self: stretch;
+  margin: 0; padding: var(--s2) var(--s3);
+  border-radius: var(--r-card); background: var(--plate);
+  text-align: left;
+}
+.inst-ask {
+  position: relative; z-index: 1;
   display: grid; justify-items: center; gap: var(--s1);
   padding: var(--s3);
   border: 4px double var(--steel-35);
   border-radius: var(--r-card);
   background: var(--sea);
   text-align: center;
-  width: 100%; max-width: 42ch;
 }
 .inst-ask-eyebrow {
   margin: 0;
