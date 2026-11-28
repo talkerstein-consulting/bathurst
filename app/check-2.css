@@ -60,6 +60,181 @@ body.inst-open { overflow: hidden; overscroll-behavior: none; }
 .inst-page { position: fixed; inset: 0; z-index: 0; }
 body.inst-open .inst-page { z-index: 60; }
 
+/* ============================ THE RESULTS LAYOUT ==========================
+   Until the assessment is finished the page is ONE SCREEN, 100vw × 100vh, and
+   nothing below it exists: the sections are display:none and the document has
+   no height to scroll. When the results land (body[data-inst-stage="results"],
+   set by components/tcg/instrument.tsx) the instrument narrows to a pinned
+   sidebar of a third of the window and the sections appear beside it and scroll
+   normally. The booking stage returns to the full screen. */
+body:not([data-inst-stage="results"]) .chk-below { display: none; }
+body:not([data-inst-stage]) .inst-page,
+body[data-inst-stage="input"] .inst-page { overflow: hidden; }
+html:has(body[data-inst-stage="input"]),
+body[data-inst-stage="input"] { overflow: hidden; }
+
+body[data-inst-stage="results"] .chk-below {
+  display: grid;
+  margin-top: 0;
+  margin-left: 33.333vw;
+  padding-left: var(--s6);
+  padding-right: var(--s6);
+}
+body[data-inst-stage="results"] .inst-page {
+  right: auto;
+  width: 33.333vw;
+  z-index: 3;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  grid-template-rows: auto;
+  border-right: 1px solid var(--steel-35);
+}
+/* RESULTS OPENS FULL SCREEN (instrument.tsx, body[data-inst-full]): the diagnosis
+   spans the window, the page is held still, and the first scroll narrows it to the
+   third-width sidebar above, uncovering the sections. Width and the border animate
+   on the site's ease; reduced motion never sets the flag. */
+@media (min-width: 901px) {
+  body[data-inst-stage="results"] .inst-page {
+    transition: width .7s var(--ease-out), border-color .7s var(--ease-out);
+  }
+  body[data-inst-stage="results"][data-inst-full] .inst-page {
+    width: 100vw; border-right-color: transparent;
+  }
+  html:has(body[data-inst-full]), body[data-inst-full] { overflow: hidden; }
+}
+/* Only the results face takes space in the sidebar; the others (the input face's
+   94vw headline above all) would otherwise size the shared cell. */
+body[data-inst-stage="results"] .inst-face:not([data-face="results"]) { display: none; }
+body[data-inst-stage="results"] .inst { align-content: start; padding-top: var(--s4); padding-bottom: var(--s5); }
+body[data-inst-stage="results"] .inst-panel { max-height: none; }
+body[data-inst-stage="results"] .inst-page .inst-foot { display: none; }
+
+/* THE SIDEBAR FITS ONE SCREEN: no scroll of its own. Type steps down a size or two,
+   the margins are even on all sides, and the fix list keeps its three open rows plus
+   two running under the card; the rest is cut. */
+@media (min-width: 901px) {
+  body[data-inst-stage="results"] .inst-page { overflow: hidden; height: 100dvh; }
+  body[data-inst-stage="results"] .inst {
+    align-content: center;
+    padding: var(--s3) var(--s4);
+  }
+  body[data-inst-stage="results"] .inst-face[data-face="results"] { gap: var(--s3); }
+  /* THE SIDEBAR'S TYPE SCALE, on the site's own tokens (globals.css) so the
+     sidebar reads at the same size as the rest of the page:
+       DISPLAY   Cheltenham 700 52px          the headline score
+       TITLE     Cheltenham 700 --t-h4        the verdict heading
+       HEADING   Cheltenham 700 --t-h5        "Performance", the dial scores, the card heading
+       BODY      Jost 400/600   --t-body      sentences; fix titles in 600
+       SMALL     Jost 400/600   --t-small     dial labels and bands, "/100", fix numbers, savings
+       LABEL     Cheltenham 700 --t-caption, caps   "Top fixes", the verdict eyebrow
+     plus the shared button, which keeps its own component style. */
+  body[data-inst-stage="results"] [data-face="results"] .inst-headline-num { font: 700 52px/1 var(--head); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-h2 { font: 700 var(--t-h4)/1.1 var(--head); }
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-ask-h, .inst-headline-say b, .score-dial figcaption strong) { font: 700 var(--t-h5)/1.15 var(--head); }
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-verdict-say, .inst-ask-say) { font: 400 var(--t-body)/1.45 var(--body); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes-list b { font: 600 var(--t-body)/1.4 var(--body); }
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-headline-num small, .inst-headline-say i, .score-dial figcaption span, .inst-fixes-list i, .inst-fixes-list em) {
+    font: 400 var(--t-small)/1.4 var(--body); letter-spacing: 0;
+  }
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-headline-say i .inst-band, .score-dial figcaption b) { font: 600 var(--t-small)/1.4 var(--body); letter-spacing: 0; }
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-fixes-h, .inst-verdict-eyebrow) { font: 700 var(--t-caption)/1.2 var(--head); letter-spacing: .12em; }
+  /* The dial's 0 / 50 / 100 printed at 8px could not be read; the score under each
+     dial already says the number (Cognitive Load). */
+  body[data-inst-stage="results"] [data-face="results"] .score-dial-fig { display: none; }
+  /* ONE PROMPT, not two: "What should you do next?" and the card's eyebrow both
+     restated the card's own question (Occam's Razor). */
+  body[data-inst-stage="results"] [data-face="results"] :is(.inst-next-h, .inst-ask-eyebrow) { display: none; }
+  /* The one CTA spans its card (D04; Fitts). */
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask .inst-go { width: 100%; justify-content: center; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-results { gap: var(--s3); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-headline { padding: var(--s1) var(--s3); gap: var(--s2); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes { max-width: none; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-paper { padding: var(--s2) var(--s2) var(--s3); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes-list li { padding: 6px 0; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes-list span { display: none; }
+  /* THE CARD STAYS ON THE SHEET. The whole list is in the page, running on under
+     the double-bordered card; the sheet is cut at the card's foot so the sidebar
+     never scrolls. --sheet is how much paper there is: three open rows, plus the
+     card's height laid over what follows. */
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes { --sheet: 300px; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-paper {
+    height: var(--sheet); overflow: hidden;
+  }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask {
+    width: calc(100% - var(--s4)); max-width: none; padding: var(--s2);
+  }
+  /* The staging strip moves over the main column, clear of the sidebar's heading. */
+  body[data-inst-stage="results"] .inst-tabs { left: calc(33.333vw + var(--s4)); }
+}
+/* Shorter windows: fewer fixes, then none, so the sidebar still never scrolls. */
+@media (min-width: 901px) and (max-height: 880px) {
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes { --sheet: 230px; }
+  /* The three dials repeat the headline's figure for two more categories; on a short
+     window they go first so the text can stay at body size. */
+  body[data-inst-stage="results"] [data-face="results"] .inst-dials { display: none; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask-say { display: none; }
+}
+@media (min-width: 901px) and (max-height: 740px) {
+  body[data-inst-stage="results"] [data-face="results"] .inst-fixes { --sheet: 200px; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-verdict-say { display: none; }
+}
+
+/* The CTA inside the list: a text link in the joke's own line. */
+.inst-fixes-list .is-held-go {
+  appearance: none; border: 0; padding: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--orange); text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* THE VERDICT: an optional eyebrow, the heading, one sentence under it. The eyebrow
+   is the sidebar's LABEL style; in danger it takes the poor band's colour. */
+.inst-verdict { display: grid; gap: var(--s1); justify-items: center; max-width: 36ch; }
+.inst-verdict-eyebrow {
+  margin: 0; font: 700 12px/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel-55);
+}
+.inst-verdict[data-danger] .inst-verdict-eyebrow { color: var(--band-poor); }
+.inst-verdict-say { margin: 0; font: 400 13px/1.45 var(--body); color: var(--steel-70); }
+
+/* Below a laptop a third is too narrow: results stack above the sections. */
+@media (max-width: 900px) {
+  body[data-inst-stage="results"] .inst-page {
+    position: relative; width: 100%; height: auto; overflow: visible; border-right: 0;
+  }
+  body[data-inst-stage="results"] .chk-below {
+    margin-left: 0;
+    padding-left: max(var(--gut), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gut), env(safe-area-inset-right, 0px));
+    padding-top: var(--s5);
+  }
+}
+/* Phones: no chevrons over the testimonial cards. At one card a screen they sat on
+   the quote; the next card peeking in at the edge is the cue to swipe (globals.css). */
+@media (max-width: 560px) {
+  .chk-proof .rail-wrap .rail-nav--over { display: none; }
+}
+
+/* --------------------------------------------------- email consent --- */
+.inst-consent {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  text-align: left; cursor: pointer;
+  font: 400 var(--t-small)/1.45 var(--body);
+  color: #FCF8F1;
+}
+/* A round check: the native box redrawn as a circle, a tick drawn in when it is on. */
+.inst-consent input {
+  appearance: none; margin: 0; flex: none; width: 20px; height: 20px;
+  border: 1.5px solid #FCF8F1; border-radius: 50%; background: transparent;
+  display: grid; place-content: center; cursor: pointer;
+}
+.inst-consent input::before {
+  content: ""; width: 9px; height: 5px; margin-top: -2px;
+  border: solid var(--steel); border-width: 0 0 2px 2px; transform: rotate(-45deg);
+  opacity: 0;
+}
+.inst-consent input:checked { background: #FCF8F1; }
+.inst-consent input:checked::before { opacity: 1; }
+.inst-consent input:focus-visible { outline: 2px solid #FCF8F1; outline-offset: 2px; }
+
 /* The bar is a header here, as it is on /check: no titles row, no megamenu, no
    sign-in, and the appointment kept on the right at every width. */
 body:has(.inst-page) .topbar-pages,
@@ -107,6 +282,65 @@ body:has(.inst-page) .topbar-r > a[href="/sign-in"] { display: none; }
   outline: none;
 }
 
+
+/* ------------------------------------------------------ staging tabs ---- */
+/* FLAGGED: a review control, not part of the page. It puts any of the four stages on
+   screen without running a reading, so the whole sequence can be looked at while there
+   is no PageSpeed key. /check-2 is noindex and is the treatment being reviewed, so it
+   ships with it — but it belongs behind a flag the day this becomes the live page.
+
+   It is deliberately NOT the stage rail that was removed from the top of the panel: it
+   sits in the corner as a utility strip, in the quiet end of the palette, so it reads
+   as a tool laid over the page rather than as the visitor's own navigation. */
+.inst-tabs {
+  position: fixed;
+  left: max(var(--gut), env(safe-area-inset-left, 0px));
+  /* Under the bar, not along the bottom: the logo rail already owns the foot of the
+     screen, and a tool sitting on top of the clients' marks looks like a fault. */
+  top: calc(var(--topbar-h) + var(--s2));
+  z-index: 5;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-btn);
+  background: var(--sea-70);
+  box-shadow: inset 0 0 0 var(--hairline) var(--steel-20);
+  backdrop-filter: blur(6px);
+}
+.inst-tabs b {
+  display: inline-flex; align-items: center;
+  padding-inline: var(--s1);
+  font: 400 var(--t-micro)/1 var(--head);
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--steel-35);
+}
+.inst-tabs button {
+  appearance: none; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  /* FITTS: 30px of box in a corner the pointer can throw itself at. It is a tool, so
+     it is allowed to be smaller than a CTA. */
+  min-height: 30px;
+  padding-inline: var(--s2);
+  border-radius: var(--r-inner);
+  background: transparent;
+  font: 400 var(--t-micro)/1 var(--head);
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--steel-55);
+  transition: background var(--tumble) var(--ease-out), color var(--tumble) var(--ease-out);
+}
+.inst-tabs button i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .6; }
+.inst-tabs button:hover { color: var(--steel); background: var(--steel-06); }
+.inst-tabs button:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+/* The stage on screen. Steel, not orange: a tab is operable, but the brand keeps orange
+   for the one thing the page wants pressed, and that is the CTA. */
+.inst-tabs button[aria-current] { color: var(--sea); background: var(--steel); }
+.inst-tabs button[aria-current] i { opacity: .7; }
+
+/* Over everything the page can raise, including the open modal and the results
+   sidebar, so it stays usable at every stage. */
+.inst-tabs { z-index: 70; }
+@media (max-width: 760px) { .inst-tabs b, .inst-tabs button span { display: none; } }
 
 /* The stage rail is gone. It was a progress tracker for a sequence the visitor is
    carried through in under a minute, and it spent the top of the screen saying so. */
@@ -1386,7 +1620,8 @@ html body .inst-go--wide.btn .label { justify-content: center; }
      with the bar's own height plus a step of air. Without it the first heading lands
      under the bar and the closer look begins with its title already lost. */
   padding-top: calc(var(--topbar-h) + var(--s5));
-  padding-bottom: var(--s7);
+  /* No bottom padding: the footer is the last thing in this sheet and closes the page. */
+  padding-bottom: 0;
   display: grid;
   gap: var(--col-gap);
 }
@@ -1446,45 +1681,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   .chk-lead { margin-bottom: var(--s4); }
 }
 
-/* --------------------------------------------- the arrival ------------- */
-/* The sections do not slide up over the hero. They are already in place — held at
-   the top of the window for the whole of the first screen by a transform that
-   cancels the document's own scroll — and what changes is only that they become
-   visible, once the warp has filled the screen with the intake's paper.
-   *
-   * The curtain is what fills it: a fixed sheet of that paper between the hero and
-   * the sections, coming up as the panel flies apart, so the last thing before the
-   * closer look is a clean field of the colour the field itself stands on.
-   *
-   * WHY THE TRANSFORM CANCELS SCROLL. .chk-below opens a screen below the fold, so
-   * by the end of the first screen the document has carried it to the top on its
-   * own. Translating it from -100vh to 0 across exactly that range holds its top at
-   * the window's top throughout, and leaves it at its natural place at the end —
-   * so the handover to ordinary scrolling is a no-op, with nothing to unwind.
-   *
-   * POINTER EVENTS ARE PART OF THE ANIMATION, not a detail. Pinned and invisible,
-   * this block still covers the window and would otherwise swallow every click
-   * meant for the address field underneath it. It is inert until it has arrived. */
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .chk-below {
-      animation: chk-settle linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-  }
-}
-
-@keyframes chk-settle {
-  0%   { transform: translateY(-100vh); opacity: 0; pointer-events: none; }
-  /* Nothing to see until the blue has finished opening. The sections carry their own
-     paper, so this fade is also what takes the screen from the intake's blue back to
-     the page's stock. */
-  76%  { opacity: 0; pointer-events: none; }
-  99%  { pointer-events: none; }
-  100% { transform: translateY(0); opacity: 1; pointer-events: auto; }
-}
-
 /* --------------------------------------------- the intake box ---------- */
 /* The address field, the button and the four marks as ONE object.
    *
@@ -1522,79 +1718,6 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   isolation: isolate;
 }
 
-/* ============================ THE OPENING ================================
-   THE FIELD OPENS. Scrolling off the first screen widens the white the visitor types
-   into until it is the whole window — the page goes into the address field, and the
-   closer look is what is on the other side of it.
-
-   It is the technique components/tcg/footprint.tsx uses on the map: the white is a
-   FULL-BLEED LAYER THAT NEVER RESIZES, and what animates is the window cut out of it.
-   Nothing inside the box is scaled, so the field, the button and the four marks keep
-   their own size and position for as long as they are visible; the white simply
-   arrives over them.
-
-   The layer is the field's own colour (--bg, the same rgb(243,247,243) the input is
-   painted in) and the sections below carry that colour too, so the screen the
-   opening ends on and the page it hands over to are one surface.
-
-   The rectangle it starts from is measured in components/tcg/instrument.tsx — the
-   FIELD's rectangle — and handed here as --ix-top/right/bottom/left, because a
-   clip-path cannot find it and it moves with every re-wrap of the headline above.
-   ========================================================================= */
-.inst-intake::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  /* Over the box's own contents: this is a sheet laid on top of the instrument, not a
-     ground behind it. The box isolates, so this cannot reach past it to the bar. */
-  z-index: 3;
-  background: var(--bg);
-  pointer-events: none;
-  /* Invisible at rest. The layer sits exactly over the field when nothing has been
-     scrolled, and at full strength it would hide the placeholder and the Tab hint
-     under a blank plate of the same colour. It is only there once the page moves. */
-  opacity: 0;
-  clip-path: inset(
-    var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
-    round var(--r-btn)
-  );
-}
-
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* Shut again from 02 on: the reading has its own full screen and does not want the
-       field opened out underneath it. */
-    body:not(.inst-open) .inst[data-stage="input"] .inst-intake::before {
-      animation: inst-open linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-  }
-}
-
-@keyframes inst-open {
-  0% {
-    opacity: 0;
-    clip-path: inset(
-      var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
-      round var(--r-btn)
-    );
-  }
-  /* Up to full strength almost at once, while the cut-out is still the field: the
-     opening has to read as the field itself widening, which it cannot do if the white
-     is still half transparent over the blue as it goes. */
-  6% {
-    opacity: 1;
-    clip-path: inset(
-      var(--ix-top, 0px) var(--ix-right, 0px) var(--ix-bottom, 0px) var(--ix-left, 0px)
-      round var(--r-btn)
-    );
-  }
-  /* Open by three quarters of the screen and held there, so the last of the range is
-     the sections arriving on a field that has already stopped moving. */
-  75%, 100% { opacity: 1; clip-path: inset(0 0 0 0 round 0); }
-}
-
 /* FULL SPAN. Outside the box the form was held to 520px so it would not run the
    width of the screen; inside it the box is the measure, so the field and its button
    take the whole span and the row of marks sits under exactly the same width. */
@@ -1612,6 +1735,32 @@ html body .inst-go--wide.btn .label { justify-content: center; }
   row-gap: 0;
 }
 .inst-intake .inst-awards--intake li { padding-inline: var(--s3); }
+
+/* SPREAD across the box: each cell its own width, the free space shared out between
+   them, so the outer marks sit at the box's edges and the row breathes. */
+@media (min-width: 761px) {
+  .inst-intake .inst-awards--intake {
+    grid-template-columns: repeat(4, auto);
+    justify-content: space-between;
+  }
+  .inst-intake .inst-awards--intake li { padding-inline: var(--s4); }
+  .inst-intake .inst-awards--intake li:first-child { padding-left: var(--s2); }
+  .inst-intake .inst-awards--intake li:last-child { padding-right: var(--s2); }
+
+  /* CLUTCH AND GOOGLE, smaller and on ONE BOTTOM LINE: the figure, the logo and the
+     review count all end on the same baseline. The stars stay above, on the right. */
+  .inst-intake .inst-awards--intake a { align-items: flex-end; gap: 10px; }
+  .inst-intake .inst-awards--intake a > span { justify-content: flex-end; gap: 6px; }
+  .inst-intake .inst-awards--intake b {
+    font-size: 30px; align-self: flex-end; display: block; text-box: trim-both cap alphabetic;
+  }
+  .inst-intake .inst-awards--intake .stars { font-size: 13px; }
+  .inst-intake .inst-awards--intake .aw-src { align-items: flex-end; gap: 5px; font-size: 12px; }
+  .inst-intake .inst-awards--intake .aw-src,
+  .inst-intake .inst-awards--intake a > span small { text-box: trim-both cap alphabetic; line-height: 1; }
+  .inst-intake .inst-awards--intake .aw-logo--clutch { height: 13px; }
+  .inst-intake .inst-awards--intake .aw-logo--google { height: 16px; margin-top: 0; margin-bottom: -3px; }
+}
 
 /* INVERTED. On the blue the type goes to paper and the hairlines between the cells
    go with it, at the strength the steel ones had on white. */
@@ -1702,6 +1851,10 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 @media (max-width: 760px) {
   .inst-h1 { font-size: clamp(26px, 7.4vw, 32px); }
 }
+/* Two sizes again: the warning is the lead-in, set small; the question is the
+   headline and the largest type on the screen. Tokens, so phones step down too. */
+.inst-h1 .inst-h1-a { font-size: var(--t-h4); line-height: 1.2; margin-bottom: var(--s1); }
+.inst-h1 .inst-h1-b { font-size: var(--t-h1); line-height: 1.05; letter-spacing: var(--track-head); }
 
 /* --------------------------------------------- the advisory ------------ */
 /* The link out to cyber.gc.ca. It is set apart from the paragraphs above it and given
@@ -1727,8 +1880,39 @@ html body .inst-go--wide.btn .label { justify-content: center; }
 /* ------------------------------------------- the final CTA ------------- */
 /* The foot of the argument, centred on its own. */
 .chk-final { justify-items: center; }
-.chk-final .chk-lead { margin-bottom: 0; }
-.chk-final .chk-again { margin-top: var(--s4); }
+/* The clients' cards in the double-stroke frame, over the final heading. Width of the
+   column; the row inside scrolls sideways within it, never past the frame. */
+.chk-proof { width: 100%; min-width: 0; padding: var(--s4); margin-bottom: var(--s5); }
+.cl-embed { display: grid; gap: var(--s3); min-width: 0; }
+/* The chevrons over the row, one at each edge, centred on the play marks
+   (--play-y, measured from the top of the row). Raised above the cards, on the
+   card stock so they read over a poster. */
+.chk-proof .rail-nav--over {
+  position: absolute; inset-inline: 0; top: var(--play-y, 50%); z-index: 3;
+  display: flex; justify-content: space-between; pointer-events: none;
+  translate: 0 -50%;
+}
+.chk-proof .rail-nav--over .cl-chev { pointer-events: auto; background: var(--sea); box-shadow: 0 6px 16px -6px rgb(25 37 74 / .5); }
+/* Inside the frame the row bleeds to the frame's edge, not the screen's: cards are cut
+   by the container, and at rest the first one lines up with the frame's padding. */
+.chk-proof { --proof-pad: var(--s4); padding: var(--proof-pad); }
+.chk-proof .tc-row.cl-row {
+  --bleed: var(--proof-pad);
+  margin-inline: calc(-1 * var(--bleed)); padding-inline: var(--bleed);
+  scroll-padding-inline: var(--bleed); overflow-x: auto;
+}
+@media (max-width: 560px) { .chk-proof { --proof-pad: var(--s3); } }
+@media (max-width: 560px) { .chk-proof { padding: var(--s3); } }
+/* The closing line and its lead, inside the frame over the cards. */
+.chk-proof-head { display: grid; gap: var(--s2); margin-bottom: var(--s4); text-align: center; justify-items: center; }
+.chk-proof-h { margin: 0; max-width: 24ch; font: 700 var(--t-h2)/1.08 var(--head); letter-spacing: var(--track-head); color: var(--steel); }
+.chk-proof-lead { margin: 0; max-width: 44ch; font: 400 var(--t-lede)/1.45 var(--body); color: var(--steel); }
+@media (max-width: 560px) { .chk-proof-head { text-align: left; justify-items: start; } }
+/* Light cards: bathurst-map.css gives every .tc-in a Sea Breeze face, so the type
+   on it is Steel Blue, and the logos are the clients' colour files (clients.tsx). */
+.chk-proof .tc-title b, .chk-proof .tc-title small,
+.chk-proof .tc-cap, .chk-proof .tc-foot { color: var(--steel); }
+.chk-proof .tc-foot::before { background: var(--steel-35); }
 
 /* The three answers under the button: free, quick, nothing to sign in to. Quiet, and
    below the ask rather than above it — they are what is left of the objections, not
@@ -1839,3 +2023,206 @@ html body .chk-again-go.btn:focus-visible { outline: 2px solid var(--steel); out
 .chk-screen .inst-awards--intake small { font-size: 6px; }
 .chk-screen .inst-awards--intake .aw-logo { height: 9px; }
 .chk-screen .inst-awards--intake .aw-badge img { height: 9px; }
+
+/* ------------------------------------------ the advisory, as a clipping --- */
+/* The advisory link sits in the body copy, in the body font, as an ordinary link. */
+.chk-inline-link {
+  color: var(--steel); font: inherit;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+.chk-inline-link:hover { color: var(--orange); }
+.chk-inline-link:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* The blue dither panel on the right of the split, replacing the phone. */
+.chk-news { margin: 0; display: grid; gap: var(--s2); width: min(100%, 460px); justify-self: center; }
+.chk-news-art {
+  position: relative; height: auto; aspect-ratio: 4 / 5;
+  border-radius: var(--r-card);
+  display: grid; place-items: center; padding: var(--s4);
+}
+/* The clipping: the advisory's own particulars on paper, over the dither. */
+.chk-news-clip {
+  position: relative; z-index: 1;
+  width: 100%; padding: var(--s3);
+  background: #FCF8F1; border-radius: var(--r-inner);
+  box-shadow: 0 10px 30px rgb(25 37 74 / .25);
+  transform: rotate(-2deg);
+  text-align: left;
+}
+/* Set like the advisory page: a plain sans, the title with its short red rule. */
+.chk-news-clip { font-family: var(--body); color: #333; max-height: 92%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
+.chk-news-crumb { margin: 0 0 var(--s2); font: 400 12px/1.3 var(--body); color: #284162; text-decoration: underline; }
+.chk-news-h { margin: 0 0 var(--s2); padding-bottom: var(--s1); position: relative;
+  font: 700 22px/1.2 var(--body); color: #333; }
+.chk-news-h::after { content: ""; position: absolute; left: 0; bottom: 0; width: 72px; height: 4px; background: #AF3C43; }
+.chk-news-line { margin: 0; font: 400 15px/1.5 var(--body); }
+.chk-news-body { margin: var(--s1) 0 0; font: 400 15px/1.5 var(--body); }
+.chk-news-list { margin: 4px 0 0; padding-left: 1.3em; font: 400 15px/1.5 var(--body); }
+.chk-news-list ul { padding-left: 1.3em; list-style: circle; }
+.chk-news-cap { font: 400 var(--t-small)/1.45 var(--body); color: var(--steel-70); text-align: left; }
+@media (prefers-reduced-motion: reduce) { .chk-news-clip { transform: none; } }
+/* Text and clipping share the row evenly; the figure no longer sizes the column. */
+@media (min-width: 1000px) {
+  .chk-split:has(.chk-news) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+}
+.chk-news { width: 100%; max-width: 460px; }
+
+/* ============================ THE /check-2 FOOTER ==========================
+   vacation.inc's footer shape on TCG tokens: a serif ticker, then one ruled
+   ledger. Steel ink and hairlines on the page's paper; orange only on what can be
+   pressed. components/tcg/check-footer.tsx. */
+.cf { display: grid; gap: var(--s4); padding-top: var(--s5); color: var(--steel); }
+.cf a { color: inherit; text-decoration: none; }
+.cf a:hover { color: var(--orange); }
+.cf a:focus-visible, .cf button:focus-visible, .cf input:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* The ticker: one line of the display face, running left. */
+.cf-ticker { overflow: hidden; white-space: nowrap; border-block: var(--hairline) solid var(--steel-20); padding-block: var(--s2); }
+.cf-ticker-run { display: inline-flex; animation: cf-run 60s linear infinite; }
+.cf-ticker-run span { font: 400 var(--t-h3)/1.1 var(--head); letter-spacing: var(--track-head); padding-right: .3em; }
+@keyframes cf-run { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .cf-ticker-run { animation: none; } }
+
+/* The ledger: every cell shares one hairline grid. */
+.cf-ledger {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  border: var(--hairline) solid var(--steel-35); border-radius: var(--r-inner);
+}
+.cf-ledger > * { border-color: var(--steel-35); border-style: solid; border-width: 0; }
+.cf-cell { padding: var(--s2) var(--s3) var(--s3); display: grid; align-content: start; gap: var(--s2); }
+.cf-cell + .cf-cell { border-left-width: var(--hairline); }
+.cf-h {
+  margin: 0; font: 700 var(--t-caption)/1.2 var(--head);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--steel);
+}
+.cf-say { margin: 0; font: 400 var(--t-small)/1.55 var(--body); color: var(--steel-70); max-width: 52ch; }
+.cf-say a { color: var(--steel); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.cf-links { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
+.cf-links a { font: 400 var(--t-h5)/1.3 var(--head); }
+
+/* The newsletter row: label | field | button, ruled like the cells above. */
+.cf-news {
+  grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 2fr auto; align-items: stretch;
+  border-top-width: var(--hairline) !important;
+}
+.cf-news-label { display: flex; align-items: center; padding: var(--s2) var(--s3); }
+.cf-news-input {
+  border: 0; border-left: var(--hairline) solid var(--steel-35); border-right: var(--hairline) solid var(--steel-35);
+  background: transparent; padding: var(--s2) var(--s3);
+  font: 400 var(--t-h5)/1.2 var(--head); color: var(--steel);
+}
+.cf-news-input::placeholder { color: var(--steel-35); }
+.cf-news-input[aria-invalid] { box-shadow: inset 0 -2px 0 var(--band-poor); }
+.cf-news-go {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--s1); padding: var(--s2) var(--s4);
+  font: 700 var(--t-caption)/1 var(--head); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--orange);
+}
+.cf-news-go svg { width: 16px; height: 16px; }
+.cf-news-go:hover { background: var(--steel-06); }
+.cf-news-go[aria-disabled] { cursor: progress; color: var(--steel-55); }
+.cf-fine {
+  grid-column: 1 / -1; margin: 0; padding: var(--s1) var(--s3);
+  border-top-width: var(--hairline) !important;
+  font: 400 12px/1.5 var(--body); color: var(--steel-70);
+}
+
+/* Outlets as tick boxes, in a ruled row. */
+.cf-outlets {
+  grid-column: 1 / -1; list-style: none; margin: 0; padding: var(--s2) var(--s3);
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4);
+  border-top-width: var(--hairline) !important;
+}
+.cf-outlets a {
+  display: inline-flex; align-items: center; gap: var(--s1);
+  font: 700 var(--t-caption)/1 var(--head); letter-spacing: .12em; text-transform: uppercase;
+}
+.cf-box { width: 14px; height: 14px; border: var(--hairline) solid currentColor; border-radius: 2px; }
+.cf-outlets a:hover .cf-box { background: var(--orange); border-color: var(--orange); }
+
+/* The line of record. */
+.cf-record {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2) var(--s4);
+  padding-bottom: var(--s3);
+  font: 400 12px/1.4 var(--body); color: var(--steel-70);
+}
+.cf-mark { font: 700 var(--t-h4)/1 var(--head); letter-spacing: var(--track-head); color: var(--steel); }
+.cf-legal { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s3); }
+.cf-copy { margin-left: auto; }
+
+@media (max-width: 760px) {
+  .cf-ledger { grid-template-columns: 1fr 1fr; }
+  .cf-cell--brand { grid-column: 1 / -1; }
+  .cf-cell + .cf-cell { border-left-width: 0; border-top-width: var(--hairline); }
+  .cf-cell--brand + .cf-cell + .cf-cell { border-left-width: var(--hairline); }
+  .cf-news { grid-template-columns: 1fr auto; }
+  .cf-news-label { grid-column: 1 / -1; }
+  .cf-news-input { border-left: 0; border-top: var(--hairline) solid var(--steel-35); }
+  .cf-news-go { border-top: var(--hairline) solid var(--steel-35); }
+  .cf-copy { margin-left: 0; }
+}
+
+/* ------------------------------------------- the pinned statement --- */
+/* Three windows tall: the stage is sticky, so the heading holds for two windows of
+   scrolling while its words fill in (components/tcg/reveal-statement.tsx sets --p,
+   0 to 1, across that travel). Word i is full once --p passes (i + 1) / n. */
+.chk-pin { position: relative; height: 300vh; height: 300dvh; }
+.chk-pin-stage {
+  position: sticky; top: 0; height: 100vh; height: 100dvh;
+  display: grid; place-items: center; padding-top: var(--topbar-h);
+}
+.chk-reveal {
+  margin: 0 auto; max-width: 20ch; text-align: center;
+  font: 700 var(--t-h2)/1.08 var(--head);
+  letter-spacing: var(--track-head); color: var(--steel);
+}
+.chk-reveal span {
+  opacity: clamp(.18, calc(.18 + (var(--p, 0) * var(--n) - var(--i)) * .82), 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chk-pin { height: auto; }
+  .chk-pin-stage { position: static; height: auto; padding-block: var(--s6); }
+  .chk-reveal span { opacity: 1; }
+}
+
+/* --- the shop sign at the end of the statement (reveal-statement.tsx) --- */
+.chk-tail { white-space: nowrap; }
+/* Text height: the print includes its nail and string, so it stands a little over
+   the cap height and hangs to the baseline. The paper is cut away to transparency. */
+.chk-sign { display: inline-block; vertical-align: -0.12em; margin-left: .2em; height: 1.05em; aspect-ratio: 137 / 160; }
+.chk-sign-card {
+  position: relative; display: block; width: 100%; height: 100%;
+  transform-origin: 50% 4%;
+  animation: chk-swing 2.6s ease-in-out infinite alternate;
+}
+.chk-sign-face {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transition: transform .25s var(--ease-out), opacity 0s linear .25s;
+}
+.chk-sign-closed { transform: scaleX(0); opacity: 0; }
+.chk-pin[data-done] .chk-sign-open { transform: scaleX(0); opacity: 0; transition-delay: 0s, .25s; }
+.chk-pin[data-done] .chk-sign-closed { transform: scaleX(1); opacity: 1; transition-delay: .25s, .25s; }
+.chk-pin:not([data-done]) .chk-sign-closed { transition-delay: 0s, .25s; }
+.chk-pin:not([data-done]) .chk-sign-open { transition-delay: .25s, .25s; }
+/* Once closed, the sign settles still. */
+.chk-pin[data-done] .chk-sign-card { animation-play-state: paused; }
+@keyframes chk-swing { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .chk-sign-card { animation: none; }
+  .chk-sign-face { transition: none; }
+}
+/* The footer closes on the logo, not a set wordmark. */
+.cf-logo { display: block; height: 40px; width: auto; }
+
+/* THE ADVISORY, LEFT-ALIGNED: heading, credit line and copy share one left edge. */
+#advisory .sec-head, #advisory .sec-head h2 { text-align: left; margin-inline: 0; }
+#advisory .chk-say { text-align: left; margin-inline: 0; }
+.chk-credit {
+  margin: calc(var(--s3) * -1) 0 0;
+  font: 400 var(--t-small)/1.45 var(--body); color: var(--steel-55);
+  text-decoration: none;
+}
+/* The advisory heading runs the full width of the column. */
+#advisory .sec-head h2 { max-width: none; }

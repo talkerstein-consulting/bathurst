@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CheckSections } from "@/components/tcg/check-sections";
+import { CheckFooter } from "@/components/tcg/check-footer";
 import { HeroGround } from "@/components/tcg/hero-ground";
 import { Instrument } from "@/components/tcg/instrument";
 import { ProofBar } from "@/components/tcg/proof-bar";
@@ -75,6 +76,7 @@ export default function CheckTwo() {
             home page's own (components/tcg/check-sections.tsx says which). */}
         <div className="chk-below">
           <CheckSections />
+          <CheckFooter />
         </div>
       </main>
     </>

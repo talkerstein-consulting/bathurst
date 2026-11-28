@@ -50,10 +50,13 @@ const WHITE: Record<string, [src: string, w: number, h: number]> = {
  * wordmark sits lower than a square badge (`--r`, its width over its height,
  * drives the height in app/globals.css).
  */
-function WhiteLogo({ id }: { id: string }) {
+function WhiteLogo({ id, colour }: { id: string; colour?: string }) {
   const l = WHITE[id];
   if (!l) return null;
-  const [src, w, h] = l;
+  const [white, w, h] = l;
+  /* On a light card (the /check-2 frame) the white knockout disappears, so the
+     client's own colour file is used; the white file's shape still sets the size. */
+  const src = colour ?? white;
   return (
     <Image
       className="cl-mark"
@@ -70,7 +73,11 @@ function WhiteLogo({ id }: { id: string }) {
 /** How far one press of a chevron moves the row: one card and its gutter. */
 const STEP = 1;
 
-export function Clients() {
+/**
+ * `embedded`: the row alone, with its chevrons, for use inside another section
+ * (the /check-2 final CTA frame). No section element and no heading of its own.
+ */
+export function Clients({ embedded = false }: { embedded?: boolean } = {}) {
   const row = useRef<HTMLUListElement | null>(null);
   const stage = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -189,6 +196,27 @@ export function Clients() {
   }, []);
 
 
+  /* Embedded: the overlay chevrons line up with the play marks. The mark's centre
+     depends on the card's width (a clamp) and its title block, so it is measured,
+     on mount and whenever the row resizes. G13: the observer is released. */
+  useEffect(() => {
+    if (!embedded) return;
+    const box = stage.current;
+    const el = row.current;
+    if (!box || !el) return;
+    const place = () => {
+      const play = el.querySelector<HTMLElement>(".cl-play");
+      if (!play) return;
+      const p = play.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      box.style.setProperty("--play-y", `${p.top + p.height / 2 - b.top}px`);
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [embedded]);
+
   const nudge = (dir: -1 | 1) => {
     const el = row.current;
     if (!el) return;
@@ -205,10 +233,15 @@ export function Clients() {
     el.scrollBy({ left: dir * by, behavior: "smooth" });
   };
 
+  const Wrap = embedded ? "div" : "section";
   const shown = TESTIMONIALS.find((t) => t.id === open) ?? null;
 
   return (
-    <section className="sec" id="testimonials" aria-labelledby="testimonials-h">
+    <Wrap
+      className={embedded ? "cl-embed" : "sec"}
+      {...(embedded ? { "aria-label": "Client testimonials" } : { id: "testimonials", "aria-labelledby": "testimonials-h" })}
+    >
+      {!embedded && (
       <div className="sec-head cl-head">
         <h2 id="testimonials-h">
           Good work speaks for itself.
@@ -219,12 +252,18 @@ export function Clients() {
             so the press is still detectable at an end (D04). */}
         <RailChevrons place="head" ends={ends} onStep={nudge} prev="Previous clients" next="More clients" />
       </div>
+      )}
 
       {/* The collectible card, one per client: name and role with the
           client's logo at the far right, the poster with its play mark, the
           opening of the quote and a foot line. The card is the control; it
           opens the video. */}
       <div className="rail-wrap" ref={stage}>
+      {/* Embedded, the chevrons sit over the row at each edge, level with the
+          play marks, instead of beside a heading. */}
+      {embedded && (
+        <RailChevrons place="overlay" ends={ends} onStep={nudge} prev="Previous clients" next="More clients" />
+      )}
       <ul className="tc-row cl-row" ref={row}>
         {TESTIMONIALS.map((t) => (
           <li key={t.id}>
@@ -233,7 +272,7 @@ export function Clients() {
               sub={t.role}
               label={`Watch ${t.who} — ${t.role}`}
               onPress={() => setOpen(t.id)}
-              logo={<WhiteLogo id={t.id} />}
+              logo={<WhiteLogo id={t.id} colour={embedded ? t.logo : undefined} />}
               art={
                 <>
                   <Image
@@ -270,7 +309,7 @@ export function Clients() {
           onClose={() => setOpen(null)}
         />
       )}
-    </section>
+    </Wrap>
   );
 }
 

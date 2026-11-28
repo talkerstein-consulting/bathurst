@@ -76,6 +76,7 @@ const DIALS: Array<[keyof Scores, string]> = [
 const STAGES: Stage[] = ["input", "reading", "results", "booking"];
 
 
+
 /**
  * A made-up reading, used only to open 03 and 04 directly (see the effect in
  * Instrument). The numbers are plausible rather than real. The fixes are real
@@ -275,6 +276,8 @@ export function Instrument() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  /** Opt-in to TCG's occasional email. Unticked by default: CASL requires express consent. */
+  const [consent, setConsent] = useState(false);
   /** True while the readings on screen are the sample, not Google's. */
   const [sample, setSample] = useState(false);
   /** When the climb began, and how far it had got when Google answered.
@@ -294,10 +297,6 @@ export function Instrument() {
   const field = useRef<HTMLInputElement>(null);
   /** The run in flight, so the reading stage can be abandoned rather than waited out. */
   const run = useRef<AbortController | null>(null);
-  /** The intake box. The field inside it is measured from here, so its white can be
-   *  opened out to full bleed on scroll. */
-  const intake = useRef<HTMLDivElement>(null);
-
   const tail = completeDomain(url);
   const locked = stage !== "input";
 
@@ -324,53 +323,60 @@ export function Instrument() {
      * way back to 01, so a navigation away mid-reading cannot leave the document
      * frozen. */
   useEffect(() => {
-    document.body.classList.toggle("inst-open", stage !== "input");
-    return () => document.body.classList.remove("inst-open");
+    /* RESULTS is not a modal any more: it is a sidebar and the page scrolls beside it
+       (app/check-2.css, THE RESULTS LAYOUT). Only the reading and the booking lock. */
+    document.body.classList.toggle("inst-open", stage === "reading" || stage === "booking");
+    document.body.dataset.instStage = stage;
+    return () => {
+      document.body.classList.remove("inst-open");
+      delete document.body.dataset.instStage;
+    };
   }, [stage]);
 
-  /**
-   * THE INTAKE'S OWN RECTANGLE, in pixels from each edge of the window, written onto
-   * the element as custom properties.
-   *
-   * The box opens from its boxed size out to full bleed as the first screen is
-   * scrolled through, and it does that the way components/tcg/footprint.tsx opens the
-   * map: the blue is a full-bleed layer that never resizes, and what animates is the
-   * window cut out of it. The field, the button and the four marks therefore stay
-   * exactly where they are and at the size they are — a box that really grew would
-   * drag its own contents up to the size of the screen with it.
-   *
-   * A clip-path cannot find the box's rectangle on its own, so it is measured here and
-   * handed to the stylesheet. Measured, not assumed: the box's position depends on the
-   * headline above it, which re-wraps with the window.
-   */
+  /* RESULTS OPENS FULL SCREEN. The diagnosis lands across the whole window; the
+     first attempt to scroll down (wheel, swipe or key) narrows it to the sidebar,
+     revealing the sections beside it (body[data-inst-full], app/check-2.css). The
+     page itself is held still while full, so that first scroll is the reveal and
+     not a jump down the sections. Desktop only: below 900px results already stack
+     full width above the sections. Reduced motion skips it. G13: every listener
+     and the flag are removed on teardown or when the stage changes. */
   useEffect(() => {
-    const box = intake.current;
-    if (!box) return;
-    const write = () => {
-      /* THE FIELD'S rectangle, not the box's. The thing that opens is the white the
-         visitor types into — the page goes INTO the address field and comes out the
-         other side of it — so the window that widens starts at the field's own edges
-         and the layer is the field's own colour. */
-      const field = box.querySelector(".inst-field") ?? box;
-      const r = field.getBoundingClientRect();
-      /* Against the WINDOW, because the layer being clipped is fixed to it. The hero
-         is itself fixed, so these hold while the page scrolls and only have to be
-         taken again when the window changes shape. */
-      box.style.setProperty("--ix-top", `${Math.max(0, r.top)}px`);
-      box.style.setProperty("--ix-right", `${Math.max(0, window.innerWidth - r.right)}px`);
-      box.style.setProperty("--ix-bottom", `${Math.max(0, window.innerHeight - r.bottom)}px`);
-      box.style.setProperty("--ix-left", `${Math.max(0, r.left)}px`);
+    if (stage !== "results") return;
+    if (!window.matchMedia("(min-width: 901px)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const body = document.body;
+    body.dataset.instFull = "";
+    window.scrollTo(0, 0);
+    let touchY: number | null = null;
+    const collapse = () => {
+      delete body.dataset.instFull;
+      detach();
     };
-    write();
-    const ro = new ResizeObserver(write);
-    ro.observe(box);
-    ro.observe(document.documentElement);
-    window.addEventListener("resize", write);
+    const onWheel = (e: WheelEvent) => { if (e.deltaY > 0) collapse(); };
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
+    const onTouchMove = (e: TouchEvent) => {
+      const y = e.touches[0]?.clientY;
+      if (touchY !== null && y !== undefined && touchY - y > 8) collapse();
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (["ArrowDown", "PageDown", "End", " "].includes(e.key) &&
+          !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) collapse();
+    };
+    const detach = () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKey);
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("keydown", onKey);
     return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", write);
+      detach();
+      delete body.dataset.instFull;
     };
-  }, []);
+  }, [stage]);
 
   /**
    * Put a stage on screen without running a reading.
@@ -567,6 +573,8 @@ export function Instrument() {
 
   return (
     <div className="inst" data-stage={stage}>
+      {/* The staging tabs were removed before launch. `?stage=` still opens any
+          stage for review (see the effect above). */}
       {/* The instrument itself: one unbounded region on the page's own ground. The
           plate and the stage rail are gone — the sequence is carried by the faces
           themselves, which crossfade in the same place. The ref is here so each stage
@@ -592,14 +600,10 @@ export function Instrument() {
                 * puts in its header, in black.
                 * See public/brand/third-party/README.md. */}
             <h1 className="inst-h1">
-              <span className="inst-h1-a">Canada’s WordPress security advisory.</span>
-              <span className="inst-h1-b">Is your website affected?</span>
+              <span className="inst-h1-a">Canada’s WordPress security warning.</span>
+              <span className="inst-h1-b">Is your site affected?</span>
             </h1>
-            <p className="inst-lede">
-              The Canadian Centre for Cyber Security has issued a warning about
-              vulnerable WordPress websites. Find out what your website might be
-              exposing to customers.
-            </p>
+            <p className="inst-lede">Find out if your website needs attention.</p>
           </div>
 
           {/* ONE CONTAINER for the whole intake: the address field, the button that
@@ -609,7 +613,7 @@ export function Instrument() {
 
               The form spans the box — full width inside it, field and button on one
               line — and the ratings sit under it across the same span. */}
-          <div className="inst-intake" ref={intake}>
+          <div className="inst-intake">
           <form className="inst-form" onSubmit={start} noValidate>
             <label className="sr-only" htmlFor="inst-url">
               Your website address
@@ -667,6 +671,22 @@ export function Instrument() {
               <ChevronRight className="glyph" aria-hidden="true" />
             </Cta>
           </form>
+
+          {/* EMAIL CONSENT. Optional and unticked (CASL: express, not implied). No email
+              is asked for here; the choice travels with the booking request, which is
+              where the address is collected. */}
+          <label className="inst-consent">
+            <input
+              type="checkbox"
+              checked={consent}
+              disabled={locked}
+              onChange={(e) => setConsent(e.target.checked)}
+            />
+            <span>
+              Keep me informed with occasional digital security tips and insights from
+              talkerstein.com.
+            </span>
+          </label>
 
           {/* The line that used to stand here ("Free check · 30 seconds") is gone. The
               paragraph stays, because it is also where a bad address is reported: it is
@@ -732,10 +752,34 @@ export function Instrument() {
               {/* No source line. It has been asked for twice now: the face opens on the
                   heading. The receipt still prints "<host> · mobile" at its head, which
                   is where the source is named. Do not put it back. */}
-              <h2 className="inst-h2">
-                Your website has been assessed.
-                <span className="inst-h2-b">Here’s what we found.</span>
-              </h2>
+              {/* IN DANGER OR NOT. Built on WordPress is the advisory's case; a site we
+                  profiled and found not to be WordPress gets the other message. "Unknown"
+                  (no stack detected, and every sample) claims neither: it says we could
+                  not tell, which is itself a reason to look closer. */}
+              {result.wordpress === "yes" ? (
+                <div className="inst-verdict" data-danger="">
+                  <p className="inst-verdict-eyebrow">WordPress detected</p>
+                  <h2 className="inst-h2">Your website could be a ticking time bomb.</h2>
+                  <p className="inst-verdict-say">
+                    You have plugins, updates, hosting and software to keep track of. Leave
+                    them unattended long enough, and something eventually gives.
+                  </p>
+                </div>
+              ) : result.wordpress === "no" ? (
+                <div className="inst-verdict" data-danger="">
+                  <p className="inst-verdict-eyebrow">Other platform detected</p>
+                  <h2 className="inst-h2">Different platform. Same ticking time bomb.</h2>
+                  <p className="inst-verdict-say">Who&rsquo;s watching yours?</p>
+                </div>
+              ) : (
+                <div className="inst-verdict">
+                  <h2 className="inst-h2">Unknown platform. Unknown risks.</h2>
+                  <p className="inst-verdict-say">
+                    We couldn&rsquo;t identify what&rsquo;s powering your website. And
+                    that&rsquo;s another reason to take a closer look.
+                  </p>
+                </div>
+              )}
 
               {/* One centred column, at every width: the reading, then the dials, then
                   what it means, then the fixes with the ask laid over them. The two-column
@@ -775,50 +819,6 @@ export function Instrument() {
                   </i>
                 </span>
 
-                {/* WORDPRESS, YES OR NO.
-                    *
-                    * It sits in the score container because it is the other half of the
-                    * reading now: the page above is about an advisory that applies to
-                    * WordPress sites, so "is this one" is the first thing the owner is
-                    * here to learn.
-                    *
-                    * THREE ANSWERS, NOT TWO. Lighthouse either recognised WordPress,
-                    * profiled the page and did not, or could not profile it at all. The
-                    * third is said out loud rather than rounded down to "No" — under a
-                    * security advisory, a confident No we have not earned is the one
-                    * answer that could cost somebody something. It is also what the
-                    * sample reads, since a sample has no site to detect.
-                    */}
-                <span className="inst-wp" data-wp={result.wordpress ?? "unknown"}>
-                  <b className="inst-wp-a">
-                    {result.wordpress === "yes" ? "Yes" : result.wordpress === "no" ? "No" : "—"}
-                  </b>
-                  <i>
-                    {/* The name is a CHIP, not a word: the same device the headline used
-                        for Google and ChatGPT, and for the same reason — a mark the
-                        reader already knows is read faster than its name set in
-                        somebody else's typeface. The file is the one already in this
-                        repo (public/logos-color/wordpress.svg), in WordPress's own
-                        #21759B, unmodified. */}
-                    Built on{" "}
-                    <span className="inst-pill inst-pill--wp">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        className="inst-wp-mark"
-                        src="/logos-color/wordpress.svg"
-                        alt=""
-                        width={24}
-                        height={24}
-                      />
-                      WordPress
-                    </span>
-                    {result.wordpress === "unknown" && (
-                      <>
-                        <span aria-hidden="true"> · </span>could not be determined
-                      </>
-                    )}
-                  </i>
-                </span>
               </div>
 
               {/* The three categories, each a white half dial: the arc filled to the
@@ -890,6 +890,7 @@ export function Instrument() {
 
           <BookingPanel
             site={result?.url ?? url}
+            consent={consent}
             onBack={() => land(() => setStage("results"))}
           />
         </section>
@@ -1027,12 +1028,17 @@ function Fixes({
           {held > 0 && (
             <li className="is-held-say">
               <i aria-hidden="true">&bull;</i>
+              {/* The line to whoever opened the inspector, with the CTA in the list
+                  itself. Under the card for everyone else, so it is out of the tab
+                  order: the card's own button is the one a visitor reaches. */}
               <b>
-                Caught you in the inspector. Fair enough — but reading the list is the
-                easy half.{" "}
+                You think you&rsquo;re clever using the page inspector, huh?{" "}
                 {green
                   ? <>Nothing here is on fire. What a review is for is the part Google does not measure.</>
-                  : <>Book the review and we&rsquo;ll work through all {fixes.length} of them with you.</>}
+                  : <>Reading the list is the easy half. We&rsquo;ll work through all {fixes.length} of them with you.</>}{" "}
+                <button type="button" className="is-held-go" tabIndex={-1} onClick={onBook}>
+                  Book the review
+                </button>
               </b>
             </li>
           )}
@@ -1259,7 +1265,7 @@ function hostOf(url: string) {
  * in this repository yet, so in practice the post fails and the visitor is handed the same
  * request as a pre-filled email — the same fallback the site's own form uses today.
  */
-function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
+function BookingPanel({ site, consent, onBack }: { site: string; consent: boolean; onBack: () => void }) {
   const [f, setF] = useState({ name: "", email: "", company: "", website: site, message: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "fallback">("idle");
   const [bad, setBad] = useState<string[]>([]);
@@ -1328,6 +1334,8 @@ function BookingPanel({ site, onBack }: { site: string; onBack: () => void }) {
           services: ["Website assessment"],
           source: "check-2",
           page: location.href,
+          /* Ticked on the intake, by the visitor. False unless they opted in. */
+          marketingConsent: consent,
         }),
       });
       setStatus(res.ok ? "sent" : "fallback");

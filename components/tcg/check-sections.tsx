@@ -1,8 +1,7 @@
-import Device from "@/components/react-bits/device";
-import Awards from "@/components/bathurst/Awards";
-import { Cta } from "./cta";
+import { Clients } from "./clients";
+import { Frame } from "./frame";
 import { Ground } from "./figures";
-import { ServiceCard } from "./service-card";
+import { RevealStatement } from "./reveal-statement";
 
 /**
  * What sits under the first screen of /check-2.
@@ -45,28 +44,6 @@ function Head({ id, bare, children }: { id: string; bare?: boolean; children: st
 }
 
 /**
- * The three things the check looks for. The dek under each is the brief's own line for
- * it, turned from a bullet into a sentence that can stand in a card.
- *
- * Every card points back at the instrument rather than at a page that does not exist —
- * the same thing the home page's capability cards do with `#intake`.
- */
-const CHECKS: Array<[string, string]> = [
-  [
-    "Unexpected redirects",
-    "Visitors sent somewhere other than your website, often without you ever seeing it happen yourself.",
-  ],
-  [
-    "Browser warnings",
-    "The interstitials and padlock warnings that stop a customer before they have read a word of your page.",
-  ],
-  [
-    "How the site is experienced",
-    "The things that quietly change what a visit feels like, on the connection and the device your customer actually has.",
-  ],
-];
-
-/**
  * The advisory itself, in the client's own words.
  *
  * VERIFIED against the source on 2026-11-28: cyber.gc.ca serves AV26-1117, dated
@@ -82,7 +59,12 @@ const CHECKS: Array<[string, string]> = [
 export function CyberCentreWarning() {
   return (
     <section className="chk-sec" id="advisory" aria-labelledby="advisory-h">
-      <Head id="advisory-h">A warning from Canada’s Cyber Centre.</Head>
+      <Head id="advisory-h">Canada’s Cyber Centre is raising the alarm.</Head>
+      {/* The credit line: whose advisory this is, under the heading, in a low tint. */}
+      <p className="chk-credit">
+        Advisory AV26-1117, issued by the Canadian Centre for Cyber Security on
+        November 3, 2026.
+      </p>
 
       <div className="chk-split">
       <div className="chk-left">
@@ -101,118 +83,50 @@ export function CyberCentreWarning() {
         </p>
         <p>
           If your business runs WordPress, it’s worth confirming that your website is up
-          to date.
+          to date.{" "}
+          <a className="chk-inline-link" href="https://www.cyber.gc.ca/en/alerts-advisories/wordpress-security-advisory-av26-1117" target="_blank" rel="noopener noreferrer">
+            Read the official Canadian advisory
+            <span className="sr-only"> (opens cyber.gc.ca in a new tab)</span>
+          </a>
+          .
         </p>
       </div>
 
-      {/* Straight to the Cyber Centre, not to a page of ours about it: the whole value
-          of citing an advisory is that the reader can go and read it. It opens in its
-          own tab so the check they came for is not navigated away from, and says where
-          it goes, because a link that leaves the site should say so before it is taken. */}
-      <p className="chk-source">
-        <a
-          className="chk-source-link"
-          href="https://www.cyber.gc.ca/en/alerts-advisories/wordpress-security-advisory-av26-1117"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Read the official Canadian advisory
-          <span className="chk-source-out" aria-hidden="true">↗</span>
-          <span className="sr-only"> (opens cyber.gc.ca in a new tab)</span>
-        </a>
-      </p>
       </div>
 
-      {/* The check, in the hand it is actually done in.
-          *
-          * The frame is @reactbits-starter/device-tw (components/react-bits/device.tsx),
-          * which takes children rather than a screenshot — so what is inside the glass
-          * is the page's own markup in the page's own classes, not a picture of it. It
-          * is the mobile layout of the intake shown on desktop too, which is the point:
-          * most of the people this advisory reaches will open the check on a phone.
-          *
-          * NOT INTERACTIVE, and deliberately so. The live field is the one in the hero;
-          * a second <form> with a second #inst-url would be two of the only control on
-          * the page. This one is inert, hidden from the tab order and from screen
-          * readers, and the caption under the section is what points at the real one. */}
-      <div className="chk-device" aria-hidden="true">
-        <Device
-          finish="titanium"
-          island
-          width={248}
-          shadow={0.9}
-          /* The component's glass reflection is a grey wash over the whole screen. At
-             its default it took the page's cream down to slate and made the interface
-             inside look switched off. Kept, but faint — enough for glass, not enough to
-             recolour what is under it. */
-          reflection={0}
-          screenColor="#FCF8F1"
-          enableParallax
-          parallaxStrength={6}
-        >
-          <div className="chk-screen">
-            <p className="chk-screen-h">
-              Canada’s WordPress security advisory. Is your website affected?
+      {/* THE ADVISORY ITSELF, as a clipping laid on the site's blue dither ground
+          (./figures.tsx Ground, the service cards' own). Every line on the clipping is
+          from the advisory as cited above: its number (AV26-1117, from its URL), its
+          date, its issuer, and the affected versions it names. Decorative: the caption
+          and the body copy carry the same facts as text. */}
+      <figure className="chk-news">
+        <div className="svc-art chk-news-art" aria-hidden="true">
+          <Ground seed={1} />
+          {/* A SNIPPET OF THE PAGE ITSELF: the advisory's own title, serial number,
+              date and opening lines, word for word from cyber.gc.ca (read 2026-11-28),
+              laid out the way that page lays them out. Cut off mid-page, as a clipping
+              is. No Government of Canada wordmark: this quotes the advisory, it does
+              not pose as the site. */}
+          <div className="chk-news-clip">
+            <p className="chk-news-crumb">Canadian Centre for Cyber Security &rsaquo; Alerts and advisories</p>
+            <p className="chk-news-h">WordPress security advisory (AV26-1117)</p>
+            <p className="chk-news-line"><b>Serial number:</b> AV26-1117</p>
+            <p className="chk-news-line"><b>Date:</b> November 3, 2026</p>
+            <p className="chk-news-body">
+              As of October 31, 2026, WordPress is affected by a vulnerability in the
+              following product:
             </p>
-            <div className="inst-intake chk-screen-box">
-              <div className="inst-field single chk-screen-field">yourwebsite.com</div>
-              <div className="btn primary inst-go chk-screen-go">Check my website</div>
-              <Awards className="inst-awards inst-awards--intake" logos />
-            </div>
+            <ul className="chk-news-list">
+              <li>WordPress Core<ul><li>Prior to 7.1.4</li></ul></li>
+            </ul>
+            <p className="chk-news-body">
+              On November 3, 2026, Cybersecurity and Infrastructure Security Agency (CISA)
+              added CVE-2026-119977 to their Known Exploited Vulnerabilities (KEV) Database.
+            </p>
           </div>
-        </Device>
+        </div>
+      </figure>
       </div>
-      </div>
-    </section>
-  );
-}
-
-export function WhatWeCheck() {
-  return (
-    <section className="chk-sec" id="what-we-check" aria-labelledby="what-we-check-h">
-      <Head id="what-we-check-h" bare>A closer look at your website.</Head>
-
-      <p className="chk-lead">
-        Your website can look perfectly normal while something is happening behind the
-        scenes.
-      </p>
-
-      <div className="svc-grid chk-grid">
-        {CHECKS.map(([title, dek], i) => (
-          <ServiceCard
-            key={title}
-            title={title}
-            dek={dek}
-            at={i}
-            art={<Ground seed={i} />}
-            cta="Check my website"
-            href="#check-2-top"
-          />
-        ))}
-      </div>
-
-    </section>
-  );
-}
-
-export function WhatHappensNext() {
-  return (
-    <section className="chk-sec chk-sec--last" id="what-next" aria-labelledby="what-next-h">
-      <Head id="what-next-h">Not every website needs a rebuild.</Head>
-
-      <div className="chk-say">
-        <p>
-          Sometimes, an update is all it takes. Other times, outdated software or a
-          difficult-to-maintain setup can make it harder to keep your website secure and
-          reliable.
-        </p>
-        <p>
-          We’ll help you understand what needs attention and whether your current setup
-          is still the right fit. If it’s time for a change, Talkerstein can build a
-          simpler, more manageable website around the way your business operates today.
-        </p>
-      </div>
-
     </section>
   );
 }
@@ -233,22 +147,19 @@ export function WhatHappensNext() {
 export function FinalCta() {
   return (
     <section className="chk-sec chk-sec--last chk-final" id="final-cta" aria-labelledby="final-cta-h">
-      <Head id="final-cta-h">Don’t wait for a customer to notice.</Head>
-
-      <p className="chk-lead">
-        Find out what your website might be exposing, and what deserves your attention.
-      </p>
-
-      <div className="chk-again">
-        <Cta href="#check-2-top" primary className="chk-again-go" label="Check my website">
-          Check my website
-        </Cta>
-      </div>
-
-      <p className="chk-fine">
-        Free check <span aria-hidden="true">·</span> 30 seconds{" "}
-        <span aria-hidden="true">·</span> No password needed
-      </p>
+      {/* The clients' own cards in the double-stroke frame, under the closing line. */}
+      <Frame className="chk-proof">
+        <div className="chk-proof-head">
+          <h2 className="chk-proof-h" id="final-cta-h">
+            When something goes wrong, you’ll wish you’d checked sooner.
+          </h2>
+          <p className="chk-proof-lead">
+            Make sure your website has the attention it needs before problems become
+            business interruptions.
+          </p>
+        </div>
+        <Clients embedded />
+      </Frame>
     </section>
   );
 }
@@ -256,10 +167,22 @@ export function FinalCta() {
 export function CheckSections() {
   return (
     <>
+      <UncheckedStatement />
       <CyberCentreWarning />
-      <WhatWeCheck />
-      <WhatHappensNext />
       <FinalCta />
     </>
   );
+}
+
+/**
+ * The opening statement of the scrolling column. Each word starts faint and comes to
+ * full strength as it scrolls up through the window (app/check-2.css, .chk-reveal);
+ * without scroll-driven animation, or with reduced motion, it is simply at full strength.
+ * The words are split for the effect only: the h2 is read whole by assistive tech.
+ */
+const STATEMENT =
+  "You wouldn’t leave your front door unlocked. Why leave your digital business unchecked?";
+
+function UncheckedStatement() {
+  return <RevealStatement id="statement-h" text={STATEMENT} />;
 }
