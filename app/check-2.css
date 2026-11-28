@@ -211,6 +211,13 @@ body[data-inst-stage="results"] .inst-page .inst-foot { display: none; }
    face clips its overflow, so the face holds that much room under it. */
 @media (max-width: 900px) {
   body[data-inst-stage="results"] .inst-face[data-face="results"] { padding-bottom: calc(var(--s3) + var(--s2)); }
+  /* The ask's column is held to the card: the nowrap button sized it to its own
+     width and pushed the text and itself past the border on a narrow phone. The
+     button may wrap to two lines there rather than overflow (D04, flagged). */
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask { grid-template-columns: minmax(0, 1fr); }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask .inst-go { max-width: 100%; white-space: normal; text-align: center; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask .inst-go .label { white-space: normal; }
+  body[data-inst-stage="results"] [data-face="results"] .inst-ask .inst-go .label > span { justify-content: center; }
 }
 /* Phones: the newsletter opt-in under the intake is fine print, set at caption size. */
 @media (max-width: 560px) {
@@ -220,6 +227,10 @@ body[data-inst-stage="results"] .inst-page .inst-foot { display: none; }
    the quote; the next card peeking in at the edge is the cue to swipe (globals.css). */
 @media (max-width: 560px) {
   .chk-proof .rail-wrap .rail-nav--over { display: none; }
+  /* The card's fixed 63:88 shape left no room for the poster once a long name
+     wrapped: the card grows to its content and the poster keeps a 16:9 window. */
+  .chk-proof .tc { aspect-ratio: auto; height: 100%; }
+  .chk-proof .tc-full .tc-art { flex: none; aspect-ratio: 16 / 9; }
 }
 
 /* --------------------------------------------------- email consent --- */
@@ -2172,6 +2183,17 @@ html body .chk-again-go.btn:focus-visible { outline: 2px solid var(--steel); out
   .cf-news-input { border-left: 0; border-top: var(--hairline) solid var(--steel-35); }
   .cf-news-go { border-top: var(--hairline) solid var(--steel-35); }
   .cf-copy { margin-left: 0; }
+  /* minmax(0, …) and a shrinkable field: the input's intrinsic width and the
+     columns' min-content otherwise pushed the ledger past a narrow window. */
+  .cf-ledger { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cf-news { grid-template-columns: minmax(0, 1fr) auto; }
+  .cf-news-input { min-width: 0; width: 100%; }
+}
+/* Narrow phones: the two link columns stack, so a link is not one word a line. */
+@media (max-width: 400px) {
+  .cf-ledger { grid-template-columns: minmax(0, 1fr); }
+  .cf-cell--brand + .cf-cell + .cf-cell { border-left-width: 0; }
+  .cf-news-go { padding-inline: var(--s3); }
 }
 
 /* ------------------------------------------- the pinned statement --- */
