@@ -207,6 +207,15 @@ body[data-inst-stage="results"] .inst-page .inst-foot { display: none; }
     padding-top: var(--s5);
   }
 }
+/* Stacked results: the ask card hangs --s3 below the fix list by design, and the
+   face clips its overflow, so the face holds that much room under it. */
+@media (max-width: 900px) {
+  body[data-inst-stage="results"] .inst-face[data-face="results"] { padding-bottom: calc(var(--s3) + var(--s2)); }
+}
+/* Phones: the newsletter opt-in under the intake is fine print, set at caption size. */
+@media (max-width: 560px) {
+  .inst .inst-consent { font-size: var(--t-caption); }
+}
 /* Phones: no chevrons over the testimonial cards. At one card a screen they sat on
    the quote; the next card peeking in at the edge is the cue to swipe (globals.css). */
 @media (max-width: 560px) {
